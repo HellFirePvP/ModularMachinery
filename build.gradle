@@ -9,9 +9,9 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.0"
-group = "com.yourname.modid"
-archivesBaseName = "modid"
+version = "0.1"
+group = "hellfirepvp.modularmachinery"
+archivesBaseName = "modularmachinery"
 
 sourceCompatibility = targetCompatibility = '1.8'
 compileJava {

@@ -1,0 +1,16 @@
+[
+    {
+        "modid": "modularmachinery",
+        "name": "Modular Machinery",
+        "description": "",
+        "version": "${version}",
+        "mcversion": "${mcversion}",
+        "url": "",
+        "updateUrl": "",
+        "authorList": ["HellFirePvP"],
+        "credits": "HellFirePvP",
+        "logoFile": "",
+        "screenshots": [],
+        "dependencies": []
+    }
+]
