@@ -6,37 +6,30 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.client;
+package hellfirepvp.modularmachinery.common.registry;
 
-import hellfirepvp.modularmachinery.common.CommonProxy;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraft.block.Block;
+import net.minecraft.item.Item;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: ClientProxy
+ * Class: RegistrationBus
  * Created by HellFirePvP
- * Date: 26.06.2017 / 21:01
+ * Date: 26.06.2017 / 21:12
  */
-public class ClientProxy extends CommonProxy {
+public class RegistrationBus {
 
-    public static ClientScheduler clientScheduler = new ClientScheduler();
+    @SubscribeEvent
+    public void registerItems(RegistryEvent.Register<Item> event) {
 
-    @Override
-    public void preInit() {
-        MinecraftForge.EVENT_BUS.register(clientScheduler);
-
-        super.preInit();
     }
 
-    @Override
-    public void init() {
-        super.init();
-    }
+    @SubscribeEvent
+    public void registerBlocks(RegistryEvent.Register<Block> event) {
 
-    @Override
-    public void postInit() {
-        super.postInit();
     }
 
 }

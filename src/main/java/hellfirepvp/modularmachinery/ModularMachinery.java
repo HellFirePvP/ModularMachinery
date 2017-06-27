@@ -20,6 +20,8 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.File;
+
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
@@ -42,7 +44,7 @@ public class ModularMachinery {
     @Mod.Instance(MODID)
     public static ModularMachinery instance;
 
-    public static Logger log = LogManager.getLogger(NAME);
+    public static Logger log;
 
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
     public static CommonProxy proxy;
@@ -50,7 +52,10 @@ public class ModularMachinery {
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
         event.getModMetadata().version = VERSION;
+        log = event.getModLog();
         devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
+
+        proxy.loadModData(event.getModConfigurationDirectory());
 
         proxy.preInit();
     }

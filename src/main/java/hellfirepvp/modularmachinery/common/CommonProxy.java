@@ -8,6 +8,13 @@
 
 package hellfirepvp.modularmachinery.common;
 
+import hellfirepvp.modularmachinery.common.data.ModDataHolder;
+import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
+import net.minecraftforge.common.MinecraftForge;
+
+import java.io.File;
+
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
@@ -17,11 +24,19 @@ package hellfirepvp.modularmachinery.common;
  */
 public class CommonProxy {
 
-    public void preInit() {
+    public static ModDataHolder dataHolder = new ModDataHolder();
 
+    public void loadModData(File configDir) {
+        dataHolder.setup(configDir);
+    }
+
+    public void preInit() {
+        MachineRegistry.getRegistry().buildRegistry();
+        MinecraftForge.EVENT_BUS.register(new RegistrationBus());
     }
 
     public void init() {
+        MachineRegistry.getRegistry().initializeAndLoad();
 
     }
 

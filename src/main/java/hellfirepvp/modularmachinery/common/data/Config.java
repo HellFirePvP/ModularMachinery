@@ -6,37 +6,33 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.client;
+package hellfirepvp.modularmachinery.common.data;
 
-import hellfirepvp.modularmachinery.common.CommonProxy;
-import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.config.Configuration;
+
+import java.io.File;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: ClientProxy
+ * Class: Config
  * Created by HellFirePvP
- * Date: 26.06.2017 / 21:01
+ * Date: 26.06.2017 / 22:34
  */
-public class ClientProxy extends CommonProxy {
+public class Config {
 
-    public static ClientScheduler clientScheduler = new ClientScheduler();
+    private static File lastReadFile;
+    private static Configuration lastReadConfig;
 
-    @Override
-    public void preInit() {
-        MinecraftForge.EVENT_BUS.register(clientScheduler);
+    public static void loadFrom(File file) {
+        lastReadFile = file;
+        lastReadConfig = new Configuration(file);
 
-        super.preInit();
+        load();
     }
 
-    @Override
-    public void init() {
-        super.init();
-    }
+    private static void load() {
 
-    @Override
-    public void postInit() {
-        super.postInit();
     }
 
 }
