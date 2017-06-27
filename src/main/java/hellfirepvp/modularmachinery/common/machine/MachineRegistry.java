@@ -50,6 +50,7 @@ public class MachineRegistry {
     public void initializeAndLoad() {
         Map<MachineLoader.FileType, List<File>> candidates = MachineLoader.discoverDirectory(CommonProxy.dataHolder.getMachineryDirectory());
         MachineLoader.prepareContext(candidates.get(MachineLoader.FileType.VARIABLES));
+
         Map<String, Exception> failures = MachineLoader.captureFailedAttempts();
         if(failures.size() > 0) {
             ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading variables!");

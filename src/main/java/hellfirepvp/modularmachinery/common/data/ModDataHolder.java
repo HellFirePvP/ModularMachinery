@@ -8,13 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.data;
 
-import com.google.gson.JsonParseException;
 import hellfirepvp.modularmachinery.ModularMachinery;
-import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineLoader;
 
 import java.io.File;
-import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod

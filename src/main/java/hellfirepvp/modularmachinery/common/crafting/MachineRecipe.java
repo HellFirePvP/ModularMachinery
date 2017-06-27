@@ -8,6 +8,17 @@
 
 package hellfirepvp.modularmachinery.common.crafting;
 
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonDeserializer;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
+import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import net.minecraft.util.ResourceLocation;
+
+import javax.annotation.Nullable;
+import java.lang.reflect.Type;
+
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
@@ -17,6 +28,34 @@ package hellfirepvp.modularmachinery.common.crafting;
  */
 public class MachineRecipe {
 
+    private final String recipeFilePath;
+    private final ResourceLocation owningMachine;
 
+    public MachineRecipe(String path, ResourceLocation owningMachine) {
+        this.recipeFilePath = path;
+        this.owningMachine = owningMachine;
+    }
+
+    public String getRecipeFilePath() {
+        return recipeFilePath;
+    }
+
+    public ResourceLocation getOwningMachineIdentifier() {
+        return owningMachine;
+    }
+
+    @Nullable
+    public DynamicMachine getOwningMachine() {
+        return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
+    }
+
+    public static class Deserializer implements JsonDeserializer<MachineRecipe> {
+
+        @Override
+        public MachineRecipe deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            return null;
+        }
+
+    }
 
 }

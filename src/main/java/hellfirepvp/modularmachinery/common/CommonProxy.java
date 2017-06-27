@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common;
 
+import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
@@ -32,11 +33,13 @@ public class CommonProxy {
 
     public void preInit() {
         MachineRegistry.getRegistry().buildRegistry();
+        RecipeRegistry.getRegistry().buildRegistry();
         MinecraftForge.EVENT_BUS.register(new RegistrationBus());
     }
 
     public void init() {
         MachineRegistry.getRegistry().initializeAndLoad();
+        RecipeRegistry.getRegistry().initializeAndLoad();
 
     }
 
