@@ -12,11 +12,13 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.registry.RegistryNamespacedDefaultedByKey;
+import net.minecraftforge.fml.common.ProgressManager;
 import net.minecraftforge.registries.*;
 
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +29,7 @@ import java.util.Map;
  * Created by HellFirePvP
  * Date: 27.06.2017 / 11:53
  */
-public class MachineRegistry {
+public class MachineRegistry implements Iterable<DynamicMachine> {
 
     private static MachineRegistry INSTANCE = new MachineRegistry();
     private static Map<ResourceLocation, DynamicMachine> REGISTRY_MACHINERY;
@@ -38,8 +40,14 @@ public class MachineRegistry {
         return INSTANCE;
     }
 
+    @Override
+    public Iterator<DynamicMachine> iterator() {
+        return REGISTRY_MACHINERY.values().iterator();
+    }
+
     @Nullable
-    public DynamicMachine getMachine(ResourceLocation name) {
+    public DynamicMachine getMachine(@Nullable ResourceLocation name) {
+        if(name == null) return null;
         return REGISTRY_MACHINERY.get(name);
     }
 
@@ -48,7 +56,11 @@ public class MachineRegistry {
     }
 
     public void initializeAndLoad() {
+        ProgressManager.ProgressBar barMachinery = ProgressManager.push("MachineRegistry", 4);
+        barMachinery.step("Discovering Files");
+
         Map<MachineLoader.FileType, List<File>> candidates = MachineLoader.discoverDirectory(CommonProxy.dataHolder.getMachineryDirectory());
+        barMachinery.step("Loading Variables");
         MachineLoader.prepareContext(candidates.get(MachineLoader.FileType.VARIABLES));
 
         Map<String, Exception> failures = MachineLoader.captureFailedAttempts();
@@ -59,6 +71,7 @@ public class MachineRegistry {
                 failures.get(fileName).printStackTrace();
             }
         }
+        barMachinery.step("Loading Machines");
         List<DynamicMachine> found = MachineLoader.loadMachines(candidates.get(MachineLoader.FileType.MACHINE));
         failures = MachineLoader.captureFailedAttempts();
         if(failures.size() > 0) {
@@ -68,9 +81,11 @@ public class MachineRegistry {
                 failures.get(fileName).printStackTrace();
             }
         }
+        barMachinery.step("Registering Machines");
         for (DynamicMachine m : found) {
             REGISTRY_MACHINERY.put(m.getRegistryName(), m);
         }
+        ProgressManager.pop(barMachinery);
     }
 
 }

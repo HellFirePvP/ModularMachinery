@@ -8,29 +8,25 @@
 
 package hellfirepvp.modularmachinery.common.registry;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: RegistrationBus
+ * Class: RegistryTileEntities
  * Created by HellFirePvP
- * Date: 26.06.2017 / 21:12
+ * Date: 28.06.2017 / 17:51
  */
-public class RegistrationBus {
+public class RegistryTileEntities {
 
-    @SubscribeEvent
-    public void registerItems(RegistryEvent.Register<Item> event) {
-        RegistryItems.register(event.getRegistry());
+    public static void register() {
+        registerTile(TileMachineController.class);
     }
 
-    @SubscribeEvent
-    public void registerBlocks(RegistryEvent.Register<Block> event) {
-        RegistryBlocks.register(event.getRegistry());
-        RegistryTileEntities.register();
+    private static void registerTile(Class<? extends TileEntity> tileClass) {
+        GameRegistry.registerTileEntity(tileClass, tileClass.getSimpleName().toLowerCase());
     }
 
 }

@@ -27,6 +27,7 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -55,6 +56,10 @@ public class MachineRecipe {
 
     public ResourceLocation getOwningMachineIdentifier() {
         return owningMachine;
+    }
+
+    public List<ComponentRequirement> getCraftingRequirements() {
+        return Collections.unmodifiableList(recipeRequirements);
     }
 
     public int getRecipeTotalTickTime() {

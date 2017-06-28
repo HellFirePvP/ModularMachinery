@@ -96,7 +96,11 @@ public abstract class ComponentRequirement {
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    return handler.drain(this.required.copy(), chance.canProduce(this.chance)) != null;
+                    FluidStack drainedSimulated = handler.drain(this.required.copy(), false);
+                    if(!chance.canProduce(this.chance)) {
+                        return drainedSimulated != null;
+                    }
+                    return drainedSimulated != null && handler.drain(this.required.copy(), true) != null;
                 case OUTPUT:
                     boolean doFill = chance.canProduce(this.chance);
 
@@ -135,10 +139,18 @@ public abstract class ComponentRequirement {
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    return ItemUtils.consumeFromInventory(handler, this.required.copy(), !chance.canProduce(this.chance));
+                    boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                    if(!chance.canProduce(this.chance)) {
+                        return can;
+                    }
+                    return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false);
                 case OUTPUT:
                     //If we don't produce the item, we only need to see if there would be space for it at all.
-                    return ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, !chance.canProduce(this.chance));
+                    boolean hasSpace = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+                    if(!chance.canProduce(this.chance)) {
+                        return hasSpace;
+                    }
+                    return hasSpace && ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, false);
             }
             return false;
         }

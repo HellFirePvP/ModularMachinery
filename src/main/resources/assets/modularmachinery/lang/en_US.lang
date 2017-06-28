@@ -1,0 +1,7 @@
+itemGroup.modularmachinery=Modular Machinery
+
+tooltip.machinery.empty=Empty
+
+item.itemblueprint.name=Machine Blueprint
+
+tile.blockcontroller.name=Machine Controller

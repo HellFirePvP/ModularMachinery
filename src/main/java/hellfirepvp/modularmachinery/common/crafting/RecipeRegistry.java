@@ -14,7 +14,9 @@ import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.ProgressManager;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.File;
 import java.util.HashMap;
@@ -40,9 +42,14 @@ public class RecipeRegistry {
         return INSTANCE;
     }
 
-    @Nullable
+    @Nonnull
     public List<MachineRecipe> getRecipesFor(DynamicMachine machine) {
-        return REGISTRY_RECIPE.get(machine.getRegistryName());
+        List<MachineRecipe> recipes = REGISTRY_RECIPE.get(machine.getRegistryName());
+        if(recipes == null) {
+            recipes = Lists.newArrayList();
+            REGISTRY_RECIPE.put(machine.getRegistryName(), recipes);
+        }
+        return recipes;
     }
 
     public void buildRegistry() {
@@ -50,7 +57,11 @@ public class RecipeRegistry {
     }
 
     public void initializeAndLoad() {
+        ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry", 3);
+        barRecipes.step("Discovering Files");
+
         List<File> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
+        barRecipes.step("Loading Recipes");
         List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes);
 
         Map<String, Exception> failures = RecipeLoader.captureFailedAttempts();
@@ -62,6 +73,7 @@ public class RecipeRegistry {
             }
         }
 
+        barRecipes.step("Validation and Registration");
         for (MachineRecipe mr : recipes) {
             DynamicMachine m = mr.getOwningMachine();
             if(m == null) {
@@ -75,6 +87,7 @@ public class RecipeRegistry {
             }
             recipeList.add(mr);
         }
+        ProgressManager.pop(barRecipes);
     }
 
 }

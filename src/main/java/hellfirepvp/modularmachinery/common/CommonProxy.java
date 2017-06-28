@@ -8,11 +8,18 @@
 
 package hellfirepvp.modularmachinery.common;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
+import hellfirepvp.modularmachinery.common.lib.ItemsMM;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
+import hellfirepvp.modularmachinery.common.registry.RegistryBlocks;
+import hellfirepvp.modularmachinery.common.registry.RegistryItems;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.ItemStack;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.ProgressManager;
 
 import java.io.File;
 
@@ -25,6 +32,7 @@ import java.io.File;
  */
 public class CommonProxy {
 
+    public static CreativeTabs creativeTabModularMachinery;
     public static ModDataHolder dataHolder = new ModDataHolder();
 
     public void loadModData(File configDir) {
@@ -32,9 +40,19 @@ public class CommonProxy {
     }
 
     public void preInit() {
+        creativeTabModularMachinery = new CreativeTabs(ModularMachinery.MODID) {
+            @Override
+            public ItemStack getTabIconItem() {
+                return new ItemStack(ItemsMM.blueprint);
+            }
+        };
+
         MachineRegistry.getRegistry().buildRegistry();
         RecipeRegistry.getRegistry().buildRegistry();
         MinecraftForge.EVENT_BUS.register(new RegistrationBus());
+
+        RegistryBlocks.initialize();
+        RegistryItems.initialize();
     }
 
     public void init() {

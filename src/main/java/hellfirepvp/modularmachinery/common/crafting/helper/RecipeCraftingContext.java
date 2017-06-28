@@ -10,10 +10,13 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.ResultChance;
 import hellfirepvp.modularmachinery.common.util.handlers.CopyableFluidHandler;
 import hellfirepvp.modularmachinery.common.util.handlers.CopyableItemHandler;
 import hellfirepvp.modularmachinery.common.util.handlers.IEnergyHandler;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +51,47 @@ public class RecipeCraftingContext {
         return currentCraftingTick;
     }
 
+    public Collection<MachineComponent> getComponentsFor(MachineComponent.ComponentType type) {
+        switch (type) {
+            case ITEM:
+                return Collections.unmodifiableCollection(this.itemComponents.keySet());
+            case FLUID:
+                return Collections.unmodifiableCollection(this.fluidComponents.keySet());
+            case ENERGY:
+                return Collections.unmodifiableCollection(this.energyComponents.keySet());
+        }
+        throw new IllegalArgumentException("Tried to get components for illegal ComponentType: " + type);
+    }
+
+    public boolean isValid() {
+        RecipeCraftingContext copy = copy();
+        lblRequirements:
+        for (ComponentRequirement requirement : copy.recipe.getCraftingRequirements()) {
+            for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
+                if(requirement.doComplete(component, this, ResultChance.GUARANTEED)) {
+                    continue lblRequirements;
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    public RecipeCraftingContext copy() {
+        RecipeCraftingContext newContext = new RecipeCraftingContext(this.recipe);
+        newContext.currentCraftingTick = this.currentCraftingTick;
+        for (Map.Entry<MachineComponent, CopyableItemHandler> component : this.itemComponents.entrySet()) {
+            newContext.itemComponents.put(component.getKey(), component.getValue().copy());
+        }
+        for (Map.Entry<MachineComponent, CopyableFluidHandler> component : this.fluidComponents.entrySet()) {
+            newContext.fluidComponents.put(component.getKey(), component.getValue().copy());
+        }
+        for (Map.Entry<MachineComponent, IEnergyHandler> component : this.energyComponents.entrySet()) {
+            newContext.energyComponents.put(component.getKey(), component.getValue().copy());
+        }
+        return newContext;
+    }
+
     public void addComponent(MachineComponent component) {
         switch (component.getComponentType()) {
             case ITEM:
@@ -60,6 +104,7 @@ public class RecipeCraftingContext {
                 energyComponents.put(component, ((MachineComponent.EnergyHatch) component).getEnergyBuffer());
                 break;
         }
+        throw new IllegalArgumentException("Tried to add component for illegal ComponentType: " + component.getComponentType());
     }
 
     public CopyableItemHandler getItemHandler(MachineComponent component) {

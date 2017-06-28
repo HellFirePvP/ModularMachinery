@@ -11,6 +11,9 @@ package hellfirepvp.modularmachinery.common.machine;
 import com.google.common.collect.Lists;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
+import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -59,6 +62,22 @@ public class DynamicMachine {
     @Nonnull
     public ResourceLocation getRegistryName() {
         return registryName;
+    }
+
+    @Nonnull
+    public List<MachineRecipe> getAvailableRecipes() {
+        return RecipeRegistry.getRegistry().getRecipesFor(this);
+    }
+
+    public RecipeCraftingContext createContext(MachineRecipe recipe, List<MachineComponent> components) {
+        if(!recipe.getOwningMachineIdentifier().equals(getRegistryName())) {
+            throw new IllegalArgumentException("Tried to create context for a recipe that doesn't belong to the referenced machine!");
+        }
+        RecipeCraftingContext context = new RecipeCraftingContext(recipe);
+        for (MachineComponent component : components) {
+            context.addComponent(component);
+        }
+        return context;
     }
 
     public static class MachineDeserializer implements JsonDeserializer<DynamicMachine> {

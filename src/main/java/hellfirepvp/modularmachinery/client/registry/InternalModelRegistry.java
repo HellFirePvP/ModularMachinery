@@ -6,31 +6,25 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.registry;
+package hellfirepvp.modularmachinery.client.registry;
 
-import net.minecraft.block.Block;
-import net.minecraft.item.Item;
-import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: RegistrationBus
+ * Class: InternalModelRegistry
  * Created by HellFirePvP
- * Date: 26.06.2017 / 21:12
+ * Date: 28.06.2017 / 21:53
  */
-public class RegistrationBus {
+public class InternalModelRegistry {
+
+
 
     @SubscribeEvent
-    public void registerItems(RegistryEvent.Register<Item> event) {
-        RegistryItems.register(event.getRegistry());
-    }
+    public void onModelRegister(ModelRegistryEvent event) {
 
-    @SubscribeEvent
-    public void registerBlocks(RegistryEvent.Register<Block> event) {
-        RegistryBlocks.register(event.getRegistry());
-        RegistryTileEntities.register();
     }
 
 }
