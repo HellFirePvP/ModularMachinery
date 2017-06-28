@@ -24,8 +24,6 @@ import java.util.Map;
  */
 public class ClientScheduler {
 
-
-
     private static long clientTick = 0;
     private static final Object lock = new Object();
 

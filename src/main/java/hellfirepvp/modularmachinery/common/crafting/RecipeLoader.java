@@ -11,8 +11,11 @@ package hellfirepvp.modularmachinery.common.crafting;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import net.minecraft.util.JsonUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,6 +35,7 @@ public class RecipeLoader {
             .create();
 
     private static Map<String, Exception> failedAttempts = new HashMap<>();
+    public static String currentlyReadingPath = null;
 
     public static List<File> discoverDirectory(File directory) {
         List<File> recipes = Lists.newArrayList();
@@ -52,9 +56,19 @@ public class RecipeLoader {
         return recipes;
     }
 
-    public static List<MachineRecipe> loadRecipes(List<File> files) {
-        //TODO
-        return Lists.newArrayList();
+    public static List<MachineRecipe> loadRecipes(List<File> candidates) {
+        List<MachineRecipe> loadedRecipes = Lists.newArrayList();
+        for (File f : candidates) {
+            currentlyReadingPath = f.getPath();
+            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
+                loadedRecipes.add(JsonUtils.fromJson(GSON, isr, MachineRecipe.class));
+            } catch (Exception exc) {
+                failedAttempts.put(f.getPath(), exc);
+            } finally {
+                currentlyReadingPath = null;
+            }
+        }
+        return loadedRecipes;
     }
 
     public static Map<String, Exception> captureFailedAttempts() {

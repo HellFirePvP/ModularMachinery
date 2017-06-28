@@ -12,7 +12,7 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
@@ -32,6 +32,7 @@ public class RecipeRegistry {
 
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
     private static Map<ResourceLocation, List<MachineRecipe>> REGISTRY_RECIPE;
+    private static List<MachineComponent> recipeComponents = Lists.newArrayList();
 
     private RecipeRegistry() {}
 
