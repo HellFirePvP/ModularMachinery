@@ -8,30 +8,20 @@
 
 package hellfirepvp.modularmachinery.common.tiles;
 
-import net.minecraft.util.ITickable;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+
+import javax.annotation.Nullable;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: TileEntityRestrictedTick
+ * Class: MachineComponentTile
  * Created by HellFirePvP
- * Date: 28.06.2017 / 17:57
+ * Date: 29.06.2017 / 15:41
  */
-public abstract class TileEntityRestrictedTick extends TileEntitySynchronized implements ITickable {
+public interface MachineComponentTile {
 
-    private long lastUpdateWorldTick = -1;
-    protected int ticksExisted = 0;
+    @Nullable
+    public MachineComponent provideComponent();
 
-    @Override
-    public final void update() {
-        long currentTick = getWorld().getTotalWorldTime();
-        if(lastUpdateWorldTick == currentTick) {
-            return;
-        }
-        lastUpdateWorldTick = currentTick;
-        doRestrictedTick();
-        ticksExisted++;
-    }
-
-    public abstract void doRestrictedTick();
 }

@@ -15,10 +15,7 @@ import hellfirepvp.modularmachinery.common.util.handlers.CopyableFluidHandler;
 import hellfirepvp.modularmachinery.common.util.handlers.CopyableItemHandler;
 import hellfirepvp.modularmachinery.common.util.handlers.IEnergyHandler;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -28,6 +25,8 @@ import java.util.Map;
  * Date: 28.06.2017 / 12:23
  */
 public class RecipeCraftingContext {
+
+    private static final Random RAND = new Random();
 
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
@@ -61,6 +60,19 @@ public class RecipeCraftingContext {
                 return Collections.unmodifiableCollection(this.energyComponents.keySet());
         }
         throw new IllegalArgumentException("Tried to get components for illegal ComponentType: " + type);
+    }
+
+    public void craft() {
+        craft(RAND.nextLong());
+    }
+
+    public void craft(long seed) {
+        ResultChance chance = new ResultChance(seed);
+        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
+                requirement.doComplete(component, this, chance);
+            }
+        }
     }
 
     public boolean isValid() {

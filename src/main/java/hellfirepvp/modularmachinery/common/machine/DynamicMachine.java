@@ -43,8 +43,18 @@ public class DynamicMachine {
     private String localizedName = null;
     private BlockArray pattern = new BlockArray();
 
+    private boolean requiresBlueprint = false;
+
     public DynamicMachine(@Nonnull ResourceLocation registryName) {
         this.registryName = registryName;
+    }
+
+    public void setRequiresBlueprint() {
+        this.requiresBlueprint = true;
+    }
+
+    public boolean requiresBlueprint() {
+        return requiresBlueprint;
     }
 
     public BlockArray getPattern() {
@@ -95,10 +105,21 @@ public class DynamicMachine {
             }
             JsonArray parts = JsonUtils.getJsonArray(root, "parts", new JsonArray());
             if(parts.size() == 0) {
-                throw new JsonParseException("Empty/Missing 'parts' !");
+                throw new JsonParseException("Empty/Missing 'parts'!");
             }
             DynamicMachine machine = new DynamicMachine(new ResourceLocation(ModularMachinery.MODID, registryName));
             machine.setLocalizedName(localized);
+            if(root.has("requires-blueprint")) {
+                JsonElement elementBlueprint = root.get("requires-blueprint");
+                if(!elementBlueprint.isJsonPrimitive() || !elementBlueprint.getAsJsonPrimitive().isBoolean()) {
+                    throw new JsonParseException("'requires-blueprint' has to be either 'true' or 'false'!");
+                }
+                boolean requiresBlueprint = elementBlueprint.getAsJsonPrimitive().getAsBoolean();
+                if(requiresBlueprint) {
+                    machine.setRequiresBlueprint();
+                }
+            }
+
             for (int i = 0; i < parts.size(); i++) {
                 JsonElement element = parts.get(i);
                 if(!element.isJsonObject()) {
