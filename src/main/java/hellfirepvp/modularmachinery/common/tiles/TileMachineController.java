@@ -18,6 +18,8 @@ import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
+import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import net.minecraft.item.ItemStack;
@@ -43,6 +45,8 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
     public static final int BLUEPRINT_SLOT = 0;
     public static final int ACCELERATOR_SLOT = 1;
+
+    private CraftingStatus craftingStatus = CraftingStatus.MISSING_STRUCTURE;
 
     private DynamicMachine foundMachine = null;
     private IOInventory inventory;
@@ -70,27 +74,51 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
             if(this.foundMachine != null) {
                 if(this.activeRecipe == null) {
-                    searchRecipe();
+                    if(this.ticksExisted % 80 == 0) {
+                        searchMatchingRecipe();
+                        if(this.activeRecipe == null) {
+                            craftingStatus = CraftingStatus.NO_RECIPE;
+                        } else {
+                            craftingStatus = CraftingStatus.CRAFTING;
+                        }
+                        markForUpdate();
+                    }
                 } else {
                     RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
-                    this.activeRecipe.tick(context);
+                    this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
                     if(this.activeRecipe.isCompleted(this)) {
                         this.activeRecipe.complete(context);
+                        context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
+                        if(context.canStartCrafting()) {
+                            this.activeRecipe.reset();
+                            this.craftingStatus = CraftingStatus.CRAFTING;
+                        } else {
+                            this.activeRecipe = null;
+                            searchMatchingRecipe();
+                            if(this.activeRecipe == null) {
+                                this.craftingStatus = CraftingStatus.NO_RECIPE;
+                            } else {
+                                this.craftingStatus = CraftingStatus.CRAFTING;
+                            }
+                        }
                     }
+                    markForUpdate();
                 }
+            } else {
+                craftingStatus = CraftingStatus.MISSING_STRUCTURE;
+                markForUpdate();
             }
         }
     }
 
-    private void searchRecipe() {
-        if(this.ticksExisted % 80 == 0) {
-            List<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
-            for (MachineRecipe recipe : availableRecipes) {
-                RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents);
-                if(context.isValid()) {
-                    this.activeRecipe = new ActiveMachineRecipe(recipe);
-                    return;
-                }
+    private void searchMatchingRecipe() {
+        List<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
+        for (MachineRecipe recipe : availableRecipes) {
+            RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents);
+            if(context.canStartCrafting()) {
+                this.activeRecipe = new ActiveMachineRecipe(recipe);
+                context.startCrafting(); //chew up start items
+                return;
             }
         }
     }
@@ -100,7 +128,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
             if(this.foundMachine != null) {
                 BlockArray pattern = this.foundMachine.getPattern();
                 if(!pattern.matches(getWorld(), getPos())) {
+                    this.activeRecipe = null;
                     this.foundMachine = null;
+                    craftingStatus = CraftingStatus.MISSING_STRUCTURE;
+                    markForUpdate();
                 }
             }
             if(this.foundMachine == null) {
@@ -141,13 +172,6 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     }
                 }
             }
-
-            if(this.activeRecipe != null) {
-                RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
-                if(!context.isValid()) {
-                    this.activeRecipe = null;
-                }
-            }
         }
     }
 
@@ -179,10 +203,15 @@ public class TileMachineController extends TileEntityRestrictedTick {
         return super.getCapability(capability, facing);
     }
 
+    public CraftingStatus getCraftingStatus() {
+        return craftingStatus;
+    }
+
     @Override
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
         this.inventory = IOInventory.deserialize(this, compound.getCompoundTag("items"));
+        this.craftingStatus = CraftingStatus.values()[compound.getInteger("status")];
 
         if(compound.hasKey("machine")) {
             ResourceLocation rl = new ResourceLocation(compound.getString("machine"));
@@ -195,16 +224,41 @@ public class TileMachineController extends TileEntityRestrictedTick {
         } else {
             this.foundMachine = null;
         }
+        if(compound.hasKey("activeRecipe")) {
+            NBTTagCompound tag = compound.getCompoundTag("activeRecipe");
+            ActiveMachineRecipe recipe = new ActiveMachineRecipe(tag);
+            if(recipe.getRecipe() == null) {
+                ModularMachinery.log.info("Couldn't find recipe named " + tag.getString("recipeName") + " for controller at " + getPos().toString());
+                this.activeRecipe = null;
+            } else {
+                this.activeRecipe = recipe;
+            }
+        } else {
+            this.activeRecipe = null;
+        }
     }
 
     @Override
     public void writeCustomNBT(NBTTagCompound compound) {
         super.writeCustomNBT(compound);
         compound.setTag("items", this.inventory.writeNBT());
+        compound.setInteger("status", this.craftingStatus.ordinal());
 
         if(this.foundMachine != null) {
             compound.setString("machine", this.foundMachine.getRegistryName().toString());
         }
+        if(this.activeRecipe != null) {
+            compound.setTag("activeRecipe", this.activeRecipe.serialize());
+        }
+    }
+
+    public static enum CraftingStatus {
+
+        MISSING_STRUCTURE,
+        NO_RECIPE,
+        NO_ENERGY,
+        CRAFTING;
+
     }
 
 }

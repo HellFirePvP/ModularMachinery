@@ -6,22 +6,25 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.tiles;
-
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-
-import javax.annotation.Nullable;
+package hellfirepvp.modularmachinery.common.util;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: MachineComponentTile
+ * Class: IEnergyHandler
  * Created by HellFirePvP
- * Date: 29.06.2017 / 15:41
+ * Date: 28.06.2017 / 12:26
  */
-public interface MachineComponentTile {
+public interface IEnergyHandler {
 
-    @Nullable
-    public MachineComponent provideComponent();
+    public int getCurrentEnergy();
+
+    public void setCurrentEnergy(int energy);
+
+    public int getMaxEnergy();
+
+    default public int getRemainingCapacity() {
+        return getMaxEnergy() - getCurrentEnergy();
+    }
 
 }

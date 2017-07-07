@@ -20,8 +20,6 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
  */
 public class InternalModelRegistry {
 
-
-
     @SubscribeEvent
     public void onModelRegister(ModelRegistryEvent event) {
 

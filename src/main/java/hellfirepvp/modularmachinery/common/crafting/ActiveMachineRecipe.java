@@ -10,6 +10,8 @@ package hellfirepvp.modularmachinery.common.crafting;
 
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -27,13 +29,26 @@ public class ActiveMachineRecipe {
         this.recipe = recipe;
     }
 
+    public ActiveMachineRecipe(NBTTagCompound serialized) {
+        this.recipe = RecipeRegistry.getRegistry().getRecipe(new ResourceLocation(serialized.getString("recipeName")));
+        this.tick = serialized.getInteger("tick");
+    }
+
+    public void reset() {
+        this.tick = 0;
+    }
+
     public MachineRecipe getRecipe() {
         return recipe;
     }
 
-    public void tick(RecipeCraftingContext context) {
-        if(context.isValid()) {
+    public TileMachineController.CraftingStatus tick(RecipeCraftingContext context) {
+        if(context.energyTick()) {
             this.tick++;
+            return TileMachineController.CraftingStatus.CRAFTING;
+        } else {
+            this.tick = 0;
+            return TileMachineController.CraftingStatus.NO_ENERGY;
         }
     }
 
@@ -42,6 +57,14 @@ public class ActiveMachineRecipe {
     }
 
     public void complete(RecipeCraftingContext completionContext) {
-        completionContext.craft();
+        completionContext.finishCrafting();
     }
+
+    public NBTTagCompound serialize() {
+        NBTTagCompound tag = new NBTTagCompound();
+        tag.setInteger("tick", this.tick);
+        tag.setString("recipeName", this.recipe.getRegistryName().toString());
+        return tag;
+    }
+
 }

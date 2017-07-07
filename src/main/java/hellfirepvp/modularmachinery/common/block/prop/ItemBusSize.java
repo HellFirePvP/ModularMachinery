@@ -6,27 +6,36 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.util.handlers;
+package hellfirepvp.modularmachinery.common.block.prop;
+
+import net.minecraft.util.IStringSerializable;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: IEnergyHandler
+ * Class: ItemBusSize
  * Created by HellFirePvP
- * Date: 28.06.2017 / 12:26
+ * Date: 07.07.2017 / 18:31
  */
-public interface IEnergyHandler {
+public enum ItemBusSize implements IStringSerializable {
 
-    public IEnergyHandler copy();
+    SMALL(1),
+    NORMAL(4),
+    REINFORCED(6),
+    BIG(9),
+    HUGE(12),
+    LUDICROUS(16),
+    GARGANTUAN(25);
 
-    public int getCurrentEnergy();
+    public final int slots;
 
-    public void setCurrentEnergy(int energy);
+    ItemBusSize(int slotSize) {
+        this.slots = slotSize;
+    }
 
-    public int getMaxEnergy();
-
-    default public int getRemainingCapacity() {
-        return getMaxEnergy() - getCurrentEnergy();
+    @Override
+    public String getName() {
+        return name().toLowerCase();
     }
 
 }

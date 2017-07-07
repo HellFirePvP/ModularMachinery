@@ -40,18 +40,23 @@ import java.util.List;
 public class MachineRecipe {
 
     private final String recipeFilePath;
-    private final ResourceLocation owningMachine;
+    private final ResourceLocation owningMachine, registryName;
     private final int tickTime;
     private final List<ComponentRequirement> recipeRequirements = Lists.newArrayList();
 
-    public MachineRecipe(String path, ResourceLocation owningMachine, int tickTime) {
+    public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime) {
         this.recipeFilePath = path;
+        this.registryName = registryName;
         this.owningMachine = owningMachine;
         this.tickTime = tickTime;
     }
 
     public String getRecipeFilePath() {
         return recipeFilePath;
+    }
+
+    public ResourceLocation getRegistryName() {
+        return registryName;
     }
 
     public ResourceLocation getOwningMachineIdentifier() {
@@ -79,6 +84,9 @@ public class MachineRecipe {
             if(!root.has("machine")) {
                 throw new JsonParseException("No 'machine'-entry specified!");
             }
+            if(!root.has("registryName")) {
+                throw new JsonParseException("No 'registryName'-entry specified!");
+            }
             if(!root.has("recipeTime")) {
                 throw new JsonParseException("No 'recipeTime'-entry specified!");
             }
@@ -86,13 +94,19 @@ public class MachineRecipe {
             if(!elementMachine.isJsonPrimitive() || !elementMachine.getAsJsonPrimitive().isString()) {
                 throw new JsonParseException("'machine' has to have as value only a String that defines its owning machine!");
             }
+            JsonElement elementRegistryName = root.get("registryName");
+            if(!elementRegistryName.isJsonPrimitive() || !elementRegistryName.getAsJsonPrimitive().isString()) {
+                throw new JsonParseException("'registryName' has to have as value only a String that defines its unique registry name!");
+            }
             JsonElement elementTime = root.get("recipeTime");
             if(!elementTime.isJsonPrimitive() || !elementTime.getAsJsonPrimitive().isNumber()) {
                 throw new JsonParseException("'recipeTime' has to be a number!");
             }
             String name = elementMachine.getAsJsonPrimitive().getAsString();
+            String registryName = elementRegistryName.getAsJsonPrimitive().getAsString();
             int recipeTime = elementTime.getAsJsonPrimitive().getAsInt();
             MachineRecipe recipe = new MachineRecipe(RecipeLoader.currentlyReadingPath,
+                    new ResourceLocation(ModularMachinery.MODID, registryName),
                     new ResourceLocation(ModularMachinery.MODID, name), recipeTime);
 
             if(!root.has("requirements")) {
@@ -166,8 +180,7 @@ public class MachineRecipe {
                     } else {
                         result = new ItemStack(item);
                     }
-                    req =
-                            new ComponentRequirement.RequirementItem(machineComponentType, machineIoType, result);
+                    req = new ComponentRequirement.RequirementItem(machineIoType, result);
                     if(requirement.has("chance")) {
                         if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
                             throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
@@ -195,7 +208,7 @@ public class MachineRecipe {
                     }
                     mbAmount = Math.max(0, mbAmount);
                     FluidStack fluidStack = new FluidStack(f, mbAmount);
-                    req = new ComponentRequirement.RequirementFluid(machineComponentType, machineIoType, fluidStack);
+                    req = new ComponentRequirement.RequirementFluid(machineIoType, fluidStack);
 
                     if(requirement.has("chance")) {
                         if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
@@ -213,7 +226,7 @@ public class MachineRecipe {
                         throw new JsonParseException("The ComponentType 'energy' expects an 'energyPerTick'-entry that defines the amount of energy per tick!");
                     }
                     int energyPerTick = requirement.getAsJsonPrimitive("energyPerTick").getAsInt();
-                    req = new ComponentRequirement.RequirementEnergy(machineComponentType, machineIoType, energyPerTick);
+                    req = new ComponentRequirement.RequirementEnergy(machineIoType, energyPerTick);
                     return req;
             }
             throw new JsonParseException("Unknown machine component type: " + type);

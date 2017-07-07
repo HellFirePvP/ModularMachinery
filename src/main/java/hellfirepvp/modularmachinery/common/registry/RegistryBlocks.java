@@ -9,7 +9,7 @@
 package hellfirepvp.modularmachinery.common.registry;
 
 import com.google.common.collect.Lists;
-import hellfirepvp.modularmachinery.common.block.BlockController;
+import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
@@ -33,6 +33,15 @@ public class RegistryBlocks {
     public static void initialize() {
         blockController = prepareRegister(new BlockController());
         prepareItemBlockRegister(blockController);
+
+        itemInputBus = prepareRegister(new BlockInputBus());
+        prepareItemBlockRegister(itemInputBus);
+        itemOutputBus = prepareRegister(new BlockOutputBus());
+        prepareItemBlockRegister(itemOutputBus);
+        fluidInputHatch = prepareRegister(new BlockFluidInputHatch());
+        prepareItemBlockRegister(fluidInputHatch);
+        fluidOutputHatch = prepareRegister(new BlockFluidOutputHatch());
+        prepareItemBlockRegister(fluidOutputHatch);
     }
 
     private static void prepareItemBlockRegister(Block block) {

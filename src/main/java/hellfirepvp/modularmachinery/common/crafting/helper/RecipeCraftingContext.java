@@ -11,9 +11,9 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableFluidHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableItemHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
 
 import java.util.*;
 
@@ -30,8 +30,8 @@ public class RecipeCraftingContext {
 
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
-    private Map<MachineComponent, CopyableItemHandler> itemComponents = new HashMap<>();
-    private Map<MachineComponent, CopyableFluidHandler> fluidComponents = new HashMap<>();
+    private Map<MachineComponent, IItemHandlerModifiable> itemComponents = new HashMap<>();
+    private Map<MachineComponent, IFluidHandler> fluidComponents = new HashMap<>();
     private Map<MachineComponent, IEnergyHandler> energyComponents = new HashMap<>();
 
     public RecipeCraftingContext(MachineRecipe recipe) {
@@ -62,46 +62,87 @@ public class RecipeCraftingContext {
         throw new IllegalArgumentException("Tried to get components for illegal ComponentType: " + type);
     }
 
-    public void craft() {
-        craft(RAND.nextLong());
+    public boolean energyTick() {
+        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            if(requirement.getRequiredComponentType() != MachineComponent.ComponentType.ENERGY ||
+                    requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+            ComponentRequirement.RequirementEnergy energyRequirement = (ComponentRequirement.RequirementEnergy) requirement;
+
+            energyRequirement.resetEnergyIO();
+            boolean enough = false;
+            for (MachineComponent component : getComponentsFor(MachineComponent.ComponentType.ENERGY)) {
+                if(energyRequirement.handleEnergyIO(component, this) <= 0) {
+                    enough = true;
+                    break;
+                }
+            }
+            energyRequirement.resetEnergyIO();
+            if(!enough) {
+                return false;
+            }
+        }
+        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            if(requirement.getRequiredComponentType() != MachineComponent.ComponentType.ENERGY ||
+                    requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
+            ComponentRequirement.RequirementEnergy energyRequirement = (ComponentRequirement.RequirementEnergy) requirement;
+
+            energyRequirement.resetEnergyIO();
+            for (MachineComponent component : getComponentsFor(MachineComponent.ComponentType.ENERGY)) {
+                energyRequirement.handleEnergyIO(component, this);
+            }
+            energyRequirement.resetEnergyIO();
+        }
+        return true;
     }
 
-    public void craft(long seed) {
+    public void startCrafting() {
+        startCrafting(RAND.nextLong());
+    }
+
+    public void startCrafting(long seed) {
         ResultChance chance = new ResultChance(seed);
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            if(requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                requirement.doComplete(component, this, chance);
+                if(requirement.startCrafting(component, this, chance)) {
+                    break;
+                }
             }
         }
     }
 
-    public boolean isValid() {
-        RecipeCraftingContext copy = copy();
-        lblRequirements:
-        for (ComponentRequirement requirement : copy.recipe.getCraftingRequirements()) {
+    public void finishCrafting() {
+        finishCrafting(RAND.nextLong());
+    }
+
+    public void finishCrafting(long seed) {
+        ResultChance chance = new ResultChance(seed);
+        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            if(requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
+
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                if(requirement.doComplete(component, this, ResultChance.GUARANTEED)) {
+                if(requirement.finishCrafting(component, this, chance)) {
+                    break;
+                }
+            }
+        }
+    }
+
+    public boolean canStartCrafting() {
+        lblRequirements:
+        for (ComponentRequirement requirement : recipe.getCraftingRequirements()) {
+            if(requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY &&
+                    requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+
+            for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
+                if(requirement.canStartCrafting(component, this)) {
                     continue lblRequirements;
                 }
             }
             return false;
         }
         return true;
-    }
-
-    public RecipeCraftingContext copy() {
-        RecipeCraftingContext newContext = new RecipeCraftingContext(this.recipe);
-        newContext.currentCraftingTick = this.currentCraftingTick;
-        for (Map.Entry<MachineComponent, CopyableItemHandler> component : this.itemComponents.entrySet()) {
-            newContext.itemComponents.put(component.getKey(), component.getValue().copy());
-        }
-        for (Map.Entry<MachineComponent, CopyableFluidHandler> component : this.fluidComponents.entrySet()) {
-            newContext.fluidComponents.put(component.getKey(), component.getValue().copy());
-        }
-        for (Map.Entry<MachineComponent, IEnergyHandler> component : this.energyComponents.entrySet()) {
-            newContext.energyComponents.put(component.getKey(), component.getValue().copy());
-        }
-        return newContext;
     }
 
     public void addComponent(MachineComponent component) {
@@ -119,11 +160,11 @@ public class RecipeCraftingContext {
         throw new IllegalArgumentException("Tried to add component for illegal ComponentType: " + component.getComponentType());
     }
 
-    public CopyableItemHandler getItemHandler(MachineComponent component) {
+    public IItemHandlerModifiable getItemHandler(MachineComponent component) {
         return itemComponents.get(component);
     }
 
-    public CopyableFluidHandler getFluidHandler(MachineComponent component) {
+    public IFluidHandler getFluidHandler(MachineComponent component) {
         return fluidComponents.get(component);
     }
 

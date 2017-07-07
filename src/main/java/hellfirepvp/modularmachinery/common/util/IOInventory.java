@@ -8,7 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.util;
 
-import hellfirepvp.modularmachinery.common.tiles.TileEntitySynchronized;
+import hellfirepvp.modularmachinery.common.tiles.base.TileEntitySynchronized;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;

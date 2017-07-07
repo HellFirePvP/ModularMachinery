@@ -19,14 +19,6 @@ import java.util.Random;
  */
 public class ResultChance {
 
-    //Used to see if a recipe can be done *at all*
-    public static ResultChance GUARANTEED = new ResultChance(1) {
-        @Override
-        public boolean canProduce(float chance) {
-            return true;
-        }
-    };
-
     private final Random rand;
 
     public ResultChance(long seed) {
@@ -34,7 +26,7 @@ public class ResultChance {
     }
 
     public boolean canProduce(float chance) {
-        return rand.nextFloat() <= chance;
+        return chance <= rand.nextFloat();
     }
 
 }

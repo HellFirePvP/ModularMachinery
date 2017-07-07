@@ -8,7 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.lib;
 
-import hellfirepvp.modularmachinery.common.block.BlockController;
+import hellfirepvp.modularmachinery.common.block.*;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -20,5 +20,10 @@ import hellfirepvp.modularmachinery.common.block.BlockController;
 public class BlocksMM {
 
     public static BlockController blockController;
+
+    public static BlockInputBus itemInputBus;
+    public static BlockOutputBus itemOutputBus;
+    public static BlockFluidInputHatch fluidInputHatch;
+    public static BlockFluidOutputHatch fluidOutputHatch;
 
 }

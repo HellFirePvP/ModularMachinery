@@ -11,11 +11,11 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableFluidHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableItemHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -42,35 +42,82 @@ public abstract class ComponentRequirement {
         return actionType;
     }
 
-    //- Used to complete crafting for a specific component in the current context with a given chance. (result can be ignored)
-    //- Used to see if a component fulfills its specific requirement (true if yes with the given chance, false if not)
-    public abstract boolean doComplete(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
+    //True, if the requirement could be fulfilled by the given component
+    public abstract boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
+
+    //True, if the requirement could be fulfilled by the given component
+    public abstract boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
+
+    public abstract boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context);
 
     public static class RequirementEnergy extends ComponentRequirement {
 
         private int requirementPerTick;
+        private int activeIO;
 
-        public RequirementEnergy(MachineComponent.ComponentType emptyRequirement, MachineComponent.IOType ioType, int requirementPerTick) {
-            super(emptyRequirement, ioType);
+        public RequirementEnergy(MachineComponent.IOType ioType, int requirementPerTick) {
+            super(MachineComponent.ComponentType.ENERGY, ioType);
             this.requirementPerTick = requirementPerTick;
+            this.activeIO = this.requirementPerTick;
         }
 
         @Override
-        public boolean doComplete(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
             if(component.getComponentType() != MachineComponent.ComponentType.ENERGY ||
                     !(component instanceof MachineComponent.EnergyHatch) ||
                     component.getIOType() != getActionType()) return false;
             IEnergyHandler handler = context.getEnergyHandler(component);
-            int time = context.getParentRecipe().getRecipeTotalTickTime();
-            time -= context.getCurrentCraftingTick();
             switch (getActionType()) {
                 case INPUT:
-                    return handler.getCurrentEnergy() >= (time * this.requirementPerTick);
+                    return handler.getCurrentEnergy() >= this.requirementPerTick;
                 case OUTPUT:
-                    return handler.getRemainingCapacity() >= (time * this.requirementPerTick);
+                    return true;
             }
             return false;
         }
+
+        @Override
+        public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            return canStartCrafting(component, context);
+        }
+
+        @Override
+        public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            return true;
+        }
+
+        public void resetEnergyIO() {
+            this.activeIO = this.requirementPerTick;
+        }
+
+        //returns remaining energy needing to be consumed/distributed
+        public int handleEnergyIO(MachineComponent component, RecipeCraftingContext context) {
+            if(component.getComponentType() != MachineComponent.ComponentType.ENERGY ||
+                    !(component instanceof MachineComponent.EnergyHatch) ||
+                    component.getIOType() != getActionType()) return this.activeIO;
+            IEnergyHandler handler = context.getEnergyHandler(component);
+            switch (getActionType()) {
+                case INPUT:
+                    if(handler.getCurrentEnergy() >= this.activeIO) {
+                        handler.setCurrentEnergy(handler.getCurrentEnergy() - this.activeIO);
+                        this.activeIO = 0;
+                        return activeIO;
+                    }
+                    return this.activeIO;
+                case OUTPUT:
+                    int remaining = handler.getRemainingCapacity();
+                    if(remaining - this.activeIO < 0) {
+                        handler.setCurrentEnergy(handler.getMaxEnergy());
+                        this.activeIO -= remaining;
+                        return this.activeIO;
+                    }
+                    handler.setCurrentEnergy(Math.min(handler.getCurrentEnergy() + this.activeIO, handler.getMaxEnergy()));
+                    this.activeIO = 0;
+                    return activeIO;
+            }
+            return this.activeIO;
+        }
+
     }
 
     public static class RequirementFluid extends ComponentRequirement {
@@ -78,8 +125,8 @@ public abstract class ComponentRequirement {
         private final FluidStack required;
         private float chance = 1F;
 
-        public RequirementFluid(MachineComponent.ComponentType emptyRequirement, MachineComponent.IOType ioType, FluidStack fluid) {
-            super(emptyRequirement, ioType);
+        public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
+            super(MachineComponent.ComponentType.FLUID, ioType);
             this.required = fluid;
         }
 
@@ -88,28 +135,52 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean doComplete(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
                     component.getIOType() != getActionType()) return false;
-            CopyableFluidHandler handler = context.getFluidHandler(component);
+            IFluidHandler handler = context.getFluidHandler(component);
+            switch (getActionType()) {
+                case INPUT:
+                    //If it doesn't consume the item, we only need to see if it's actually there.
+                    return  handler.drain(this.required.copy(), false) != null;
+                case OUTPUT:
+                    return handler.fill(this.required.copy(), false) >= this.required.amount;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
+                    !(component instanceof MachineComponent.FluidHatch) ||
+                    component.getIOType() != getActionType()) return false;
+            IFluidHandler handler = context.getFluidHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     FluidStack drainedSimulated = handler.drain(this.required.copy(), false);
-                    if(!chance.canProduce(this.chance)) {
+                    if(chance.canProduce(this.chance)) {
                         return drainedSimulated != null;
                     }
                     return drainedSimulated != null && handler.drain(this.required.copy(), true) != null;
-                case OUTPUT:
-                    boolean doFill = chance.canProduce(this.chance);
+            }
+            return false;
+        }
 
+        @Override
+        public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
+                    !(component instanceof MachineComponent.FluidHatch) ||
+                    component.getIOType() != getActionType()) return false;
+            IFluidHandler handler = context.getFluidHandler(component);
+            switch (getActionType()) {
+                case OUTPUT:
                     int fillableAmount = handler.fill(this.required.copy(), false);
-                    if (fillableAmount >= this.required.amount) {
-                        handler.fill(this.required.copy(), doFill);
-                        return true;
+                    if(chance.canProduce(this.chance)) {
+                        return fillableAmount >= this.required.amount;
                     }
-                    return false;
+                    return fillableAmount >= this.required.amount && handler.fill(this.required.copy(), true) >= this.required.amount;
             }
             return false;
         }
@@ -121,8 +192,8 @@ public abstract class ComponentRequirement {
         private final ItemStack required;
         private float chance = 1F;
 
-        public RequirementItem(MachineComponent.ComponentType emptyRequirement, MachineComponent.IOType ioType, ItemStack item) {
-            super(emptyRequirement, ioType);
+        public RequirementItem(MachineComponent.IOType ioType, ItemStack item) {
+            super(MachineComponent.ComponentType.ITEM, ioType);
             this.required = item.copy();
         }
 
@@ -131,19 +202,45 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean doComplete(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
             if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
                     !(component instanceof MachineComponent.ItemBus) ||
                     component.getIOType() != getActionType()) return false;
-            CopyableItemHandler handler = context.getItemHandler(component);
+            IItemHandlerModifiable handler = context.getItemHandler(component);
+            switch (getActionType()) {
+                case INPUT:
+                    return ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                case OUTPUT:
+                    return ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+            }
+            return false;
+        }
+
+        @Override
+        public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
+                    !(component instanceof MachineComponent.ItemBus) ||
+                    component.getIOType() != getActionType()) return false;
+            IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
-                    if(!chance.canProduce(this.chance)) {
+                    if(chance.canProduce(this.chance)) {
                         return can;
                     }
                     return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false);
+            }
+            return false;
+        }
+
+        @Override
+        public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+            if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
+                    !(component instanceof MachineComponent.ItemBus) ||
+                    component.getIOType() != getActionType()) return false;
+            IItemHandlerModifiable handler = context.getItemHandler(component);
+            switch (getActionType()) {
                 case OUTPUT:
                     //If we don't produce the item, we only need to see if there would be space for it at all.
                     boolean hasSpace = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);

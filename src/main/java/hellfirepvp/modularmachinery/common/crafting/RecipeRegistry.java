@@ -33,7 +33,8 @@ import java.util.Map;
 public class RecipeRegistry {
 
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
-    private static Map<ResourceLocation, List<MachineRecipe>> REGISTRY_RECIPE;
+    private static Map<ResourceLocation, List<MachineRecipe>> REGISTRY_RECIPE_BY_MACHINE;
+    private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY;
     private static List<MachineComponent> recipeComponents = Lists.newArrayList();
 
     private RecipeRegistry() {}
@@ -44,16 +45,22 @@ public class RecipeRegistry {
 
     @Nonnull
     public List<MachineRecipe> getRecipesFor(DynamicMachine machine) {
-        List<MachineRecipe> recipes = REGISTRY_RECIPE.get(machine.getRegistryName());
+        List<MachineRecipe> recipes = REGISTRY_RECIPE_BY_MACHINE.get(machine.getRegistryName());
         if(recipes == null) {
             recipes = Lists.newArrayList();
-            REGISTRY_RECIPE.put(machine.getRegistryName(), recipes);
+            REGISTRY_RECIPE_BY_MACHINE.put(machine.getRegistryName(), recipes);
         }
         return recipes;
     }
 
+    @Nullable
+    public MachineRecipe getRecipe(ResourceLocation key) {
+        return RECIPE_REGISTRY.get(key);
+    }
+
     public void buildRegistry() {
-        REGISTRY_RECIPE = new HashMap<>();
+        REGISTRY_RECIPE_BY_MACHINE = new HashMap<>();
+        RECIPE_REGISTRY = new HashMap<>();
     }
 
     public void initializeAndLoad() {
@@ -80,10 +87,18 @@ public class RecipeRegistry {
                 ModularMachinery.log.warn("MachineRecipe loaded for unknown machine: " + mr.getOwningMachineIdentifier() + " - responsible file: " + mr.getRecipeFilePath());
                 continue;
             }
-            List<MachineRecipe> recipeList = REGISTRY_RECIPE.get(mr.getOwningMachineIdentifier());
+            if(RECIPE_REGISTRY.containsKey(mr.getRegistryName())) {
+                MachineRecipe other = RECIPE_REGISTRY.get(mr.getRegistryName());
+                if(other != null) {
+                    ModularMachinery.log.warn("MachineRecipe with registryName " + mr.getRegistryName() + " already exists!");
+                    ModularMachinery.log.warn("Offending files: '" + mr.getRecipeFilePath() + "' and '" + other.getRecipeFilePath() + "' !");
+                    continue;
+                }
+            }
+            List<MachineRecipe> recipeList = REGISTRY_RECIPE_BY_MACHINE.get(mr.getOwningMachineIdentifier());
             if(recipeList == null) {
                 recipeList = Lists.newArrayList();
-                REGISTRY_RECIPE.put(mr.getOwningMachineIdentifier(), recipeList);
+                REGISTRY_RECIPE_BY_MACHINE.put(mr.getOwningMachineIdentifier(), recipeList);
             }
             recipeList.add(mr);
         }

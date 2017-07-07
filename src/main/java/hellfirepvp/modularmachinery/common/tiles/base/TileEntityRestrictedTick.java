@@ -6,7 +6,7 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.tiles;
+package hellfirepvp.modularmachinery.common.tiles.base;
 
 import net.minecraft.util.ITickable;
 

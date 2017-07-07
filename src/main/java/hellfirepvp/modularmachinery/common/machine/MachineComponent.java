@@ -8,9 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.machine;
 
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableFluidHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.CopyableItemHandler;
-import hellfirepvp.modularmachinery.common.util.handlers.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nullable;
 
@@ -76,7 +76,7 @@ public abstract class MachineComponent {
             super(ioType);
         }
 
-        public abstract CopyableItemHandler getInventory();
+        public abstract IItemHandlerModifiable getInventory();
 
         @Override
         public ComponentType getComponentType() {
@@ -91,7 +91,7 @@ public abstract class MachineComponent {
             super(ioType);
         }
 
-        public abstract CopyableFluidHandler getTank();
+        public abstract IFluidHandler getTank();
 
         @Override
         public ComponentType getComponentType() {

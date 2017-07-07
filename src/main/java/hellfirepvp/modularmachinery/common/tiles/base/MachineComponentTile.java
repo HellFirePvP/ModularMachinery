@@ -6,19 +6,22 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.util.handlers;
+package hellfirepvp.modularmachinery.common.tiles.base;
 
-import net.minecraftforge.items.IItemHandlerModifiable;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+
+import javax.annotation.Nullable;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: CopyableItemHandler
+ * Class: MachineComponentTile
  * Created by HellFirePvP
- * Date: 28.06.2017 / 12:20
+ * Date: 29.06.2017 / 15:41
  */
-public interface CopyableItemHandler extends IItemHandlerModifiable {
+public interface MachineComponentTile {
 
-    public CopyableItemHandler copy();
+    @Nullable
+    public MachineComponent provideComponent();
 
 }
