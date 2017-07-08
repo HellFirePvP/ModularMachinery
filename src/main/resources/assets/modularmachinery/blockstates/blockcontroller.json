@@ -1,0 +1,8 @@
+{
+    "variants": {
+        "facing=north": { "model": "modularmachinery:blockcontroller" },
+        "facing=south": { "model": "modularmachinery:blockcontroller", "y": 180 },
+        "facing=west":  { "model": "modularmachinery:blockcontroller", "y": 270 },
+        "facing=east":  { "model": "modularmachinery:blockcontroller", "y": 90 }
+    }
+}

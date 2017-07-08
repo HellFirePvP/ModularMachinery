@@ -12,10 +12,13 @@ import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import ic2.api.energy.event.EnergyTileLoadEvent;
+import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -37,6 +40,20 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
+    public void onLoad() {
+        super.onLoad();
+        MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(this));
+    }
+
+    @Override
+    @Optional.Method(modid = "ic2")
+    public void invalidate() {
+        super.invalidate();
+        MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+    }
+
+    @Override
     public double getOfferedEnergy() {
         return Math.min(this.size.getEnergyTransmission(), this.getCurrentEnergy() / 4);
     }
@@ -44,6 +61,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Override
     public void drawEnergy(double amount) {
         this.energy = MathHelper.clamp(MathHelper.floor(this.energy - (amount * 4)), 0, this.size.maxEnergy);
+        markForUpdate();
     }
 
     @Override

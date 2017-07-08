@@ -1,0 +1,11 @@
+{
+    "variants": {
+        "size=tiny":       { "model":"modularmachinery:blockoutputbus_tiny" },
+        "size=small":      { "model":"modularmachinery:blockoutputbus_small" },
+        "size=normal":     { "model":"modularmachinery:blockoutputbus_normal" },
+        "size=reinforced": { "model":"modularmachinery:blockoutputbus_reinforced" },
+        "size=big":        { "model":"modularmachinery:blockoutputbus_big" },
+        "size=huge":       { "model":"modularmachinery:blockoutputbus_huge" },
+        "size=ludicrous":  { "model":"modularmachinery:blockoutputbus_ludicrous" }
+    }
+}

@@ -47,7 +47,7 @@ public enum ItemBusSize implements IStringSerializable {
 
     public static void loadSizeFromConfig(Configuration cfg) {
         for (ItemBusSize size : values()) {
-            size.slots = cfg.getInt("slots", "itembus." + size.name().toUpperCase(), size.defaultConfigSize, 1, 128, "Defines the amount of item slots in the item bus");
+            size.slots = cfg.getInt("slots", "itembus." + size.name().toUpperCase(), size.defaultConfigSize, 1, 64, "Defines the amount of item slots in the item bus");
         }
     }
 

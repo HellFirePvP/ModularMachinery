@@ -1,0 +1,8 @@
+{
+    "parent": "block/orientable",
+    "textures": {
+        "top": "modularmachinery:blocks/controller_casing",
+        "front": "modularmachinery:blocks/controller_face",
+        "side": "modularmachinery:blocks/controller_casing"
+    }
+}

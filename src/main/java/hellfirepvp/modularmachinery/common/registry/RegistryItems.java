@@ -9,6 +9,9 @@
 package hellfirepvp.modularmachinery.common.registry;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import net.minecraft.item.Item;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -30,6 +33,8 @@ public class RegistryItems {
 
     public static void initialize() {
         blueprint = prepareRegister(new ItemBlueprint());
+
+        registerItemModels();
     }
 
     private static <T extends Item> T prepareRegister(T item) {
@@ -43,6 +48,10 @@ public class RegistryItems {
         for (Item i : itemsToRegister) {
             registry.register(i);
         }
+    }
+
+    private static void registerItemModels() {
+        itemsToRegister.stream().filter(i -> !(i instanceof ItemBlockCustomName)).forEach(ModularMachinery.proxy::registerItemModel);
     }
 
 }

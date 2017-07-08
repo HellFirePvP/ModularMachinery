@@ -22,13 +22,14 @@ import javax.annotation.Nullable;
  */
 public enum EnergyHatchSize implements IStringSerializable {
 
-    TINY      (2048,   1, 128),
-    SMALL     (4096,   2, 512),
-    NORMAL    (8192,   2, 512),
-    REINFORCED(16384,  3, 2048),
-    BIG       (32768,  4, 8192),
-    LUDICROUS (131072, 5, 32768),
-    ULTIMATE  (524288, 6, 131072);
+    TINY      (2048,    1, 128),
+    SMALL     (4096,    2, 512),
+    NORMAL    (8192,    2, 512),
+    REINFORCED(16384,   3, 2048),
+    BIG       (32768,   4, 8192),
+    HUGE      (131072,  5, 32768),
+    LUDICROUS (524288,  6, 131072),
+    ULTIMATE  (2097152, 6, 131072);
 
     public int maxEnergy;
     public int energyTier;

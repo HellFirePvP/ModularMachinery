@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.block.prop;
 
+import hellfirepvp.modularmachinery.common.tiles.base.TileEntitySynchronized;
 import net.minecraft.util.IStringSerializable;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidTank;
@@ -38,8 +39,14 @@ public enum FluidHatchSize implements IStringSerializable {
         this.defaultConfigurationValue = defaultConfigurationValue;
     }
 
-    public FluidTank buildTank(boolean canFill, boolean canDrain) {
-        FluidTank tank = new FluidTank(this.size);
+    public FluidTank buildTank(TileEntitySynchronized tileEntity, boolean canFill, boolean canDrain) {
+        FluidTank tank = new FluidTank(this.size) {
+            @Override
+            protected void onContentsChanged() {
+                super.onContentsChanged();
+                tileEntity.markForUpdate();
+            }
+        };
         tank.setCanFill(canFill);
         tank.setCanDrain(canDrain);
         return tank;

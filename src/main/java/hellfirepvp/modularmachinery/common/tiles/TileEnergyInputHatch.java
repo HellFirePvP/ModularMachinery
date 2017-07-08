@@ -12,10 +12,13 @@ import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import ic2.api.energy.event.EnergyTileLoadEvent;
+import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyEmitter;
 import ic2.api.energy.tile.IEnergySink;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -37,6 +40,20 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
+    public void onLoad() {
+        super.onLoad();
+        MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(this));
+    }
+
+    @Override
+    @Optional.Method(modid = "ic2")
+    public void invalidate() {
+        super.invalidate();
+        MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+    }
+
+    @Override
     public double getDemandedEnergy() {
         return Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, this.size.getEnergyTransmission());
     }
@@ -51,6 +68,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
         double addable = Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, amount);
         amount -= addable;
         this.energy = MathHelper.clamp(this.energy + MathHelper.floor(addable * 4), 0, this.size.maxEnergy);
+        markForUpdate();
         return amount;
     }
 

@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.registry;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import hellfirepvp.modularmachinery.common.tiles.*;
@@ -39,11 +40,16 @@ public class RegistryBlocks {
         registerBlocks();
 
         registerTiles();
+
+        registerBlockModels();
     }
 
     private static void registerBlocks() {
         blockController = prepareRegister(new BlockController());
         prepareItemBlockRegister(blockController);
+
+        blockCasing = prepareRegister(new BlockCasing());
+        prepareItemBlockRegister(blockCasing);
 
         itemInputBus = prepareRegister(new BlockInputBus());
         prepareItemBlockRegister(itemInputBus);
@@ -70,6 +76,12 @@ public class RegistryBlocks {
         registerTile(TileEnergyOutputHatch.class);
     }
 
+    private static void registerBlockModels() {
+        for (Block block : blocksToRegister) {
+            ModularMachinery.proxy.registerBlockModel(block);
+        }
+    }
+
     private static void registerTile(Class<? extends TileEntity> tile, String name) {
         GameRegistry.registerTileEntity(tile, name);
     }
@@ -79,7 +91,11 @@ public class RegistryBlocks {
     }
 
     private static void prepareItemBlockRegister(Block block) {
-        prepareItemBlockRegister(new ItemBlockCustomName(block));
+        if(block instanceof BlockCustomName) {
+            prepareItemBlockRegister(new ItemBlockCustomName(block));
+        } else {
+            prepareItemBlockRegister(new ItemBlock(block));
+        }
     }
 
     private static <T extends ItemBlock> T prepareItemBlockRegister(T item) {

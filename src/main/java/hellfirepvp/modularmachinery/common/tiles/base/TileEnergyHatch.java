@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 08.07.2017 / 10:14
  */
+@Optional.Interface(iface = "cofh.redstoneflux.api.IEnergyStorage", modid = "redstoneflux")
 public abstract class TileEnergyHatch extends TileEntitySynchronized implements IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
 
     protected int energy = 0;
@@ -53,6 +54,7 @@ public abstract class TileEnergyHatch extends TileEntitySynchronized implements 
         insertable = Math.min(insertable, size.transferLimit);
         if(!simulate) {
             this.energy = MathHelper.clamp(this.energy + maxReceive, 0, this.size.maxEnergy);
+            markForUpdate();
         }
         return insertable;
     }
@@ -66,6 +68,7 @@ public abstract class TileEnergyHatch extends TileEntitySynchronized implements 
         extractable = Math.min(extractable, size.transferLimit);
         if(!simulate) {
             this.energy = MathHelper.clamp(this.energy - extractable, 0, this.size.maxEnergy);
+            markForUpdate();
         }
         return extractable;
     }
@@ -130,6 +133,7 @@ public abstract class TileEnergyHatch extends TileEntitySynchronized implements 
     @Override
     public void setCurrentEnergy(int energy) {
         this.energy = MathHelper.clamp(energy, 0, this.size.maxEnergy);
+        markForUpdate();
     }
 
     @Override

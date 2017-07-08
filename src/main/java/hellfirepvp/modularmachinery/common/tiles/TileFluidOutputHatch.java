@@ -28,18 +28,7 @@ public class TileFluidOutputHatch extends TileFluidTank implements MachineCompon
     public TileFluidOutputHatch() {}
 
     public TileFluidOutputHatch(FluidHatchSize size) {
-        super(size.buildTank(false, true));
-    }
-
-    @Nullable
-    @Override
-    public MachineComponent provideComponent() {
-        return new MachineComponent.FluidHatch(MachineComponent.IOType.OUTPUT) {
-            @Override
-            public IFluidHandler getTank() {
-                return TileFluidOutputHatch.this.tank;
-            }
-        };
+        super(size, MachineComponent.IOType.INPUT);
     }
 
 }

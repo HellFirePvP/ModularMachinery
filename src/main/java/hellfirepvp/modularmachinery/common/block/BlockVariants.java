@@ -6,23 +6,21 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.client.registry;
+package hellfirepvp.modularmachinery.common.block;
 
-import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraft.block.state.IBlockState;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: InternalModelRegistry
+ * Class: BlockVariants
  * Created by HellFirePvP
- * Date: 28.06.2017 / 21:53
+ * Date: 08.07.2017 / 14:59
  */
-public class InternalModelRegistry {
+public interface BlockVariants {
 
-    @SubscribeEvent
-    public void onModelRegister(ModelRegistryEvent event) {
+    public Iterable<IBlockState> getValidStates();
 
-    }
+    public String getBlockStateName(IBlockState state);
 
 }

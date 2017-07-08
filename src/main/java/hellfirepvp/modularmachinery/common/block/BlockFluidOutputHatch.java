@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileFluidOutputHatch;
 import net.minecraft.block.BlockContainer;
+import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
@@ -20,12 +21,14 @@ import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 
 import javax.annotation.Nullable;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -35,12 +38,16 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 19:00
  */
-public class BlockFluidOutputHatch extends BlockContainer implements BlockCustomName {
+public class BlockFluidOutputHatch extends BlockContainer implements BlockCustomName, BlockVariants {
 
     private static final PropertyEnum<FluidHatchSize> BUS_TYPE = PropertyEnum.create("size", FluidHatchSize.class);
 
     public BlockFluidOutputHatch() {
         super(Material.IRON);
+        setHardness(2F);
+        setResistance(10F);
+        setSoundType(SoundType.METAL);
+        setHarvestLevel("pickaxe", 1);
         setCreativeTab(CommonProxy.creativeTabModularMachinery);
     }
 
@@ -58,6 +65,16 @@ public class BlockFluidOutputHatch extends BlockContainer implements BlockCustom
     }
 
     @Override
+    public EnumBlockRenderType getRenderType(IBlockState state) {
+        return EnumBlockRenderType.MODEL;
+    }
+
+    @Override
+    public int damageDropped(IBlockState state) {
+        return getMetaFromState(state);
+    }
+
+    @Override
     public IBlockState getStateFromMeta(int meta) {
         return getDefaultState().withProperty(BUS_TYPE, FluidHatchSize.values()[meta]);
     }
@@ -70,6 +87,20 @@ public class BlockFluidOutputHatch extends BlockContainer implements BlockCustom
     @Override
     protected BlockStateContainer createBlockState() {
         return new BlockStateContainer(this, BUS_TYPE);
+    }
+
+    @Override
+    public Iterable<IBlockState> getValidStates() {
+        List<IBlockState> ret = new LinkedList<>();
+        for (FluidHatchSize type : FluidHatchSize.values()) {
+            ret.add(getDefaultState().withProperty(BUS_TYPE, type));
+        }
+        return ret;
+    }
+
+    @Override
+    public String getBlockStateName(IBlockState state) {
+        return state.getValue(BUS_TYPE).getName();
     }
 
     @Override

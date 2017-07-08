@@ -35,6 +35,10 @@ public abstract class TileInventory extends TileEntitySynchronized {
 
     public abstract IOInventory buildInventory(TileInventory tile, int size);
 
+    public IOInventory getInventory() {
+        return inventory;
+    }
+
     @Override
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
