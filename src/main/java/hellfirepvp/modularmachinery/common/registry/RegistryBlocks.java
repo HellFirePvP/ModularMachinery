@@ -12,8 +12,10 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import hellfirepvp.modularmachinery.common.tiles.*;
+import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemBlock;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
@@ -51,15 +53,21 @@ public class RegistryBlocks {
         prepareItemBlockRegister(fluidInputHatch);
         fluidOutputHatch = prepareRegister(new BlockFluidOutputHatch());
         prepareItemBlockRegister(fluidOutputHatch);
+        energyInputHatch = prepareRegister(new BlockEnergyInputHatch());
+        prepareItemBlockRegister(energyInputHatch);
+        energyOutputHatch = prepareRegister(new BlockEnergyOutputHatch());
+        prepareItemBlockRegister(energyOutputHatch);
     }
 
     private static void registerTiles() {
         registerTile(TileMachineController.class);
-        registerTile(TileEnergyHatch.class);
+
         registerTile(TileFluidInputHatch.class);
         registerTile(TileFluidOutputHatch.class);
         registerTile(TileItemOutputBus.class);
         registerTile(TileItemInputBus.class);
+        registerTile(TileEnergyInputHatch.class);
+        registerTile(TileEnergyOutputHatch.class);
     }
 
     private static void registerTile(Class<? extends TileEntity> tile, String name) {
@@ -74,8 +82,8 @@ public class RegistryBlocks {
         prepareItemBlockRegister(new ItemBlockCustomName(block));
     }
 
-    private static <T extends Item> T prepareItemBlockRegister(T item) {
-        String name = item.getClass().getSimpleName().toLowerCase();
+    private static <T extends ItemBlock> T prepareItemBlockRegister(T item) {
+        String name = item.getBlock().getClass().getSimpleName().toLowerCase();
         item.setRegistryName(name).setUnlocalizedName(name);
         RegistryItems.itemsToRegister.add(item);
         return item;

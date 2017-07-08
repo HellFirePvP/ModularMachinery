@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.block.prop;
 
 import net.minecraft.util.IStringSerializable;
+import net.minecraftforge.common.config.Configuration;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -19,23 +20,35 @@ import net.minecraft.util.IStringSerializable;
  */
 public enum ItemBusSize implements IStringSerializable {
 
-    SMALL(1),
-    NORMAL(4),
-    REINFORCED(6),
-    BIG(9),
-    HUGE(12),
-    LUDICROUS(16),
-    GARGANTUAN(25);
+    TINY(1),
+    SMALL(4),
+    NORMAL(6),
+    REINFORCED(9),
+    BIG(12),
+    HUGE(16),
+    LUDICROUS(25);
 
-    public final int slots;
+    private int slots;
 
-    ItemBusSize(int slotSize) {
-        this.slots = slotSize;
+    private final int defaultConfigSize;
+
+    private ItemBusSize(int defaultConfigSize) {
+        this.defaultConfigSize = defaultConfigSize;
+    }
+
+    public int getSlotCount() {
+        return slots;
     }
 
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public static void loadSizeFromConfig(Configuration cfg) {
+        for (ItemBusSize size : values()) {
+            size.slots = cfg.getInt("slots", "itembus." + size.name().toUpperCase(), size.defaultConfigSize, 1, 128, "Defines the amount of item slots in the item bus");
+        }
     }
 
 }

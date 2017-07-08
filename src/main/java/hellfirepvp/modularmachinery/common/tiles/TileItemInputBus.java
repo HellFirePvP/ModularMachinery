@@ -29,7 +29,7 @@ public class TileItemInputBus extends TileInventory implements MachineComponentT
     public TileItemInputBus() {}
 
     public TileItemInputBus(ItemBusSize type) {
-        super(type.slots);
+        super(type.getSlotCount());
     }
 
     @Override

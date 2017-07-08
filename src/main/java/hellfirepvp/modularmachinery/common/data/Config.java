@@ -8,6 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.data;
 
+import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
+import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
+import hellfirepvp.modularmachinery.common.block.prop.ItemBusSize;
 import net.minecraftforge.common.config.Configuration;
 
 import java.io.File;
@@ -29,10 +32,16 @@ public class Config {
         lastReadConfig = new Configuration(file);
 
         load();
+
+        if(lastReadConfig.hasChanged()) {
+            lastReadConfig.save();
+        }
     }
 
     private static void load() {
-
+        ItemBusSize.loadSizeFromConfig(lastReadConfig);
+        FluidHatchSize.loadSizeFromConfig(lastReadConfig);
+        EnergyHatchSize.loadSizeFromConfig(lastReadConfig);
     }
 
 }

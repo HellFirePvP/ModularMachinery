@@ -6,12 +6,16 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.tiles;
+package hellfirepvp.modularmachinery.common.tiles.base;
 
+import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
-import hellfirepvp.modularmachinery.common.tiles.base.TileEntitySynchronized;
+import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
+import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import ic2.api.energy.tile.IEnergyEmitter;
+import ic2.api.energy.tile.IEnergySink;
+import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
@@ -29,18 +33,15 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 08.07.2017 / 10:14
  */
-@Optional.Interface(iface = "cofh.redstoneflux.api.IEnergyStorage", modid = "redstoneflux")
-public class TileEnergyHatch extends TileEntitySynchronized implements IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
+public abstract class TileEnergyHatch extends TileEntitySynchronized implements IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
 
-    private int energy = 0;
-    private int maxEnergy;
-    private MachineComponent.IOType ioType;
+    protected int energy = 0;
+    protected EnergyHatchSize size;
 
     public TileEnergyHatch() {}
 
-    public TileEnergyHatch(MachineComponent.IOType type, int maxEnergy) {
-        this.ioType = type;
-        this.maxEnergy = maxEnergy;
+    public TileEnergyHatch(EnergyHatchSize size) {
+        this.size = size;
     }
 
     @Override
@@ -48,9 +49,10 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
         if(!canReceive()) {
             return 0;
         }
-        int insertable = this.energy + maxReceive > this.maxEnergy ? this.maxEnergy - this.energy : maxReceive;
+        int insertable = this.energy + maxReceive > this.size.maxEnergy ? this.size.maxEnergy - this.energy : maxReceive;
+        insertable = Math.min(insertable, size.transferLimit);
         if(!simulate) {
-            this.energy = MathHelper.clamp(this.energy + maxReceive, 0, this.maxEnergy);
+            this.energy = MathHelper.clamp(this.energy + maxReceive, 0, this.size.maxEnergy);
         }
         return insertable;
     }
@@ -61,8 +63,9 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
             return 0;
         }
         int extractable = this.energy - maxExtract < 0 ? this.energy : maxExtract;
+        extractable = Math.min(extractable, size.transferLimit);
         if(!simulate) {
-            this.energy = MathHelper.clamp(this.energy - extractable, 0, this.maxEnergy);
+            this.energy = MathHelper.clamp(this.energy - extractable, 0, this.size.maxEnergy);
         }
         return extractable;
     }
@@ -74,17 +77,17 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
 
     @Override
     public int getMaxEnergyStored() {
-        return this.maxEnergy;
+        return this.size.maxEnergy;
     }
 
     @Override
     public boolean canExtract() {
-        return this.ioType == MachineComponent.IOType.OUTPUT;
+        return this instanceof TileEnergyOutputHatch;
     }
 
     @Override
     public boolean canReceive() {
-        return this.ioType == MachineComponent.IOType.INPUT;
+        return this instanceof TileEnergyInputHatch;
     }
 
     @Override
@@ -106,8 +109,7 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
         super.readCustomNBT(compound);
 
         this.energy = compound.getInteger("energy");
-        this.maxEnergy = compound.getInteger("maxEnergy");
-        this.ioType = compound.getBoolean("ioType") ? MachineComponent.IOType.INPUT : MachineComponent.IOType.OUTPUT;
+        this.size = EnergyHatchSize.values()[compound.getInteger("hatchSize")];
     }
 
     @Override
@@ -115,8 +117,7 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
         super.writeCustomNBT(compound);
 
         compound.setInteger("energy", this.energy);
-        compound.setInteger("maxEnergy", this.maxEnergy);
-        compound.setBoolean("ioType", this.ioType == MachineComponent.IOType.INPUT);
+        compound.setInteger("hatchSize", this.size.ordinal());
     }
 
     //MM stuff
@@ -128,22 +129,12 @@ public class TileEnergyHatch extends TileEntitySynchronized implements IEnergySt
 
     @Override
     public void setCurrentEnergy(int energy) {
-        this.energy = MathHelper.clamp(energy, 0, this.maxEnergy);
+        this.energy = MathHelper.clamp(energy, 0, this.size.maxEnergy);
     }
 
     @Override
     public int getMaxEnergy() {
-        return this.maxEnergy;
+        return this.size.maxEnergy;
     }
 
-    @Nullable
-    @Override
-    public MachineComponent provideComponent() {
-        return new MachineComponent.EnergyHatch(this.ioType) {
-            @Override
-            public IEnergyHandler getEnergyBuffer() {
-                return TileEnergyHatch.this;
-            }
-        };
-    }
 }

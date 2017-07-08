@@ -9,6 +9,9 @@
 package hellfirepvp.modularmachinery.common.block.prop;
 
 import net.minecraft.util.IStringSerializable;
+import net.minecraftforge.common.config.Configuration;
+
+import javax.annotation.Nullable;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -17,24 +20,82 @@ import net.minecraft.util.IStringSerializable;
  * Created by HellFirePvP
  * Date: 08.07.2017 / 10:25
  */
-public enum  EnergyHatchSize implements IStringSerializable {
+public enum EnergyHatchSize implements IStringSerializable {
 
-    TINY(200),
-    SMALL(600),
-    NORMAL(1000),
-    REINFORCED(1500),
-    BIG(2500),
-    HUGE(5000);
+    TINY      (2048,   1, 128),
+    SMALL     (4096,   2, 512),
+    NORMAL    (8192,   2, 512),
+    REINFORCED(16384,  3, 2048),
+    BIG       (32768,  4, 8192),
+    LUDICROUS (131072, 5, 32768),
+    ULTIMATE  (524288, 6, 131072);
 
-    public final int maxEnergy;
+    public int maxEnergy;
+    public int energyTier;
+    public int transferLimit;
 
-    private EnergyHatchSize(int maxEnergy) {
-        this.maxEnergy = maxEnergy;
+    private final int defaultConfigurationEnergy;
+    private final int defaultEnergyTier;
+    private final int defaultConfigurationTransferLimit;
+
+    private EnergyHatchSize(int defaultConfigurationEnergy, int defaultEnergyTier, int defaultConfigurationTransferLimit) {
+        this.defaultConfigurationEnergy = defaultConfigurationEnergy;
+        this.defaultEnergyTier = defaultEnergyTier;
+        this.defaultConfigurationTransferLimit = defaultConfigurationTransferLimit;
     }
 
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    @Nullable
+    public String getEnergyDescriptor() {
+        switch (energyTier) {
+            case 0:
+                return "ULV";
+            case 1:
+                return "LV";
+            case 2:
+                return "MV";
+            case 3:
+                return "HV";
+            case 4:
+                return "EV";
+            case 5:
+                return "IV";
+            case 6:
+                return "LuV";
+            case 7:
+                return "ZPM";
+            case 8:
+                return "UV";
+            case 9:
+                return "UHV";
+            case 10:
+                return "UEV";
+            case 11:
+                return "UIV";
+            case 12:
+                return "UXV";
+            //No, i'm not going to continue after this.
+        }
+        return null;
+    }
+
+    public int getEnergyTransmission() {
+        if(energyTier < 0) {
+            return -1;
+        }
+        return (int) Math.pow(2, ((energyTier + 1) * 2) + 1);
+    }
+
+    public static void loadSizeFromConfig(Configuration cfg) {
+        for (EnergyHatchSize size : values()) {
+            size.maxEnergy = cfg.getInt("size", "energyhatch." + size.name().toUpperCase(), size.defaultConfigurationEnergy, 1, Integer.MAX_VALUE, "Energy storage size of the energy hatch.");
+            size.transferLimit = cfg.getInt("limit", "energyhatch." + size.name().toUpperCase(), size.defaultConfigurationTransferLimit, 1, Integer.MAX_VALUE, "Defines the transfer limit for RF/FE things. IC2's transfer limit is defined by the voltage tier.");
+            size.energyTier = cfg.getInt("tier", "energyhatch." + size.name().toUpperCase(), size.defaultEnergyTier, 0, 12, "Defines the IC2 output-voltage tier. Only affects the power the output hatches will output power as. 0 = 'ULV' = 8 EU/t, 1 = 'LV' = 32 EU/t, 2 = 'MV' = 128 EU/t, ...");
+        }
     }
 
 }

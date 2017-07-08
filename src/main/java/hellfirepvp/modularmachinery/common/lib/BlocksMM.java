@@ -25,5 +25,7 @@ public class BlocksMM {
     public static BlockOutputBus itemOutputBus;
     public static BlockFluidInputHatch fluidInputHatch;
     public static BlockFluidOutputHatch fluidOutputHatch;
+    public static BlockEnergyInputHatch energyInputHatch;
+    public static BlockEnergyOutputHatch energyOutputHatch;
 
 }

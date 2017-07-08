@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.block.prop;
 
 import net.minecraft.util.IStringSerializable;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidTank;
 
 /**
@@ -18,7 +19,7 @@ import net.minecraftforge.fluids.FluidTank;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 18:31
  */
-public enum  FluidHatchSize implements IStringSerializable {
+public enum FluidHatchSize implements IStringSerializable {
 
     TINY(100),
     SMALL(400),
@@ -29,10 +30,12 @@ public enum  FluidHatchSize implements IStringSerializable {
     LUDICROUS(16000),
     VACUUM(32000);
 
-    private final int size;
+    private int size;
 
-    FluidHatchSize(int size) {
-        this.size = size;
+    private final int defaultConfigurationValue;
+
+    FluidHatchSize(int defaultConfigurationValue) {
+        this.defaultConfigurationValue = defaultConfigurationValue;
     }
 
     public FluidTank buildTank(boolean canFill, boolean canDrain) {
@@ -42,8 +45,19 @@ public enum  FluidHatchSize implements IStringSerializable {
         return tank;
     }
 
+    public int getSize() {
+        return size;
+    }
+
     @Override
     public String getName() {
         return name().toLowerCase();
     }
+
+    public static void loadSizeFromConfig(Configuration cfg) {
+        for (FluidHatchSize size : values()) {
+            size.size = cfg.getInt("size", "fluidhatch." + size.name().toUpperCase(), size.defaultConfigurationValue, 1, Integer.MAX_VALUE, "Defines the tank size for the size-type of fluid hatch.");
+        }
+    }
+
 }
