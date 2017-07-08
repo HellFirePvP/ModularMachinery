@@ -11,8 +11,11 @@ package hellfirepvp.modularmachinery.common.registry;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
+import hellfirepvp.modularmachinery.common.tiles.*;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
+import net.minecraft.tileentity.TileEntity;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 
 import java.util.List;
@@ -31,6 +34,12 @@ public class RegistryBlocks {
     static List<Block> blocksToRegister = Lists.newArrayList();
 
     public static void initialize() {
+        registerBlocks();
+
+        registerTiles();
+    }
+
+    private static void registerBlocks() {
         blockController = prepareRegister(new BlockController());
         prepareItemBlockRegister(blockController);
 
@@ -42,6 +51,23 @@ public class RegistryBlocks {
         prepareItemBlockRegister(fluidInputHatch);
         fluidOutputHatch = prepareRegister(new BlockFluidOutputHatch());
         prepareItemBlockRegister(fluidOutputHatch);
+    }
+
+    private static void registerTiles() {
+        registerTile(TileMachineController.class);
+        registerTile(TileEnergyHatch.class);
+        registerTile(TileFluidInputHatch.class);
+        registerTile(TileFluidOutputHatch.class);
+        registerTile(TileItemOutputBus.class);
+        registerTile(TileItemInputBus.class);
+    }
+
+    private static void registerTile(Class<? extends TileEntity> tile, String name) {
+        GameRegistry.registerTileEntity(tile, name);
+    }
+
+    private static void registerTile(Class<? extends TileEntity> tile) {
+        registerTile(tile, tile.getSimpleName().toLowerCase());
     }
 
     private static void prepareItemBlockRegister(Block block) {
