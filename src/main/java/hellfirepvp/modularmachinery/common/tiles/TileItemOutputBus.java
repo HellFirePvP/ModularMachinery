@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.common.block.prop.ItemBusSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileInventory;
+import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
@@ -24,12 +25,12 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 18:41
  */
-public class TileItemOutputBus extends TileInventory implements MachineComponentTile {
+public class TileItemOutputBus extends TileItemBus implements MachineComponentTile {
 
     public TileItemOutputBus() {}
 
     public TileItemOutputBus(ItemBusSize type) {
-        super(type.getSlotCount());
+        super(type);
     }
 
     @Override

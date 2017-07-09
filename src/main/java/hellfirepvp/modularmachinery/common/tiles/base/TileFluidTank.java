@@ -41,6 +41,10 @@ public abstract class TileFluidTank extends TileEntitySynchronized implements Ma
         this.ioType = type;
     }
 
+    public FluidTank getTank() {
+        return tank;
+    }
+
     @Override
     public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
         return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing);

@@ -10,22 +10,34 @@ package hellfirepvp.modularmachinery.client;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.client.gui.GuiContainerEnergyHatch;
+import hellfirepvp.modularmachinery.client.gui.GuiContainerFluidHatch;
+import hellfirepvp.modularmachinery.client.gui.GuiContainerItemBus;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
+import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
+import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
+import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -110,4 +122,32 @@ public class ClientProxy extends CommonProxy {
         itemModelsToRegister.add(item);
     }
 
+    @Nullable
+    @Override
+    public Object getClientGuiElement(int ID, EntityPlayer player, World world, int x, int y, int z) {
+        GuiType type = GuiType.values()[MathHelper.clamp(ID, 0, GuiType.values().length - 1)];
+        Class<? extends TileEntity> required = type.requiredTileEntity;
+        TileEntity present = null;
+        if(required != null) {
+            TileEntity te = world.getTileEntity(new BlockPos(x, y, z));
+            if(te != null && required.isAssignableFrom(te.getClass())) {
+                present = te;
+            } else {
+                return null;
+            }
+        }
+        switch (type) {
+            case CONTROLLER:
+                break;
+            case BUS_INVENTORY:
+                return new GuiContainerItemBus((TileItemBus) present, player);
+            case TANK_INVENTORY:
+                return new GuiContainerFluidHatch((TileFluidTank) present, player);
+            case ENERGY_INVENTORY:
+                return new GuiContainerEnergyHatch((TileEnergyHatch) present, player);
+            case BLUEPRINT_PREVIEW:
+                break;
+        }
+        return null;
+    }
 }

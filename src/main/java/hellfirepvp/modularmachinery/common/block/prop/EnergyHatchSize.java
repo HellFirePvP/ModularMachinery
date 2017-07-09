@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.block.prop;
 import net.minecraft.util.IStringSerializable;
 import net.minecraftforge.common.config.Configuration;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -50,38 +51,9 @@ public enum EnergyHatchSize implements IStringSerializable {
         return name().toLowerCase();
     }
 
-    @Nullable
-    public String getEnergyDescriptor() {
-        switch (energyTier) {
-            case 0:
-                return "ULV";
-            case 1:
-                return "LV";
-            case 2:
-                return "MV";
-            case 3:
-                return "HV";
-            case 4:
-                return "EV";
-            case 5:
-                return "IV";
-            case 6:
-                return "LuV";
-            case 7:
-                return "ZPM";
-            case 8:
-                return "UV";
-            case 9:
-                return "UHV";
-            case 10:
-                return "UEV";
-            case 11:
-                return "UIV";
-            case 12:
-                return "UXV";
-            //No, i'm not going to continue after this.
-        }
-        return null;
+    @Nonnull
+    public String getUnlocalizedEnergyDescriptor() {
+        return "tooltip.ic2.powertier." + energyTier + ".name";
     }
 
     public int getEnergyTransmission() {

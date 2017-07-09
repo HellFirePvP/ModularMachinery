@@ -8,21 +8,26 @@
 
 package hellfirepvp.modularmachinery.common.block;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
+import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyEnum;
 import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumBlockRenderType;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
@@ -68,13 +73,26 @@ public class BlockEnergyInputHatch extends BlockContainer implements BlockCustom
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
         EnergyHatchSize size = EnergyHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, EnergyHatchSize.values().length - 1)];
-        tooltip.add(TextFormatting.GRAY + "Stores " + size.maxEnergy + " RF/FE");
-        tooltip.add(TextFormatting.GRAY + "Accepts " + size.transferLimit + " RF/FE per tick");
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.storage", size.maxEnergy));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.in.accept", size.transferLimit));
         if(Loader.isModLoaded("ic2")) {
             tooltip.add("");
-            tooltip.add(TextFormatting.GRAY + "Input Voltage: " + TextFormatting.BLUE + "Any");
-            tooltip.add(TextFormatting.GRAY + "Input Transfer: " + TextFormatting.BLUE + "Any EU/t");
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.voltage",
+                    TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any")));
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.transfer",
+                    TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any"), TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.powerrate")));
         }
+    }
+
+    @Override
+    public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        if(!worldIn.isRemote) {
+            TileEntity te = worldIn.getTileEntity(pos);
+            if(te != null && te instanceof TileEnergyHatch) {
+                playerIn.openGui(ModularMachinery.MODID, CommonProxy.GuiType.ENERGY_INVENTORY.ordinal(), worldIn, pos.getX(), pos.getY(), pos.getZ());
+            }
+        }
+        return true;
     }
 
     @Override

@@ -2,6 +2,38 @@ itemGroup.modularmachinery=Modular Machinery
 
 tooltip.machinery.empty=Empty
 
+tooltip.itembus.slot=1 Slot
+tooltip.itembus.slots=%s Slots
+
+tooltip.fluidhatch.empty=Empty
+tooltip.fluidhatch.tank=%smb / %smb
+tooltip.fluidhatch.tank.info=Can hold %s mb
+
+tooltip.energyhatch.charge=%s / %s Energy
+tooltip.energyhatch.storage=Stores %s FE
+tooltip.energyhatch.out.transfer=Transfers %s FE per tick
+tooltip.energyhatch.in.accept=Accepts %s FE per tick
+tooltip.energyhatch.ic2.powerrate=EU/t
+tooltip.energyhatch.ic2.any=Any
+tooltip.energyhatch.ic2.out.voltage=Output Voltage: %s
+tooltip.energyhatch.ic2.out.transfer=Output Transfer: %s %s
+tooltip.energyhatch.ic2.in.voltage=Input Voltage: %s
+tooltip.energyhatch.ic2.in.transfer=Input Transfer: %s %s
+
+tooltip.ic2.powertier.0.name=ULV
+tooltip.ic2.powertier.1.name=LV
+tooltip.ic2.powertier.2.name=MV
+tooltip.ic2.powertier.3.name=HV
+tooltip.ic2.powertier.4.name=EV
+tooltip.ic2.powertier.5.name=IV
+tooltip.ic2.powertier.6.name=LuV
+tooltip.ic2.powertier.7.name=ZPM
+tooltip.ic2.powertier.8.name=UV
+tooltip.ic2.powertier.9.name=UHV
+tooltip.ic2.powertier.10.name=UEV
+tooltip.ic2.powertier.11.name=UIV
+tooltip.ic2.powertier.12.name=UXV
+
 item.itemblueprint.name=Machine Blueprint
 
 tile.blockcontroller.name=Machine Controller

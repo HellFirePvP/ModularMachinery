@@ -39,7 +39,6 @@ public class Config {
     }
 
     private static void load() {
-        ItemBusSize.loadSizeFromConfig(lastReadConfig);
         FluidHatchSize.loadSizeFromConfig(lastReadConfig);
         EnergyHatchSize.loadSizeFromConfig(lastReadConfig);
     }

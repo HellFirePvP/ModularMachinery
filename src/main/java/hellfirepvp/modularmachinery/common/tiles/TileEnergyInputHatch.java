@@ -16,9 +16,11 @@ import ic2.api.energy.event.EnergyTileLoadEvent;
 import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyEmitter;
 import ic2.api.energy.tile.IEnergySink;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -43,14 +45,23 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();
-        MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(this));
+        MinecraftServer ms = FMLCommonHandler.instance().getMinecraftServerInstance();
+        if(ms != null) {
+            ms.addScheduledTask(() -> {
+                if(!world.isRemote) {
+                    MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(TileEnergyInputHatch.this));
+                }
+            });
+        }
     }
 
     @Override
     @Optional.Method(modid = "ic2")
     public void invalidate() {
         super.invalidate();
-        MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+        if(!world.isRemote) {
+            MinecraftForge.EVENT_BUS.post(new EnergyTileUnloadEvent(this));
+        }
     }
 
     @Override
