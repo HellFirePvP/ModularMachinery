@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
@@ -31,7 +32,7 @@ public class RecipeCraftingContext {
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
     private Map<MachineComponent, IItemHandlerModifiable> itemComponents = new HashMap<>();
-    private Map<MachineComponent, IFluidHandler> fluidComponents = new HashMap<>();
+    private Map<MachineComponent, FluidTank> fluidComponents = new HashMap<>();
     private Map<MachineComponent, IEnergyHandler> energyComponents = new HashMap<>();
 
     public RecipeCraftingContext(MachineRecipe recipe) {
@@ -149,13 +150,13 @@ public class RecipeCraftingContext {
         switch (component.getComponentType()) {
             case ITEM:
                 itemComponents.put(component, ((MachineComponent.ItemBus) component).getInventory());
-                break;
+                return;
             case FLUID:
                 fluidComponents.put(component, ((MachineComponent.FluidHatch) component).getTank());
-                break;
+                return;
             case ENERGY:
                 energyComponents.put(component, ((MachineComponent.EnergyHatch) component).getEnergyBuffer());
-                break;
+                return;
         }
         throw new IllegalArgumentException("Tried to add component for illegal ComponentType: " + component.getComponentType());
     }
@@ -164,7 +165,7 @@ public class RecipeCraftingContext {
         return itemComponents.get(component);
     }
 
-    public IFluidHandler getFluidHandler(MachineComponent component) {
+    public FluidTank getFluidHandler(MachineComponent component) {
         return fluidComponents.get(component);
     }
 

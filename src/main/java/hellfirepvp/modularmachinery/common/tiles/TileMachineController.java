@@ -10,11 +10,13 @@ package hellfirepvp.modularmachinery.common.tiles;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
+import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
@@ -22,12 +24,15 @@ import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.items.CapabilityItemHandler;
 
@@ -49,6 +54,8 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private CraftingStatus craftingStatus = CraftingStatus.MISSING_STRUCTURE;
 
     private DynamicMachine foundMachine = null;
+    private BlockArray foundPattern = null;
+    private EnumFacing patternRotation = null;
     private IOInventory inventory;
 
     private ActiveMachineRecipe activeRecipe = null;
@@ -72,7 +79,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
             checkStructure();
             updateComponents();
 
-            if(this.foundMachine != null) {
+            if(this.foundMachine != null && this.foundPattern != null && this.patternRotation != null) {
                 if(this.activeRecipe == null) {
                     if(this.ticksExisted % 80 == 0) {
                         searchMatchingRecipe();
@@ -88,9 +95,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
                     if(this.activeRecipe.isCompleted(this)) {
                         this.activeRecipe.complete(context);
+                        this.activeRecipe.reset();
                         context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
                         if(context.canStartCrafting()) {
-                            this.activeRecipe.reset();
+                            context.startCrafting();
                             this.craftingStatus = CraftingStatus.CRAFTING;
                         } else {
                             this.activeRecipe = null;
@@ -125,27 +133,40 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
     private void checkStructure() {
         if(ticksExisted % 20 == 0) {
-            if(this.foundMachine != null) {
-                BlockArray pattern = this.foundMachine.getPattern();
-                if(!pattern.matches(getWorld(), getPos())) {
+            if(this.foundMachine != null && this.foundPattern != null && this.patternRotation != null) {
+                if(!foundPattern.matches(getWorld(), getPos())) {
                     this.activeRecipe = null;
                     this.foundMachine = null;
+                    this.foundPattern = null;
+                    this.patternRotation = null;
                     craftingStatus = CraftingStatus.MISSING_STRUCTURE;
                     markForUpdate();
                 }
             }
-            if(this.foundMachine == null) {
+            if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null) {
+                this.foundMachine = null;
+                this.foundPattern = null;
+                this.patternRotation = null;
+
                 DynamicMachine blueprint = getBlueprintMachine();
                 if(blueprint != null) {
-                    if(blueprint.getPattern().matches(getWorld(), getPos())) {
+                    Tuple<EnumFacing, BlockArray> res = matchesRotation(blueprint.getPattern());
+                    if(res != null) {
                         this.foundMachine = blueprint;
+                        this.foundPattern = res.getSecond();
+                        this.patternRotation = res.getFirst();
+                        this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                         markForUpdate();
                     }
                 } else {
                     for (DynamicMachine machine : MachineRegistry.getRegistry()) {
                         if (machine.requiresBlueprint()) continue;
-                        if (machine.getPattern().matches(getWorld(), getPos())) {
+                        Tuple<EnumFacing, BlockArray> res = matchesRotation(machine.getPattern());
+                        if (res != null) {
                             this.foundMachine = machine;
+                            this.foundPattern = res.getSecond();
+                            this.patternRotation = res.getFirst();
+                            this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                             markForUpdate();
                             break;
                         }
@@ -155,14 +176,30 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
+    @Nullable
+    private Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern) {
+        EnumFacing face = EnumFacing.NORTH;
+        do {
+            if(pattern.matches(getWorld(), getPos())) {
+                return new Tuple<>(face, pattern);
+            }
+            face = face.rotateYCCW();
+            pattern = pattern.rotateYCCW();
+        } while (face != EnumFacing.NORTH);
+        return null;
+    }
+
     private void updateComponents() {
-        if(this.foundMachine == null) {
+        if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null) {
             this.foundComponents.clear();
+            this.foundMachine = null;
+            this.foundPattern = null;
+            this.patternRotation = null;
             return;
         }
         if(ticksExisted % 20 == 0) {
             this.foundComponents = Lists.newArrayList();
-            for (BlockPos potentialPosition : this.foundMachine.getPattern().getPattern().keySet()) {
+            for (BlockPos potentialPosition : this.foundPattern.getPattern().keySet()) {
                 BlockPos realPos = getPos().add(potentialPosition);
                 TileEntity te = getWorld().getTileEntity(realPos);
                 if(te != null && te instanceof MachineComponentTile) {
@@ -173,6 +210,11 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 }
             }
         }
+    }
+
+    @Override
+    public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newSate) {
+        return oldState.getBlock() != newSate.getBlock();
     }
 
     @Nullable
@@ -213,16 +255,30 @@ public class TileMachineController extends TileEntityRestrictedTick {
         this.inventory = IOInventory.deserialize(this, compound.getCompoundTag("items"));
         this.craftingStatus = CraftingStatus.values()[compound.getInteger("status")];
 
-        if(compound.hasKey("machine")) {
+        if(compound.hasKey("machine") && compound.hasKey("rotation")) {
             ResourceLocation rl = new ResourceLocation(compound.getString("machine"));
             DynamicMachine machine = MachineRegistry.getRegistry().getMachine(rl);
             if(machine == null) {
                 ModularMachinery.log.info("Couldn't find machine named " + rl.toString() + " for controller at " + getPos().toString());
+                this.foundMachine = null;
+                this.foundPattern = null;
+                this.patternRotation = null;
             } else {
+                EnumFacing rot = EnumFacing.getHorizontal(compound.getInteger("rotation"));
+                EnumFacing offset = EnumFacing.NORTH;
+                BlockArray pattern = machine.getPattern();
+                while (offset != rot) {
+                    pattern = pattern.rotateYCCW();
+                    offset = offset.rotateY();
+                }
+                this.patternRotation = rot;
+                this.foundPattern = pattern;
                 this.foundMachine = machine;
             }
         } else {
             this.foundMachine = null;
+            this.foundPattern = null;
+            this.patternRotation = null;
         }
         if(compound.hasKey("activeRecipe")) {
             NBTTagCompound tag = compound.getCompoundTag("activeRecipe");
@@ -244,8 +300,9 @@ public class TileMachineController extends TileEntityRestrictedTick {
         compound.setTag("items", this.inventory.writeNBT());
         compound.setInteger("status", this.craftingStatus.ordinal());
 
-        if(this.foundMachine != null) {
+        if(this.foundMachine != null && this.patternRotation != null) {
             compound.setString("machine", this.foundMachine.getRegistryName().toString());
+            compound.setInteger("rotation", this.patternRotation.getHorizontalIndex());
         }
         if(this.activeRecipe != null) {
             compound.setTag("activeRecipe", this.activeRecipe.serialize());

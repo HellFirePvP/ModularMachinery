@@ -87,7 +87,7 @@ public abstract class TileFluidTank extends TileEntitySynchronized implements Ma
     public MachineComponent provideComponent() {
         return new MachineComponent.FluidHatch(ioType) {
             @Override
-            public IFluidHandler getTank() {
+            public FluidTank getTank() {
                 return TileFluidTank.this.tank;
             }
         };

@@ -12,7 +12,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
+import hellfirepvp.modularmachinery.client.ClientScheduler;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
@@ -26,6 +28,8 @@ import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import org.lwjgl.util.vector.Matrix2f;
+import org.lwjgl.util.vector.Vector2f;
 
 import javax.annotation.Nonnull;
 import java.util.*;
@@ -39,17 +43,16 @@ import java.util.*;
  */
 public class BlockArray {
 
-    protected static final Random STATIC_RAND = new Random();
-
     protected Map<BlockPos, BlockInformation> pattern = new HashMap<>();
     private Vec3i min = new Vec3i(0, 0, 0), max = new Vec3i(0, 0, 0), size = new Vec3i(0, 0, 0);
 
-    public void addBlock(int x, int y, int z, @Nonnull IBlockState state) {
-        addBlock(new BlockPos(x, y, z), state);
-    }
+    public BlockArray() {}
 
-    public void addBlock(BlockPos offset, @Nonnull IBlockState state) {
-        addBlock(offset, new BlockInformation(Lists.newArrayList(state)));
+    public BlockArray(BlockArray other) {
+        this.pattern = new HashMap<>(other.pattern);
+        this.min = new Vec3i(other.min.getX(), other.min.getY(), other.min.getZ());
+        this.max = new Vec3i(other.max.getX(), other.max.getY(), other.max.getZ());
+        this.size = new Vec3i(other.size.getX(), other.size.getY(), other.size.getZ());
     }
 
     public void addBlock(int x, int y, int z, @Nonnull BlockInformation info) {
@@ -107,10 +110,10 @@ public class BlockArray {
         return pattern;
     }
 
-    public List<ItemStack> getAsDescriptiveStacks(long tick) {
+    public List<ItemStack> getAsDescriptiveStacks() {
         List<ItemStack> out = new LinkedList<>();
         for (BlockInformation info : pattern.values()) {
-            IBlockState state = info.getSampleState(tick);
+            IBlockState state = info.getSampleState(ClientScheduler.getClientTick());
             Block type = state.getBlock();
             int meta = type.getMetaFromState(state);
             ItemStack s;
@@ -147,11 +150,13 @@ public class BlockArray {
             Block atBlock = state.getBlock();
             int atMeta = atBlock.getMetaFromState(state);
 
-            for (IBlockState applicable : info.matchingStates) {
-                Block type = applicable.getBlock();
-                int meta = type.getMetaFromState(applicable);
-                if(type.equals(state.getBlock()) && meta == atMeta) {
-                    continue lblPattern; //Matches
+            for (IBlockStateDescriptor descriptor : info.matchingStates) {
+                for (IBlockState applicable : descriptor.applicable) {
+                    Block type = applicable.getBlock();
+                    int meta = type.getMetaFromState(applicable);
+                    if(type.equals(state.getBlock()) && meta == atMeta) {
+                        continue lblPattern; //Matches
+                    }
                 }
             }
             return false;
@@ -159,21 +164,43 @@ public class BlockArray {
         return true;
     }
 
+    public BlockArray rotateYCCW() {
+        BlockArray out = new BlockArray();
+
+        Matrix2f rotation = new Matrix2f();
+        rotation.m00 = 0;
+        rotation.m01 = -1;
+        rotation.m10 = 1;
+        rotation.m11 = 0;
+
+        for (BlockPos pos : pattern.keySet()) {
+            BlockInformation info = pattern.get(pos);
+            Vector2f vec = new Vector2f(pos.getX(), pos.getZ());
+            Vector2f dst = Matrix2f.transform(rotation, vec, null);
+            out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info);
+        }
+        return out;
+    }
+
     public static class BlockInformation {
 
         public static final int CYCLE_TICK_SPEED = 60;
-        public final List<IBlockState> matchingStates;
+        public final List<IBlockStateDescriptor> matchingStates;
+        private final List<IBlockState> samples = Lists.newLinkedList();
 
-        public BlockInformation(List<IBlockState> matching) {
+        public BlockInformation(List<IBlockStateDescriptor> matching) {
             this.matchingStates = ImmutableList.copyOf(matching);
+            for (IBlockStateDescriptor desc : matchingStates) {
+                samples.addAll(desc.applicable);
+            }
         }
 
         public IBlockState getSampleState(long tick) {
             int part = (int) ((tick % CYCLE_TICK_SPEED) % matchingStates.size());
-            return matchingStates.get(part);
+            return samples.get(part);
         }
 
-        public static IBlockState getDescriptor(JsonPrimitive stringElement) throws JsonParseException {
+        public static IBlockStateDescriptor getDescriptor(JsonPrimitive stringElement) throws JsonParseException {
             String strElement = stringElement.getAsString();
             int meta = -1;
             int indexMeta = strElement.indexOf('@');
@@ -191,10 +218,35 @@ public class BlockArray {
                 throw new JsonParseException("Couldn't find block with registryName '" + res.toString() + "' !");
             }
             if(meta == -1) {
-                return b.getDefaultState();
+                return new IBlockStateDescriptor(b);
             } else {
-                return b.getStateFromMeta(meta);
+                return new IBlockStateDescriptor(b.getStateFromMeta(meta));
             }
+        }
+    }
+
+    public static class IBlockStateDescriptor {
+
+        public final List<IBlockState> applicable = Lists.newArrayList();
+
+        public IBlockStateDescriptor(Block block) {
+            List<Integer> usedMetas = Lists.newArrayList();
+            if(!(block instanceof BlockLiquid) && !(block instanceof BlockFluidBase)) {
+                for (IBlockState state : block.getBlockState().getValidStates()) {
+                    int meta = block.getMetaFromState(state);
+                    if(!usedMetas.contains(meta)) {
+                        usedMetas.add(meta);
+                        this.applicable.add(state);
+                    }
+                }
+            }
+            if(applicable.isEmpty()) {
+                applicable.add(block.getDefaultState());
+            }
+        }
+
+        public IBlockStateDescriptor(IBlockState state) {
+            this.applicable.add(state);
         }
 
     }

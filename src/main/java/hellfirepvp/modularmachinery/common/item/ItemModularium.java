@@ -6,21 +6,23 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.lib;
+package hellfirepvp.modularmachinery.common.item;
 
-import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
-import hellfirepvp.modularmachinery.common.item.ItemModularium;
+import hellfirepvp.modularmachinery.common.CommonProxy;
+import net.minecraft.item.Item;
 
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
- * Class: ItemsMM
+ * Class: ItemModularium
  * Created by HellFirePvP
- * Date: 28.06.2017 / 18:39
+ * Date: 12.07.2017 / 15:37
  */
-public class ItemsMM {
+public class ItemModularium extends Item {
 
-    public static ItemBlueprint blueprint;
-    public static ItemModularium modularium;
+    public ItemModularium() {
+        setMaxStackSize(64);
+        setCreativeTab(CommonProxy.creativeTabModularMachinery);
+    }
 
 }

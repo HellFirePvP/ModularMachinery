@@ -12,10 +12,13 @@ import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.items.ItemHandlerHelper;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -59,6 +62,10 @@ public abstract class ComponentRequirement {
             super(MachineComponent.ComponentType.ENERGY, ioType);
             this.requirementPerTick = requirementPerTick;
             this.activeIO = this.requirementPerTick;
+        }
+
+        public int getRequiredEnergyPerTick() {
+            return requirementPerTick;
         }
 
         @Override
@@ -122,8 +129,8 @@ public abstract class ComponentRequirement {
 
     public static class RequirementFluid extends ComponentRequirement {
 
-        private final FluidStack required;
-        private float chance = 1F;
+        public final FluidStack required;
+        public float chance = 1F;
 
         public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
             super(MachineComponent.ComponentType.FLUID, ioType);
@@ -139,13 +146,13 @@ public abstract class ComponentRequirement {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
                     component.getIOType() != getActionType()) return false;
-            IFluidHandler handler = context.getFluidHandler(component);
+            FluidTank handler = context.getFluidHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    return  handler.drain(this.required.copy(), false) != null;
+                    return handler.drainInternal(this.required.copy(), false) != null;
                 case OUTPUT:
-                    return handler.fill(this.required.copy(), false) >= this.required.amount;
+                    return handler.fillInternal(this.required.copy(), false) >= this.required.amount;
             }
             return false;
         }
@@ -155,15 +162,15 @@ public abstract class ComponentRequirement {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
                     component.getIOType() != getActionType()) return false;
-            IFluidHandler handler = context.getFluidHandler(component);
+            FluidTank handler = context.getFluidHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    FluidStack drainedSimulated = handler.drain(this.required.copy(), false);
+                    FluidStack drainedSimulated = handler.drainInternal(this.required.copy(), false);
                     if(chance.canProduce(this.chance)) {
                         return drainedSimulated != null;
                     }
-                    return drainedSimulated != null && handler.drain(this.required.copy(), true) != null;
+                    return drainedSimulated != null && handler.drainInternal(this.required.copy(), true) != null;
             }
             return false;
         }
@@ -173,14 +180,14 @@ public abstract class ComponentRequirement {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
                     component.getIOType() != getActionType()) return false;
-            IFluidHandler handler = context.getFluidHandler(component);
+            FluidTank handler = context.getFluidHandler(component);
             switch (getActionType()) {
                 case OUTPUT:
-                    int fillableAmount = handler.fill(this.required.copy(), false);
+                    int fillableAmount = handler.fillInternal(this.required.copy(), false);
                     if(chance.canProduce(this.chance)) {
                         return fillableAmount >= this.required.amount;
                     }
-                    return fillableAmount >= this.required.amount && handler.fill(this.required.copy(), true) >= this.required.amount;
+                    return fillableAmount >= this.required.amount && handler.fillInternal(this.required.copy(), true) >= this.required.amount;
             }
             return false;
         }
@@ -189,12 +196,24 @@ public abstract class ComponentRequirement {
 
     public static class RequirementItem extends ComponentRequirement {
 
-        private final ItemStack required;
-        private float chance = 1F;
+        public final ItemStack required;
+        public final String oreDictName;
+        public final int oreDictItemAmount;
+
+        public float chance = 1F;
 
         public RequirementItem(MachineComponent.IOType ioType, ItemStack item) {
             super(MachineComponent.ComponentType.ITEM, ioType);
             this.required = item.copy();
+            this.oreDictName = null;
+            this.oreDictItemAmount = 0;
+        }
+
+        public RequirementItem(MachineComponent.IOType ioType, String oreDictName, int oreDictAmount) {
+            super(MachineComponent.ComponentType.ITEM, ioType);
+            this.oreDictName = oreDictName;
+            this.oreDictItemAmount = oreDictAmount;
+            this.required = ItemStack.EMPTY;
         }
 
         public void setChance(float chance) {
@@ -209,7 +228,11 @@ public abstract class ComponentRequirement {
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
-                    return ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                    if(oreDictName != null) {
+                        return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true);
+                    } else {
+                        return ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                    }
                 case OUTPUT:
                     return ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
             }
@@ -224,12 +247,20 @@ public abstract class ComponentRequirement {
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
-                    //If it doesn't consume the item, we only need to see if it's actually there.
-                    boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
-                    if(chance.canProduce(this.chance)) {
-                        return can;
+                    if(oreDictName != null) {
+                        //If it doesn't consume the item, we only need to see if it's actually there.
+                        boolean can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true);
+                        if(chance.canProduce(this.chance)) {
+                            return can;
+                        }
+                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false);
+                    } else {
+                        boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                        if(chance.canProduce(this.chance)) {
+                            return can;
+                        }
+                        return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false);
                     }
-                    return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false);
             }
             return false;
         }
@@ -239,12 +270,16 @@ public abstract class ComponentRequirement {
             if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
                     !(component instanceof MachineComponent.ItemBus) ||
                     component.getIOType() != getActionType()) return false;
+
+            if(oreDictName != null && required.isEmpty()) {
+                throw new IllegalStateException("Can't output item by oredict!");
+            }
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case OUTPUT:
                     //If we don't produce the item, we only need to see if there would be space for it at all.
                     boolean hasSpace = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
-                    if(!chance.canProduce(this.chance)) {
+                    if(chance.canProduce(this.chance)) {
                         return hasSpace;
                     }
                     return hasSpace && ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, false);

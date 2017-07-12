@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.util;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
@@ -45,6 +46,51 @@ public class ItemUtils {
         int cAmt = toConsume.getCount();
         for (int slot : contents.keySet()) {
             ItemStack inSlot = contents.get(slot);
+            if(inSlot.getItem().hasContainerItem(inSlot)) {
+                if(inSlot.getCount() > 1) {
+                    continue; //uh... rip. we won't consume 16 buckets at once.
+                }
+                ItemStack stack = ForgeHooks.getContainerItem(inSlot);
+                cAmt--;
+                if (!simulate) {
+                    handler.setStackInSlot(slot, stack.copy());
+                }
+                if (cAmt <= 0) {
+                    break;
+                }
+            }
+            int toRemove = cAmt > inSlot.getCount() ? inSlot.getCount() : cAmt;
+            cAmt -= toRemove;
+            if (!simulate) {
+                handler.setStackInSlot(slot, copyStackWithSize(inSlot, inSlot.getCount() - toRemove));
+            }
+            if (cAmt <= 0) {
+                break;
+            }
+        }
+        return cAmt <= 0;
+    }
+
+    public static boolean consumeFromInventoryOreDict(IItemHandlerModifiable handler, String oreName, int amount, boolean simulate) {
+        Map<Integer, ItemStack> contents = findItemsIndexedInInventoryOreDict(handler, oreName);
+        if (contents.isEmpty()) return false;
+
+        int cAmt = amount;
+        for (int slot : contents.keySet()) {
+            ItemStack inSlot = contents.get(slot);
+            if(inSlot.getItem().hasContainerItem(inSlot)) {
+                if(inSlot.getCount() > 1) {
+                    continue; //uh... rip. we won't consume 16 buckets at once.
+                }
+                ItemStack stack = ForgeHooks.getContainerItem(inSlot);
+                cAmt--;
+                if (!simulate) {
+                    handler.setStackInSlot(slot, stack.copy());
+                }
+                if (cAmt <= 0) {
+                    break;
+                }
+            }
             int toRemove = cAmt > inSlot.getCount() ? inSlot.getCount() : cAmt;
             cAmt -= toRemove;
             if (!simulate) {
@@ -70,7 +116,7 @@ public class ItemUtils {
             ItemStack in = handler.getStackInSlot(i);
             if (in.isEmpty()) {
                 int added = Math.min(toAdd.getCount(), max);
-                toAdd.setCount(toAdd.getCount() - added);
+                stack.setCount(toAdd.getCount() - added);
                 if(!simulate) {
                     handler.setStackInSlot(i, copyStackWithSize(toAdd, added));
                 }
@@ -79,16 +125,16 @@ public class ItemUtils {
                 if (stackEqualsNonNBT(toAdd, in) && matchTags(toAdd, in)) {
                     int space = max - in.getCount();
                     int added = Math.min(toAdd.getCount(), space);
-                    toAdd.setCount(toAdd.getCount() - added);
+                    stack.setCount(toAdd.getCount() - added);
                     if(!simulate) {
                         handler.getStackInSlot(i).setCount(handler.getStackInSlot(i).getCount() + added);
                     }
-                    if (toAdd.getCount() <= 0)
+                    if (stack.getCount() <= 0)
                         return true;
                 }
             }
         }
-        return toAdd.getCount() <= 0;
+        return stack.getCount() <= 0;
     }
 
     public static boolean hasInventorySpace(@Nonnull ItemStack stack, IItemHandler handler, int rangeMin, int rangeMax) {
@@ -134,6 +180,20 @@ public class ItemUtils {
         ItemStack s = stack.copy();
         s.setCount(amount);
         return s;
+    }
+
+    public static Map<Integer, ItemStack> findItemsIndexedInInventoryOreDict(IItemHandlerModifiable handler, String oreDict) {
+        Map<Integer, ItemStack> stacksOut = new HashMap<>();
+        for (int j = 0; j < handler.getSlots(); j++) {
+            ItemStack s = handler.getStackInSlot(j);
+            int[] ids = OreDictionary.getOreIDs(s);
+            for (int id : ids) {
+                if(OreDictionary.getOreName(id).equals(oreDict)) {
+                    stacksOut.put(j, s.copy());
+                }
+            }
+        }
+        return stacksOut;
     }
 
     public static Map<Integer, ItemStack> findItemsIndexedInInventory(IItemHandlerModifiable handler, ItemStack match, boolean strict) {

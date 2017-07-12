@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.machine;
 
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
@@ -91,7 +92,7 @@ public abstract class MachineComponent {
             super(ioType);
         }
 
-        public abstract IFluidHandler getTank();
+        public abstract FluidTank getTank();
 
         @Override
         public ComponentType getComponentType() {

@@ -1,6 +1,6 @@
 {
     "parent": "block/cube_all",
     "textures": {
-        "all": "modularmachinery:blocks/blockoutputbus_"
+        "all": "modularmachinery:blocks/blockoutputbus_big"
     }
 }

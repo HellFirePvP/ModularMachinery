@@ -1,6 +1,17 @@
 itemGroup.modularmachinery=Modular Machinery
 
+jei.category.preview=Structure Preview
+
 tooltip.machinery.empty=Empty
+tooltip.machinery.duration=Processing Time: %s ticks
+tooltip.machinery.chance.in=Consumption Chance: %s
+tooltip.machinery.chance.out=Production Chance: %s
+tooltip.machinery.energy.in=Required Energy:
+tooltip.machinery.energy.in.tick=Per Tick: %s FE/t
+tooltip.machinery.energy.in.total=Total: %s FE
+tooltip.machinery.energy.out=Produced Energy:
+tooltip.machinery.energy.out.tick=Per Tick: %s FE/t
+tooltip.machinery.energy.out.total=Total: %s FE
 
 tooltip.itembus.slot=1 Slot
 tooltip.itembus.slots=%s Slots
@@ -13,6 +24,7 @@ tooltip.energyhatch.charge=%s / %s Energy
 tooltip.energyhatch.storage=Stores %s FE
 tooltip.energyhatch.out.transfer=Transfers %s FE per tick
 tooltip.energyhatch.in.accept=Accepts %s FE per tick
+
 tooltip.energyhatch.ic2.powerrate=EU/t
 tooltip.energyhatch.ic2.any=Any
 tooltip.energyhatch.ic2.out.voltage=Output Voltage: %s
@@ -35,6 +47,7 @@ tooltip.ic2.powertier.11.name=UIV
 tooltip.ic2.powertier.12.name=UXV
 
 item.itemblueprint.name=Machine Blueprint
+item.itemmodularium.name=Modularium
 
 tile.blockcontroller.name=Machine Controller
 

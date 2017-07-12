@@ -35,7 +35,6 @@ public class RecipeRegistry {
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
     private static Map<ResourceLocation, List<MachineRecipe>> REGISTRY_RECIPE_BY_MACHINE;
     private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY;
-    private static List<MachineComponent> recipeComponents = Lists.newArrayList();
 
     private RecipeRegistry() {}
 
@@ -73,7 +72,7 @@ public class RecipeRegistry {
 
         Map<String, Exception> failures = RecipeLoader.captureFailedAttempts();
         if(failures.size() > 0) {
-            ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading recipes!");
+            ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading recipe!");
             for (String fileName : failures.keySet()) {
                 ModularMachinery.log.warn("Couldn't load recipe from file " + fileName);
                 failures.get(fileName).printStackTrace();
@@ -95,12 +94,13 @@ public class RecipeRegistry {
                     continue;
                 }
             }
+            RECIPE_REGISTRY.put(mr.getRegistryName(), mr);
             List<MachineRecipe> recipeList = REGISTRY_RECIPE_BY_MACHINE.get(mr.getOwningMachineIdentifier());
             if(recipeList == null) {
                 recipeList = Lists.newArrayList();
-                REGISTRY_RECIPE_BY_MACHINE.put(mr.getOwningMachineIdentifier(), recipeList);
             }
             recipeList.add(mr);
+            REGISTRY_RECIPE_BY_MACHINE.put(mr.getOwningMachineIdentifier(), recipeList);
         }
         ProgressManager.pop(barRecipes);
     }

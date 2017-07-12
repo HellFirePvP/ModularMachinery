@@ -132,10 +132,10 @@ public class DynamicMachine {
                 if(x == 0 && y == 0 && z == 0) {
                     throw new JsonParseException("Block at 0, 0, 0 has to be the controller-block! You cannot override this!");
                 }
-                if(!part.has("element")) {
+                if(!part.has("elements")) {
                     throw new JsonParseException("Part contained no element!");
                 }
-                JsonElement partElement = part.get("element");
+                JsonElement partElement = part.get("elements");
                 if(partElement.isJsonPrimitive() && partElement.getAsJsonPrimitive().isString()) {
                     String strDesc = partElement.getAsString();
                     BlockArray.BlockInformation descr = MachineLoader.variableContext.get(strDesc);
@@ -145,20 +145,20 @@ public class DynamicMachine {
                     machine.getPattern().addBlock(x, y, z, descr);
                 } else if(partElement.isJsonArray()) {
                     JsonArray elementArray = partElement.getAsJsonArray();
-                    List<IBlockState> descriptors = Lists.newArrayList();
+                    List<BlockArray.IBlockStateDescriptor> descriptors = Lists.newArrayList();
                     for (int xx = 0; xx < elementArray.size(); xx++) {
                         JsonElement p = elementArray.get(xx);
                         if(!partElement.isJsonPrimitive() || !partElement.getAsJsonPrimitive().isString()) {
-                            throw new JsonParseException("Part elements of 'element' have to be blockstate descriptions!");
+                            throw new JsonParseException("Part elements of 'elements' have to be blockstate descriptions!");
                         }
                         descriptors.add(BlockArray.BlockInformation.getDescriptor(p.getAsJsonPrimitive()));
                     }
                     if(descriptors.isEmpty()) {
-                        throw new JsonParseException("'element' array didn't contain any blockstate descriptors!");
+                        throw new JsonParseException("'elements' array didn't contain any blockstate descriptors!");
                     }
                     machine.getPattern().addBlock(x, y, z, new BlockArray.BlockInformation(descriptors));
                 } else {
-                    throw new JsonParseException("'element' has to either be a blockstate description, variable or array of blockstate descriptions!");
+                    throw new JsonParseException("'elements' has to either be a blockstate description, variable or array of blockstate descriptions!");
                 }
             }
             return machine;

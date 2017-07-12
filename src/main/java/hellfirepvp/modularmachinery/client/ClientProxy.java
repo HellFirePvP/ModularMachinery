@@ -13,13 +13,17 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.gui.GuiContainerEnergyHatch;
 import hellfirepvp.modularmachinery.client.gui.GuiContainerFluidHatch;
 import hellfirepvp.modularmachinery.client.gui.GuiContainerItemBus;
+import hellfirepvp.modularmachinery.client.gui.GuiScreenBlueprint;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
+import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
+import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.entity.player.EntityPlayer;
@@ -36,6 +40,7 @@ import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -61,6 +66,7 @@ public class ClientProxy extends CommonProxy {
 
         super.preInit();
     }
+
     @SubscribeEvent
     public void onModelRegister(ModelRegistryEvent event) {
         registerModels();
@@ -146,6 +152,16 @@ public class ClientProxy extends CommonProxy {
             case ENERGY_INVENTORY:
                 return new GuiContainerEnergyHatch((TileEnergyHatch) present, player);
             case BLUEPRINT_PREVIEW:
+                ItemStack stack;
+                if(x == 0) {
+                    stack = Minecraft.getMinecraft().player.getHeldItemMainhand();
+                } else {
+                    stack = Minecraft.getMinecraft().player.getHeldItemOffhand();
+                }
+                DynamicMachine machine = ItemBlueprint.getAssociatedMachine(stack);
+                if(machine != null) {
+                    return new GuiScreenBlueprint(machine);
+                }
                 break;
         }
         return null;

@@ -8,17 +8,19 @@
 
 package hellfirepvp.modularmachinery.common.item;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.NonNullList;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.*;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
@@ -39,7 +41,7 @@ public class ItemBlueprint extends Item {
     public static final String DYNAMIC_MACHINE_NBT_KEY = "dynamicmachine";
 
     public ItemBlueprint() {
-        setMaxStackSize(1);
+        setMaxStackSize(16);
         setCreativeTab(CommonProxy.creativeTabModularMachinery);
     }
 
@@ -63,6 +65,23 @@ public class ItemBlueprint extends Item {
         } else {
             tooltip.add(TextFormatting.GRAY + machine.getLocalizedName());
         }
+    }
+
+    @Override
+    public EnumActionResult onItemUse(EntityPlayer player, World worldIn, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+        if(worldIn.isRemote && getAssociatedMachine(player.getHeldItem(hand)) != null) {
+            player.openGui(ModularMachinery.MODID, CommonProxy.GuiType.BLUEPRINT_PREVIEW.ordinal(), worldIn, hand == EnumHand.MAIN_HAND ? 0 : 1, 0, 0);
+        }
+        return EnumActionResult.SUCCESS;
+    }
+
+    @Override
+    public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer player, EnumHand hand) {
+        ItemStack held = player.getHeldItem(hand);
+        if(worldIn.isRemote && getAssociatedMachine(held) != null) {
+            player.openGui(ModularMachinery.MODID, CommonProxy.GuiType.BLUEPRINT_PREVIEW.ordinal(), worldIn, hand == EnumHand.MAIN_HAND ? 0 : 1, 0, 0);
+        }
+        return new ActionResult<>(EnumActionResult.PASS, held);
     }
 
     @Nullable

@@ -19,6 +19,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
@@ -169,18 +170,32 @@ public class MachineRecipe {
                         }
                         itemDefinition = itemDefinition.substring(0, indexMeta);
                     }
+                    int amount = 1;
+                    if(requirement.has("amount")) {
+                        if(!requirement.get("amount").isJsonPrimitive() || !requirement.getAsJsonPrimitive("amount").isNumber()) {
+                            throw new JsonParseException("'amount', if defined, needs to be a amount-number!");
+                        }
+                        amount = MathHelper.clamp(requirement.getAsJsonPrimitive("amount").getAsInt(), 1, 64);
+                    }
                     ResourceLocation res = new ResourceLocation(itemDefinition);
-                    Item item = ForgeRegistries.ITEMS.getValue(res);
-                    if(item == null || item == Items.AIR) {
-                        throw new JsonParseException("Couldn't find item with registryName '" + res.toString() + "' !");
-                    }
-                    ItemStack result;
-                    if(meta > 0) {
-                        result = new ItemStack(item, 1, meta);
+                    if(res.getResourceDomain().equalsIgnoreCase("ore")) {
+                        if(machineIoType == MachineComponent.IOType.OUTPUT) {
+                            throw new JsonParseException("You cannot define an oredict as item output! Offending oredict entry: " + res.toString());
+                        }
+                        req = new ComponentRequirement.RequirementItem(machineIoType, res.getResourcePath(), amount);
                     } else {
-                        result = new ItemStack(item);
+                        Item item = ForgeRegistries.ITEMS.getValue(res);
+                        if(item == null || item == Items.AIR) {
+                            throw new JsonParseException("Couldn't find item with registryName '" + res.toString() + "' !");
+                        }
+                        ItemStack result;
+                        if(meta > 0) {
+                            result = new ItemStack(item, amount, meta);
+                        } else {
+                            result = new ItemStack(item, amount);
+                        }
+                        req = new ComponentRequirement.RequirementItem(machineIoType, result);
                     }
-                    req = new ComponentRequirement.RequirementItem(machineIoType, result);
                     if(requirement.has("chance")) {
                         if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
                             throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
