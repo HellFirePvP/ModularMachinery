@@ -8,8 +8,10 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
+import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.IOInventory;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import net.minecraftforge.fluids.FluidTank;
@@ -31,9 +33,11 @@ public class RecipeCraftingContext {
 
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
-    private Map<MachineComponent, IItemHandlerModifiable> itemComponents = new HashMap<>();
+    private Map<MachineComponent, IOInventory> itemComponents = new HashMap<>();
     private Map<MachineComponent, FluidTank> fluidComponents = new HashMap<>();
     private Map<MachineComponent, IEnergyHandler> energyComponents = new HashMap<>();
+
+    private List<ComponentOutputRestrictor> currentRestrictions = Lists.newArrayList();
 
     public RecipeCraftingContext(MachineRecipe recipe) {
         this.recipe = recipe;
@@ -49,6 +53,10 @@ public class RecipeCraftingContext {
 
     public int getCurrentCraftingTick() {
         return currentCraftingTick;
+    }
+
+    public void addRestriction(ComponentOutputRestrictor restrictor) {
+        this.currentRestrictions.add(restrictor);
     }
 
     public Collection<MachineComponent> getComponentsFor(MachineComponent.ComponentType type) {
@@ -131,18 +139,22 @@ public class RecipeCraftingContext {
     }
 
     public boolean canStartCrafting() {
+        currentRestrictions.clear();
+
         lblRequirements:
         for (ComponentRequirement requirement : recipe.getCraftingRequirements()) {
             if(requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY &&
                     requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
 
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                if(requirement.canStartCrafting(component, this)) {
+                if(requirement.canStartCrafting(component, this, this.currentRestrictions)) {
                     continue lblRequirements;
                 }
             }
+            currentRestrictions.clear();
             return false;
         }
+        currentRestrictions.clear();
         return true;
     }
 
@@ -161,7 +173,7 @@ public class RecipeCraftingContext {
         throw new IllegalArgumentException("Tried to add component for illegal ComponentType: " + component.getComponentType());
     }
 
-    public IItemHandlerModifiable getItemHandler(MachineComponent component) {
+    public IOInventory getItemHandler(MachineComponent component) {
         return itemComponents.get(component);
     }
 

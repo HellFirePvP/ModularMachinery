@@ -8,10 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
+import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.util.ItemUtils;
-import hellfirepvp.modularmachinery.common.util.ResultChance;
-import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fluids.FluidStack;
@@ -19,6 +18,8 @@ import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemHandlerHelper;
+
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -51,7 +52,7 @@ public abstract class ComponentRequirement {
     //True, if the requirement could be fulfilled by the given component
     public abstract boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
 
-    public abstract boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context);
+    public abstract boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
     public static class RequirementEnergy extends ComponentRequirement {
 
@@ -69,7 +70,7 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.ENERGY ||
                     !(component instanceof MachineComponent.EnergyHatch) ||
                     component.getIOType() != getActionType()) return false;
@@ -85,7 +86,7 @@ public abstract class ComponentRequirement {
 
         @Override
         public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-            return canStartCrafting(component, context);
+            return canStartCrafting(component, context, Lists.newArrayList());
         }
 
         @Override
@@ -142,7 +143,7 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
                     component.getIOType() != getActionType()) return false;
@@ -152,7 +153,23 @@ public abstract class ComponentRequirement {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     return handler.drainInternal(this.required.copy(), false) != null;
                 case OUTPUT:
-                    return handler.fillInternal(this.required.copy(), false) >= this.required.amount;
+                    handler = CopyHandlerHelper.copyTank(handler);
+
+                    for (ComponentOutputRestrictor restrictor : restrictions) {
+                        if(restrictor instanceof ComponentOutputRestrictor.RestrictionTank) {
+                            ComponentOutputRestrictor.RestrictionTank tank = (ComponentOutputRestrictor.RestrictionTank) restrictor;
+
+                            if(tank.exactComponent.equals(component)) {
+                                handler.fillInternal(tank.inserted.copy(), true);
+                            }
+                        }
+                    }
+                    int filled = handler.fillInternal(this.required.copy(), false); //True or false doesn't really matter tbh
+                    boolean didFill = filled >= this.required.amount;
+                    if(didFill) {
+                        context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
+                    }
+                    return didFill;
             }
             return false;
         }
@@ -221,11 +238,11 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context) {
+        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
                     !(component instanceof MachineComponent.ItemBus) ||
                     component.getIOType() != getActionType()) return false;
-            IItemHandlerModifiable handler = context.getItemHandler(component);
+            IOInventory handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     if(oreDictName != null) {
@@ -234,7 +251,22 @@ public abstract class ComponentRequirement {
                         return ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
                     }
                 case OUTPUT:
-                    return ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+                    handler = CopyHandlerHelper.copyInventory(handler);
+
+                    for (ComponentOutputRestrictor restrictor : restrictions) {
+                        if(restrictor instanceof ComponentOutputRestrictor.RestrictionInventory) {
+                            ComponentOutputRestrictor.RestrictionInventory inv = (ComponentOutputRestrictor.RestrictionInventory) restrictor;
+
+                            if(inv.exactComponent.equals(component)) {
+                                ItemUtils.tryPlaceItemInInventory(inv.inserted.copy(), handler, false);
+                            }
+                        }
+                    }
+                    boolean inserted = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+                    if(inserted) {
+                        context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(this.required.copy(), component));
+                    }
+                    return inserted;
             }
             return false;
         }
