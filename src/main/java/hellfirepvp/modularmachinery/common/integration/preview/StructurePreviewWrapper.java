@@ -17,6 +17,7 @@ import mezz.jei.api.gui.IDrawable;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureMap;
@@ -89,8 +90,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
 
     @Override
     public void drawInfo(Minecraft minecraft, int recipeWidth, int recipeHeight, int mouseX, int mouseY) {
-        int guiLeft = (recipeWidth  - 168) / 2;
-        int guiTop =  (recipeHeight - 136) / 2;
+        GuiScreen current = Minecraft.getMinecraft().currentScreen;
+        if(current == null) {
+            return; //Wtf. where are we rendering in.
+        }
 
         if(System.currentTimeMillis() - lastRenderMs >= 500) {
             context.resetRender();
@@ -113,14 +116,17 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             context.zoomIn();
         }
 
+        int guiLeft = (current.width - recipeWidth) / 2;
+        int guiTop  = (current.height - recipeHeight) / 2;
+
         ScaledResolution res = new ScaledResolution(minecraft);
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor(240 * res.getScaleFactor(), 118 * res.getScaleFactor(),
+        GL11.glScissor((guiLeft + 4) * res.getScaleFactor(), (guiTop + 14) * res.getScaleFactor(),
                 160 * res.getScaleFactor(), 94 * res.getScaleFactor());
-        context.renderAt(guiLeft + 88, guiTop + 64);
+        context.renderAt(88,  64);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
-        drawButtons(minecraft, mouseX, mouseY, guiLeft, guiTop);
+        drawButtons(minecraft, mouseX, mouseY, 0, 0);
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         int strWidth = minecraft.fontRenderer.getStringWidth(machine.getLocalizedName());
