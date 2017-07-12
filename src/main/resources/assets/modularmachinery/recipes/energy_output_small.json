@@ -1,0 +1,29 @@
+{
+    "result": {
+        "item": "modularmachinery:blockenergyoutputhatch",
+        "data": 1
+    },
+    "pattern": [
+        "drd",
+        "rmr",
+        "ded"
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "r": {
+            "type": "forge:ore_dict",
+            "ore" : "blockRedstone"
+        },
+        "e": {
+            "item": "minecraft:repeater"
+        },
+        "d": {
+            "type": "forge:ore_dict",
+            "ore" : "dustRedstone"
+        },
+        "m": {
+            "item": "modularmachinery:blockenergyoutputhatch",
+            "data": 0
+        }
+    }
+}

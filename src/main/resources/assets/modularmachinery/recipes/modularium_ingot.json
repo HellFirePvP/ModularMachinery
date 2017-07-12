@@ -1,0 +1,30 @@
+{
+    "result": {
+        "item": "modularmachinery:itemmodularium",
+        "count": 3
+    },
+    "pattern": [
+        "gig",
+        "iri",
+        "ror"
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "r": {
+            "type": "forge:ore_dict",
+            "ore" : "dustRedstone"
+        },
+        "g": {
+            "type": "forge:ore_dict",
+            "ore" : "ingotGold"
+        },
+        "i": {
+            "type": "forge:ore_dict",
+            "ore": "ingotIron"
+        },
+        "o": {
+            "type": "forge:ore_dict",
+            "ore": "dustGlowstone"
+        }
+    }
+}

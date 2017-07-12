@@ -1,0 +1,24 @@
+{
+    "result": {
+        "item": "modularmachinery:blockinputbus",
+        "data": 0
+    },
+    "pattern": [
+        "h",
+        "m",
+        "c"
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "c": {
+            "item": "minecraft:chest"
+        },
+        "h": {
+            "item": "minecraft:hopper"
+        },
+        "m": {
+            "item": "modularmachinery:blockcasing",
+            "data": 0
+        }
+    }
+}

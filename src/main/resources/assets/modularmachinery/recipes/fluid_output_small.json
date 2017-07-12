@@ -1,0 +1,27 @@
+{
+    "result": {
+        "item": "modularmachinery:blockfluidoutputhatch",
+        "data": 1
+    },
+    "pattern": [
+        "cmc",
+        "mbm",
+        " h "
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "c": {
+            "item": "minecraft:bucket"
+        },
+        "h": {
+            "item": "minecraft:hopper"
+        },
+        "m": {
+            "item": "modularmachinery:itemmodularium"
+        },
+        "b": {
+            "item": "modularmachinery:blockfluidoutputhatch",
+            "data": 0
+        }
+    }
+}

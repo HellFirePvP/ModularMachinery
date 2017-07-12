@@ -1,0 +1,24 @@
+{
+    "result": {
+        "item": "modularmachinery:blockcasing",
+        "data": 4
+    },
+    "pattern": [
+        "omo",
+        "mcm",
+        "omo"
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "o": {
+            "item": "minecraft:obsidian"
+        },
+        "c": {
+            "item": "modularmachinery:blockcasing",
+            "data": 0
+        },
+        "m": {
+            "item": "modularmachinery:itemmodularium"
+        }
+    }
+}

@@ -1,0 +1,27 @@
+{
+    "result": {
+        "item": "modularmachinery:blockoutputbus",
+        "data": 1
+    },
+    "pattern": [
+        "cmc",
+        "mbm",
+        " h "
+    ],
+    "type": "forge:ore_shaped",
+    "key": {
+        "c": {
+            "item": "minecraft:chest"
+        },
+        "h": {
+            "item": "minecraft:hopper"
+        },
+        "m": {
+            "item": "modularmachinery:itemmodularium"
+        },
+        "b": {
+            "item": "modularmachinery:blockoutputbus",
+            "data": 0
+        }
+    }
+}
