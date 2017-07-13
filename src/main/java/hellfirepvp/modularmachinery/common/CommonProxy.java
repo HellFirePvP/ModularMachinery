@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.container.ContainerController;
 import hellfirepvp.modularmachinery.common.container.ContainerEnergyHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerItemBus;
@@ -103,7 +104,7 @@ public class CommonProxy implements IGuiHandler {
         }
         switch (type) {
             case CONTROLLER:
-                break;
+                return new ContainerController((TileMachineController) present, player);
             case BUS_INVENTORY:
                 return new ContainerItemBus((TileItemBus) present, player);
             case TANK_INVENTORY:

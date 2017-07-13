@@ -18,6 +18,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -100,6 +101,10 @@ public class GuiScreenBlueprint extends GuiScreen {
 
         GlStateManager.disableDepth();
         fontRenderer.drawStringWithShadow(machine.getLocalizedName(), this.guiLeft + 10, this.guiTop + 11, 0xFFFFFFFF);
+        if(machine.requiresBlueprint()) {
+            String reqBlueprint = I18n.format("tooltip.machinery.blueprint.required");
+            fontRenderer.drawString(reqBlueprint, this.guiLeft + 10, this.guiTop + 106, 0x444444);
+        }
         GlStateManager.enableDepth();
     }
 

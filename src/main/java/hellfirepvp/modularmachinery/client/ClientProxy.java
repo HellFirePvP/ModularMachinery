@@ -10,14 +10,12 @@ package hellfirepvp.modularmachinery.client;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
-import hellfirepvp.modularmachinery.client.gui.GuiContainerEnergyHatch;
-import hellfirepvp.modularmachinery.client.gui.GuiContainerFluidHatch;
-import hellfirepvp.modularmachinery.client.gui.GuiContainerItemBus;
-import hellfirepvp.modularmachinery.client.gui.GuiScreenBlueprint;
+import hellfirepvp.modularmachinery.client.gui.*;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
@@ -144,7 +142,7 @@ public class ClientProxy extends CommonProxy {
         }
         switch (type) {
             case CONTROLLER:
-                break;
+                return new GuiMachineController((TileMachineController) present, player);
             case BUS_INVENTORY:
                 return new GuiContainerItemBus((TileItemBus) present, player);
             case TANK_INVENTORY:

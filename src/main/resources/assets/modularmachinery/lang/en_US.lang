@@ -1,8 +1,20 @@
 itemGroup.modularmachinery=Modular Machinery
 
+gui.controller.blueprint=Blueprint Found: %s
+gui.controller.blueprint.none=None
+gui.controller.structure=Structure Found: %s
+gui.controller.structure.none=None
+gui.controller.status=Status:
+gui.controller.status.missing_structure=Missing structure
+gui.controller.status.no_recipe=No matching recipe found
+gui.controller.status.no_energy=Missing energy to continue processing
+gui.controller.status.crafting=Processing...
+gui.controller.status.crafting.progress=Progress: %s
+
 jei.category.preview=Structure Preview
 
 tooltip.machinery.empty=Empty
+tooltip.machinery.blueprint.required=Requires Blueprint
 tooltip.machinery.duration=Processing Time: %s ticks
 tooltip.machinery.chance.in=Consumption Chance: %s
 tooltip.machinery.chance.out=Production Chance: %s

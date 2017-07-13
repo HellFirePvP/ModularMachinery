@@ -21,6 +21,7 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -133,6 +134,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         minecraft.fontRenderer.drawString(machine.getLocalizedName(),
                 159 - (recipeWidth / 2) - (strWidth / 2), -7,
                 0x222222);
+        if(machine.requiresBlueprint()) {
+            String reqBlueprint = I18n.format("tooltip.machinery.blueprint.required");
+            minecraft.fontRenderer.drawString(reqBlueprint, 6, 102, 0x222222);
+        }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 

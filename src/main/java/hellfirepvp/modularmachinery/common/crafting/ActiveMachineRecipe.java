@@ -13,6 +13,8 @@ import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
 
+import javax.annotation.Nonnull;
+
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
@@ -42,6 +44,7 @@ public class ActiveMachineRecipe {
         return recipe;
     }
 
+    @Nonnull
     public TileMachineController.CraftingStatus tick(RecipeCraftingContext context) {
         if(context.energyTick()) {
             this.tick++;
@@ -50,6 +53,10 @@ public class ActiveMachineRecipe {
             this.tick = 0;
             return TileMachineController.CraftingStatus.NO_ENERGY;
         }
+    }
+
+    public int getTick() {
+        return tick;
     }
 
     public boolean isCompleted(TileMachineController controller) {

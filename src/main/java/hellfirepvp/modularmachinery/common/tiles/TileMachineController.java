@@ -64,6 +64,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
     public TileMachineController() {
         this.inventory = buildInventory();
+        this.inventory.setStackLimit(1, BLUEPRINT_SLOT);
     }
 
     private IOInventory buildInventory() {
@@ -71,6 +72,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 new int[] {},
                 new int[] {})
                 .setMiscSlots(BLUEPRINT_SLOT, ACCELERATOR_SLOT);
+    }
+
+    public IOInventory getInventory() {
+        return inventory;
     }
 
     @Override
@@ -212,6 +217,13 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
+    public float getCurrentActiveRecipeProgress() {
+        if(activeRecipe == null) return 0F;
+        float tick = activeRecipe.getTick();
+        float maxTick = activeRecipe.getRecipe().getRecipeTotalTickTime();
+        return tick / maxTick;
+    }
+
     @Override
     public boolean shouldRefresh(World world, BlockPos pos, IBlockState oldState, IBlockState newSate) {
         return oldState.getBlock() != newSate.getBlock();
@@ -253,6 +265,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
         this.inventory = IOInventory.deserialize(this, compound.getCompoundTag("items"));
+        this.inventory.setStackLimit(1, BLUEPRINT_SLOT);
         this.craftingStatus = CraftingStatus.values()[compound.getInteger("status")];
 
         if(compound.hasKey("machine") && compound.hasKey("rotation")) {
