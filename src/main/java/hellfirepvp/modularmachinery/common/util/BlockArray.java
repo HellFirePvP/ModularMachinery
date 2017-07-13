@@ -141,11 +141,14 @@ public class BlockArray {
         return out;
     }
 
-    public boolean matches(World world, BlockPos center) {
+    public boolean matches(World world, BlockPos center, boolean oldState) {
         lblPattern:
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockInformation info = entry.getValue();
             BlockPos at = center.add(entry.getKey());
+            if(!world.isBlockLoaded(at)) { //We can't say if it's actually properly formed, but it didn't get changed from the last check so....
+                return oldState;
+            }
             IBlockState state = world.getBlockState(at);
             Block atBlock = state.getBlock();
             int atMeta = atBlock.getMetaFromState(state);

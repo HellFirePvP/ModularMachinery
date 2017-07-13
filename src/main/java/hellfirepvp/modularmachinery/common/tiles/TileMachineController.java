@@ -139,7 +139,14 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private void checkStructure() {
         if(ticksExisted % 20 == 0) {
             if(this.foundMachine != null && this.foundPattern != null && this.patternRotation != null) {
-                if(!foundPattern.matches(getWorld(), getPos())) {
+                if(this.foundMachine.requiresBlueprint() && !this.foundMachine.equals(getBlueprintMachine())) {
+                    this.activeRecipe = null;
+                    this.foundMachine = null;
+                    this.foundPattern = null;
+                    this.patternRotation = null;
+                    craftingStatus = CraftingStatus.MISSING_STRUCTURE;
+                    markForUpdate();
+                } else if(!foundPattern.matches(getWorld(), getPos(), true)) {
                     this.activeRecipe = null;
                     this.foundMachine = null;
                     this.foundPattern = null;
@@ -185,7 +192,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern) {
         EnumFacing face = EnumFacing.NORTH;
         do {
-            if(pattern.matches(getWorld(), getPos())) {
+            if(pattern.matches(getWorld(), getPos(), false)) {
                 return new Tuple<>(face, pattern);
             }
             face = face.rotateYCCW();

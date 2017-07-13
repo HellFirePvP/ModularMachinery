@@ -57,6 +57,9 @@ public class CommonProxy implements IGuiHandler {
 
     public void loadModData(File configDir) {
         dataHolder.setup(configDir);
+        if(dataHolder.requiresDefaultMachinery()) {
+            dataHolder.copyDefaultMachinery();
+        }
     }
 
     public void preInit() {

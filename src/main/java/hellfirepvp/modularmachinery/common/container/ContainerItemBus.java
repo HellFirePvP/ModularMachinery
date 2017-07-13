@@ -75,8 +75,8 @@ public class ContainerItemBus extends ContainerBase<TileItemBus> {
                 break;
             case SMALL:
                 addSlotToContainer(new SlotItemHandler(itemHandler, 0, 70, 18));
-                addSlotToContainer(new SlotItemHandler(itemHandler, 1, 88, 36));
-                addSlotToContainer(new SlotItemHandler(itemHandler, 2, 70, 18));
+                addSlotToContainer(new SlotItemHandler(itemHandler, 1, 88, 18));
+                addSlotToContainer(new SlotItemHandler(itemHandler, 2, 70, 36));
                 addSlotToContainer(new SlotItemHandler(itemHandler, 3, 88, 36));
                 break;
             case NORMAL:
