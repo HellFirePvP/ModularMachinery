@@ -49,7 +49,7 @@ public class ModIntegrationJEI implements IModPlugin {
     public static IRecipeRegistry recipeRegistry;
 
     public static String getCategoryStringFor(DynamicMachine machine) {
-        return "modularmachinery.recipes." + machine.getRegistryName().getResourceDomain();
+        return "modularmachinery.recipes." + machine.getRegistryName().getResourcePath();
     }
 
     public static CategoryDynamicRecipe getCategory(DynamicMachine machine) {

@@ -187,7 +187,7 @@ public class BlockArray {
 
     public static class BlockInformation {
 
-        public static final int CYCLE_TICK_SPEED = 60;
+        public static final int CYCLE_TICK_SPEED = 30;
         public final List<IBlockStateDescriptor> matchingStates;
         private final List<IBlockState> samples = Lists.newLinkedList();
 

@@ -207,9 +207,6 @@ public class BlockArrayRenderHelper {
             if(renderStates.size() > 10) {
                 tickSpeed *= 0.6;
             }
-            if(renderStates.size() > 20) {
-                tickSpeed *= 0.6;
-            }
             int p = (int) (ClientScheduler.getClientTick() / tickSpeed);
             int part = p % renderStates.size();
             return renderStates.get(part);

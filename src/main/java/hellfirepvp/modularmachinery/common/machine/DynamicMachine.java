@@ -148,7 +148,7 @@ public class DynamicMachine {
                     List<BlockArray.IBlockStateDescriptor> descriptors = Lists.newArrayList();
                     for (int xx = 0; xx < elementArray.size(); xx++) {
                         JsonElement p = elementArray.get(xx);
-                        if(!partElement.isJsonPrimitive() || !partElement.getAsJsonPrimitive().isString()) {
+                        if(!p.isJsonPrimitive() || !p.getAsJsonPrimitive().isString()) {
                             throw new JsonParseException("Part elements of 'elements' have to be blockstate descriptions!");
                         }
                         descriptors.add(BlockArray.BlockInformation.getDescriptor(p.getAsJsonPrimitive()));

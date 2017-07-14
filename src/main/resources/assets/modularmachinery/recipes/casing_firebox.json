@@ -1,12 +1,13 @@
 {
     "result": {
-        "item": "modularmachinery:itemmodularium",
-        "count": 5
+        "item": "modularmachinery:blockcasing",
+        "data": 2,
+        "count": 2
     },
     "pattern": [
-        "gig",
-        "iri",
-        "ror"
+        "rfr",
+        "c c",
+        "rir"
     ],
     "type": "forge:ore_shaped",
     "key": {
@@ -14,17 +15,16 @@
             "type": "forge:ore_dict",
             "ore" : "dustRedstone"
         },
-        "g": {
-            "type": "forge:ore_dict",
-            "ore" : "ingotGold"
-        },
         "i": {
             "type": "forge:ore_dict",
             "ore": "ingotIron"
         },
-        "o": {
-            "type": "forge:ore_dict",
-            "ore": "dustGlowstone"
+        "c": {
+            "item": "modularmachinery:blockcasing",
+            "data": 0
+        },
+        "f": {
+            "item": "minecraft:flint"
         }
     }
 }

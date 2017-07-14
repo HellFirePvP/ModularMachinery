@@ -1,12 +1,13 @@
 {
     "result": {
         "item": "modularmachinery:blockcasing",
-        "data": 4
+        "data": 4,
+        "count": 4
     },
     "pattern": [
-        "omo",
-        "mcm",
-        "omo"
+        "oco",
+        "c c",
+        "oco"
     ],
     "type": "forge:ore_shaped",
     "key": {
@@ -16,9 +17,6 @@
         "c": {
             "item": "modularmachinery:blockcasing",
             "data": 0
-        },
-        "m": {
-            "item": "modularmachinery:itemmodularium"
         }
     }
 }

@@ -23,8 +23,11 @@ import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+
+import java.lang.reflect.Field;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -44,7 +47,8 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     private final DynamicMachine machine;
     private final DynamicMachineRenderContext context;
 
-    private long lastRenderMs = 0;
+    public static long lastRenderMs = 0;
+    public static DynamicMachine lastPreviewedMachine = null;
 
     public StructurePreviewWrapper(DynamicMachine machine) {
         this.machine = machine;
@@ -80,7 +84,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                     context.sliceDown();
                 }
             } else {
-                if(mouseX >=132 && mouseX <= 132 + 16 &&
+                if(mouseX >= 132 && mouseX <= 132 + 16 &&
                         mouseY >= 122 && mouseY <= 122 + 16) {
                     context.setTo2D();
                 }
@@ -96,7 +100,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             return; //Wtf. where are we rendering in.
         }
 
-        if(System.currentTimeMillis() - lastRenderMs >= 500) {
+        if(System.currentTimeMillis() - lastRenderMs >= 500 || lastPreviewedMachine == null || !lastPreviewedMachine.equals(machine)) {
             context.resetRender();
         }
         lastRenderMs = System.currentTimeMillis();
