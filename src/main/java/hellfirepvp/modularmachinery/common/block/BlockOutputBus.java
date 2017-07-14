@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.tiles.TileItemOutputBus;
 import hellfirepvp.modularmachinery.common.tiles.base.TileInventory;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
+import hellfirepvp.modularmachinery.common.util.RedstoneHelper;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -139,6 +140,16 @@ public class BlockOutputBus extends BlockContainer implements BlockCustomName, B
     @Override
     public String getBlockStateName(IBlockState state) {
         return state.getValue(BUS_TYPE).getName();
+    }
+
+    @Override
+    public boolean hasComparatorInputOverride(IBlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getComparatorInputOverride(IBlockState blockState, World worldIn, BlockPos pos) {
+        return RedstoneHelper.getRedstoneLevel(worldIn.getTileEntity(pos));
     }
 
     @Override

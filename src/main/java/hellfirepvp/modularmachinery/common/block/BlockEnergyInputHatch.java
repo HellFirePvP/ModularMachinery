@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
+import hellfirepvp.modularmachinery.common.util.RedstoneHelper;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
@@ -132,6 +133,16 @@ public class BlockEnergyInputHatch extends BlockContainer implements BlockCustom
     @Override
     public String getBlockStateName(IBlockState state) {
         return state.getValue(BUS_TYPE).getName();
+    }
+
+    @Override
+    public boolean hasComparatorInputOverride(IBlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getComparatorInputOverride(IBlockState blockState, World worldIn, BlockPos pos) {
+        return RedstoneHelper.getRedstoneLevel(worldIn.getTileEntity(pos));
     }
 
     @Override

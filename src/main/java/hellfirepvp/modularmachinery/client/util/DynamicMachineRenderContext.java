@@ -9,11 +9,13 @@
 package hellfirepvp.modularmachinery.client.util;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.List;
@@ -41,7 +43,8 @@ public class DynamicMachineRenderContext {
         copy.getPattern().put(BlockPos.ORIGIN,
                 new BlockArray.BlockInformation(
                         Lists.newArrayList(
-                                new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
+                                new BlockArray.IBlockStateDescriptor(
+                                        BlocksMM.blockController.getDefaultState()))));
         this.render = new BlockArrayRenderHelper(copy);
     }
 

@@ -18,6 +18,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.client.model.animation.Animation;
 
 import java.util.List;
 
@@ -54,6 +55,21 @@ public class GuiMachineController extends GuiContainerBase<ContainerController> 
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         FontRenderer fr = this.fontRenderer;
+
+        int redstone = controller.getWorld().getStrongPower(controller.getPos());
+        if(redstone > 0) {
+            String drawnStop = I18n.format("gui.controller.status.redstone_stopped");
+            List<String> out = fr.listFormattedStringToWidth(drawnStop, MathHelper.floor(135 * (1 / scale)));
+            for (String draw : out) {
+                offsetY += 10;
+                fr.drawString(draw, offsetX, offsetY, 0xFFFFFF);
+                offsetY += 10;
+            }
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.popMatrix();
+            return;
+        }
+
         DynamicMachine machine = controller.getBlueprintMachine();
         if(machine != null) {
             String drawnHead = I18n.format("gui.controller.blueprint", "");
@@ -96,7 +112,8 @@ public class GuiMachineController extends GuiContainerBase<ContainerController> 
         }
         offsetY += 15;
         if(controller.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING) {
-            int percProgress = MathHelper.floor(controller.getCurrentActiveRecipeProgress() * 100F);
+            int percProgress = MathHelper.floor((controller.getCurrentActiveRecipeProgress() + Animation.getPartialTickTime()) * 100F);
+            percProgress = MathHelper.clamp(percProgress, 0, 100);
             String progressStr = I18n.format("gui.controller.status.crafting.progress", percProgress + "%");
             fr.drawString(progressStr, offsetX, offsetY, 0xFFFFFF);
         }

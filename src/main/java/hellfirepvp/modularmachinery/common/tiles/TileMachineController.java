@@ -81,6 +81,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
     @Override
     public void doRestrictedTick() {
         if(!getWorld().isRemote) {
+            if(getWorld().getStrongPower(getPos()) > 0) {
+                return;
+            }
+
             checkStructure();
             updateComponents();
 
