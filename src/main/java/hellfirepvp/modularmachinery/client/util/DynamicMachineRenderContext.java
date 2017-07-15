@@ -70,11 +70,11 @@ public class DynamicMachineRenderContext {
     }
 
     public void zoomOut() {
-        scale *= 0.95F;
+        scale *= 0.85F;
     }
 
     public void zoomIn() {
-        scale *= 1.05F;
+        scale *= 1.15F;
     }
 
     public boolean doesRenderIn3D() {

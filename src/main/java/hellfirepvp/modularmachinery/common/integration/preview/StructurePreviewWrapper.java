@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.integration.preview;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.client.ClientMouseJEIGuiEventHandler;
 import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
@@ -102,6 +103,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
 
         if(System.currentTimeMillis() - lastRenderMs >= 500 || lastPreviewedMachine == null || !lastPreviewedMachine.equals(machine)) {
             context.resetRender();
+            lastPreviewedMachine = this.machine;
         }
         lastRenderMs = System.currentTimeMillis();
 
@@ -114,12 +116,13 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 context.moveRender(0.25 * Mouse.getDX(), 0, -0.25 * Mouse.getDY());
             }
         }
-        int dwheel = Mouse.getDWheel();
+        int dwheel = ClientMouseJEIGuiEventHandler.eventDWheelState;
         if(dwheel < 0) {
             context.zoomOut();
         } else if(dwheel > 0) {
             context.zoomIn();
         }
+        ClientMouseJEIGuiEventHandler.eventDWheelState = 0;
 
         int guiLeft = (current.width - recipeWidth) / 2;
         int guiTop  = (current.height - recipeHeight) / 2;

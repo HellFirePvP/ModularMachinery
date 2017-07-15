@@ -37,6 +37,8 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 
@@ -61,8 +63,16 @@ public class ClientProxy extends CommonProxy {
     public void preInit() {
         MinecraftForge.EVENT_BUS.register(clientScheduler);
         MinecraftForge.EVENT_BUS.register(this);
+        if(Loader.isModLoaded("jei")) {
+            registerJEIEventHandler();
+        }
 
         super.preInit();
+    }
+
+    @Optional.Method(modid = "jei")
+    private void registerJEIEventHandler() {
+        MinecraftForge.EVENT_BUS.register(new ClientMouseJEIGuiEventHandler());
     }
 
     @SubscribeEvent
