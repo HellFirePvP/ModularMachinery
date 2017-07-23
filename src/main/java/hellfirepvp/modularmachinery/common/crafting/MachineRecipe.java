@@ -40,6 +40,8 @@ import java.util.List;
  */
 public class MachineRecipe {
 
+    private static boolean frozen = false;
+
     private final String recipeFilePath;
     private final ResourceLocation owningMachine, registryName;
     private final int tickTime;
@@ -68,6 +70,13 @@ public class MachineRecipe {
         return Collections.unmodifiableList(recipeRequirements);
     }
 
+    public void addRequirement(ComponentRequirement requirement) {
+        if(frozen) {
+            throw new IllegalStateException("Tried to add Requirement after recipes have been registered!");
+        }
+        this.recipeRequirements.add(requirement);
+    }
+
     public int getRecipeTotalTickTime() {
         return tickTime;
     }
@@ -75,6 +84,10 @@ public class MachineRecipe {
     @Nullable
     public DynamicMachine getOwningMachine() {
         return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
+    }
+
+    static void freezeChanges() {
+        frozen = true;
     }
 
     public static class Deserializer implements JsonDeserializer<MachineRecipe> {

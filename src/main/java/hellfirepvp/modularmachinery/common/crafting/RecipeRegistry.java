@@ -12,7 +12,6 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.ProgressManager;
 
@@ -66,7 +65,7 @@ public class RecipeRegistry {
         ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry", 3);
         barRecipes.step("Discovering Files");
 
-        List<File> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
+        Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
         barRecipes.step("Loading Recipes");
         List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes);
 
@@ -102,6 +101,7 @@ public class RecipeRegistry {
             recipeList.add(mr);
             REGISTRY_RECIPE_BY_MACHINE.put(mr.getOwningMachineIdentifier(), recipeList);
         }
+        MachineRecipe.freezeChanges();
         ProgressManager.pop(barRecipes);
     }
 

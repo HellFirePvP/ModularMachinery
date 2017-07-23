@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.common.container.ContainerEnergyHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerItemBus;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.lib.ItemsMM;
@@ -81,6 +82,8 @@ public class CommonProxy implements IGuiHandler {
     }
 
     public void init() {
+        RecipeAdapterRegistry.initDefaultAdapters();
+
         MachineRegistry.getRegistry().initializeAndLoad();
         RecipeRegistry.getRegistry().initializeAndLoad();
     }
