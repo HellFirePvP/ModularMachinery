@@ -23,6 +23,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.MathHelper;
+import net.minecraftforge.client.model.animation.Animation;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.oredict.OreDictionary;
 
@@ -101,7 +102,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int totalDur = this.recipe.getRecipeTotalTickTime();
         int tick = (int) (ClientScheduler.getClientTick() % totalDur);
-        int pxPart = MathHelper.ceil(((float) tick) / ((float) totalDur) * RecipeLayoutHelper.PART_PROCESS_ARROW_ACTIVE.xSize);
+        int pxPart = MathHelper.ceil(((float) tick + Animation.getPartialTickTime()) / ((float) totalDur) * RecipeLayoutHelper.PART_PROCESS_ARROW_ACTIVE.xSize);
         ModIntegrationJEI.jeiHelpers.getGuiHelper()
                 .createDrawable(RecipeLayoutHelper.LOCATION_JEI_ICONS, 84, 15, pxPart, RecipeLayoutHelper.PART_PROCESS_ARROW_ACTIVE.zSize)
                 .draw(minecraft, recipeCategory.rectangleProcessArrow.x, recipeCategory.rectangleProcessArrow.y);

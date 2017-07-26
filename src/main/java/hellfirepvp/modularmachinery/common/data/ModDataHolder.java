@@ -9,13 +9,10 @@
 package hellfirepvp.modularmachinery.common.data;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
-import net.minecraftforge.fml.common.FMLLog;
 import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.ModContainer;
 import org.apache.commons.io.IOUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -59,9 +56,6 @@ public class ModDataHolder {
 
     public boolean requiresDefaultMachinery() {
         boolean old = requiresDefaultMachinery;
-        if(ModularMachinery.isRunningInDevEnvironment()) {
-            old = true;
-        }
         requiresDefaultMachinery = false;
         return old;
     }
