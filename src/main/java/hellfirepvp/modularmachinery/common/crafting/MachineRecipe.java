@@ -195,7 +195,7 @@ public class MachineRecipe {
                         if(machineIoType == MachineComponent.IOType.OUTPUT) {
                             throw new JsonParseException("You cannot define an oredict as item output! Offending oredict entry: " + res.toString());
                         }
-                        req = new ComponentRequirement.RequirementItem(machineIoType, res.getResourcePath(), amount);
+                        req = new ComponentRequirement.RequirementItem(machineIoType, itemDefinition.substring(4), amount);
                     } else {
                         Item item = ForgeRegistries.ITEMS.getValue(res);
                         if(item == null || item == Items.AIR) {

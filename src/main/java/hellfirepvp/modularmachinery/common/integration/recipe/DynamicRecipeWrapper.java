@@ -191,7 +191,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             for (ItemStack s : out) {
                 ItemStack copy = s.copy();
                 copy.setCount(itemRequirement.oreDictItemAmount);
-                stacks.add(copy);
+                stacksOut.add(copy);
             }
             return stacksOut;
         } else {

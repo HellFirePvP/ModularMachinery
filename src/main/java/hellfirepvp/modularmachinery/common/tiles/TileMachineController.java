@@ -32,6 +32,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.items.CapabilityItemHandler;
@@ -228,11 +229,11 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
-    public float getCurrentActiveRecipeProgress() {
+    public float getCurrentActiveRecipeProgress(float patial) {
         if(activeRecipe == null) return 0F;
-        float tick = activeRecipe.getTick();
+        float tick = activeRecipe.getTick() + patial;
         float maxTick = activeRecipe.getRecipe().getRecipeTotalTickTime();
-        return tick / maxTick;
+        return MathHelper.clamp(tick / maxTick, 0F, 1F);
     }
 
     @Override

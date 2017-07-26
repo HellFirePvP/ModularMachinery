@@ -186,6 +186,7 @@ public class ItemUtils {
         Map<Integer, ItemStack> stacksOut = new HashMap<>();
         for (int j = 0; j < handler.getSlots(); j++) {
             ItemStack s = handler.getStackInSlot(j);
+            if(s.isEmpty()) continue;
             int[] ids = OreDictionary.getOreIDs(s);
             for (int id : ids) {
                 if(OreDictionary.getOreName(id).equals(oreDict)) {
