@@ -99,7 +99,7 @@ public class ContainerItemBus extends ContainerBase<TileItemBus> {
                 for (int zz = 0; zz < 3; zz++) {
                     for (int xx = 0; xx < 4; xx++) {
                         int index = zz * 4 + xx;
-                        addSlotToContainer(new SlotItemHandler(itemHandler, index, 53 + xx * 18, 18 + zz * 18));
+                        addSlotToContainer(new SlotItemHandler(itemHandler, index, 52 + xx * 18, 18 + zz * 18));
                     }
                 }
                 break;

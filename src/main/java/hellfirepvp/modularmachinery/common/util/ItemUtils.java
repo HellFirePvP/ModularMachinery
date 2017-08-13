@@ -215,7 +215,7 @@ public class ItemUtils {
 
     public static boolean matchStackLoosely(@Nonnull ItemStack stack, @Nonnull  ItemStack other) {
         if (stack.isEmpty()) return other.isEmpty();
-        return stack.isItemEqual(other);
+        return OreDictionary.itemMatches(other, stack, false);
     }
 
 }
