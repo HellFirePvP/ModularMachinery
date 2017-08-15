@@ -34,6 +34,9 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
+import net.minecraftforge.fluids.FluidTank;
+import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 
 import javax.annotation.Nullable;
 import java.util.LinkedList;
@@ -77,6 +80,21 @@ public class BlockFluidInputHatch extends BlockContainer implements BlockCustomN
         if(!worldIn.isRemote) {
             TileEntity te = worldIn.getTileEntity(pos);
             if(te != null && te instanceof TileFluidTank) {
+                ItemStack activeHand = playerIn.getHeldItem(hand);
+                if(!activeHand.isEmpty() && FluidUtil.getFluidHandler(activeHand) !=  null) {
+                    FluidTank ft = ((TileFluidTank) te).getTank();
+                    boolean canFillPrev = ft.canFill();
+                    boolean canDrainPrev = ft.canDrain();
+                    ft.setCanFill(true);
+                    ft.setCanDrain(true);
+                    try {
+                        FluidUtil.interactWithFluidHandler(playerIn, hand, ft);
+                    } finally {
+                        ft.setCanFill(canFillPrev);
+                        ft.setCanDrain(canDrainPrev);
+                    }
+                    return true;
+                }
                 playerIn.openGui(ModularMachinery.MODID, CommonProxy.GuiType.TANK_INVENTORY.ordinal(), worldIn, pos.getX(), pos.getY(), pos.getZ());
             }
         }
