@@ -81,9 +81,14 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
 
         FluidStack content = tank.getTank().getFluid();
         if(content != null && content.amount > 0) {
+            int fluidColor = content.getFluid().getColor(content);
+            float red   = (fluidColor >> 16 & 0xFF) / 255F;
+            float green = (fluidColor >>  8 & 0xFF) / 255F;
+            float blue  = (fluidColor       & 0xFF) / 255F;
+
             float percFilled = ((float) content.amount) / ((float) tank.getTank().getCapacity());
             int pxFilled = MathHelper.ceil(percFilled * 61F);
-            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+            GlStateManager.color(red, green, blue, 1.0F);
             ResourceLocation rl = content.getFluid().getStill(content);
             TextureAtlasSprite tas = Minecraft.getMinecraft().getTextureMapBlocks().getTextureExtry(rl.toString());
             if(tas == null) {
