@@ -21,12 +21,15 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
+import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistryEntry;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -126,12 +129,6 @@ public class DynamicMachine {
                     throw new JsonParseException("A part of 'parts' is not a compound object!");
                 }
                 JsonObject part = element.getAsJsonObject();
-                int x = JsonUtils.getInt(part, "x", 0);
-                int y = JsonUtils.getInt(part, "y", 0);
-                int z = JsonUtils.getInt(part, "z", 0);
-                if(x == 0 && y == 0 && z == 0) {
-                    throw new JsonParseException("Block at 0, 0, 0 has to be the controller-block! You cannot override this!");
-                }
                 if(!part.has("elements")) {
                     throw new JsonParseException("Part contained no element!");
                 }
@@ -142,7 +139,7 @@ public class DynamicMachine {
                     if(descr == null) {
                         descr = new BlockArray.BlockInformation(Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(partElement.getAsJsonPrimitive())));
                     }
-                    machine.getPattern().addBlock(x, y, z, descr);
+                    addDescriptorWithPattern(machine.getPattern(), descr, part);
                 } else if(partElement.isJsonArray()) {
                     JsonArray elementArray = partElement.getAsJsonArray();
                     List<BlockArray.IBlockStateDescriptor> descriptors = Lists.newArrayList();
@@ -156,13 +153,61 @@ public class DynamicMachine {
                     if(descriptors.isEmpty()) {
                         throw new JsonParseException("'elements' array didn't contain any blockstate descriptors!");
                     }
-                    machine.getPattern().addBlock(x, y, z, new BlockArray.BlockInformation(descriptors));
+                    addDescriptorWithPattern(machine.getPattern(), new BlockArray.BlockInformation(descriptors), part);
                 } else {
                     throw new JsonParseException("'elements' has to either be a blockstate description, variable or array of blockstate descriptions!");
                 }
             }
             return machine;
         }
+
+        private void addDescriptorWithPattern(BlockArray pattern, BlockArray.BlockInformation information, JsonObject part) throws JsonParseException {
+            List<Integer> avX = new ArrayList<>();
+            List<Integer> avY = new ArrayList<>();
+            List<Integer> avZ = new ArrayList<>();
+            addCoordinates("x", part, avX);
+            addCoordinates("y", part, avY);
+            addCoordinates("z", part, avZ);
+
+            for (BlockPos permutation : buildPermutations(avX, avY, avZ)) {
+                if(permutation.getX() == 0 && permutation.getY() == 0 && permutation.getZ() == 0) {
+                    continue; //We're not going to overwrite the controller.
+                }
+                pattern.addBlock(permutation, information);
+            }
+        }
+
+        private List<BlockPos> buildPermutations(List<Integer> avX, List<Integer> avY, List<Integer> avZ) {
+            List<BlockPos> out = new ArrayList<>(avX.size() * avY.size() * avZ.size());
+            for (int x : avX) {
+                for (int y : avY) {
+                    for (int z : avZ) {
+                        out.add(new BlockPos(x, y, z));
+                    }
+                }
+            }
+            return out;
+        }
+
+        private void addCoordinates(String key, JsonObject part, List<Integer> out) throws JsonParseException {
+            if(!part.has(key)) {
+                out.add(0);
+                return;
+            }
+            JsonElement coordinateElement = part.get(key);
+            if(coordinateElement.isJsonPrimitive() && coordinateElement.getAsJsonPrimitive().isNumber()) {
+                out.add(coordinateElement.getAsInt());
+            } else if(coordinateElement.isJsonArray() && coordinateElement.getAsJsonArray().size() > 0) {
+                for (JsonElement element : coordinateElement.getAsJsonArray()) {
+                    if(element.isJsonPrimitive() && element.getAsJsonPrimitive().isNumber()) {
+                        out.add(element.getAsInt());
+                    } else {
+                        throw new JsonParseException("Expected only numbers in JsonArray " + coordinateElement.toString() + " but found " + element.toString());
+                    }
+                }
+            }
+        }
+
     }
 
 }
