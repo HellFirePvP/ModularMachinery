@@ -137,9 +137,8 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         drawButtons(minecraft, mouseX, mouseY, 0, 0);
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        int strWidth = minecraft.fontRenderer.getStringWidth(machine.getLocalizedName());
         minecraft.fontRenderer.drawString(machine.getLocalizedName(),
-                159 - (recipeWidth / 2) - (strWidth / 2), -7,
+                4, -7,
                 0x222222);
         if(machine.requiresBlueprint()) {
             String reqBlueprint = I18n.format("tooltip.machinery.blueprint.required");
@@ -199,7 +198,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         int width = minecraft.fontRenderer.getStringWidth(String.valueOf(context.getRenderSlice()));
-        minecraft.fontRenderer.drawString(String.valueOf(context.getRenderSlice()), guiLeft + 159 - (width / 2), guiTop + 118, 0x222222);
+        GlStateManager.pushMatrix();
+        GlStateManager.translate(0.5, 0, 0); //Don't ask.
+        minecraft.fontRenderer.drawString(String.valueOf(context.getRenderSlice()), guiLeft + 158 - (width / 2), guiTop + 118, 0x222222);
+        GlStateManager.popMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
