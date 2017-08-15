@@ -40,16 +40,25 @@ public class ContainerItemBus extends ContainerBase<TileItemBus> {
             ItemStack itemstack1 = slot.getStack();
             itemstack = itemstack1.copy();
 
-            if (index >= 0 && index < 27) {
-                if (!this.mergeItemStack(itemstack1, 27, 36, false)) {
+            boolean changed = false;
+            if (index >= 0 && index < 36) {
+                if(this.mergeItemStack(itemstack1, 36, inventorySlots.size(), false)) {
+                    changed = true;
+                }
+            }
+
+            if(!changed) {
+                if (index >= 0 && index < 27) {
+                    if (!this.mergeItemStack(itemstack1, 27, 36, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (index >= 27 && index < 36) {
+                    if (!this.mergeItemStack(itemstack1, 0, 27, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (!this.mergeItemStack(itemstack1, 0, 36, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (index >= 27 && index < 36) {
-                if (!this.mergeItemStack(itemstack1, 0, 27, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (!this.mergeItemStack(itemstack1, 0, 36, false)) {
-                return ItemStack.EMPTY;
             }
 
             if (itemstack1.getCount() == 0) {
