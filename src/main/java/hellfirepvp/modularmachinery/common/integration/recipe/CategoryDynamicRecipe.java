@@ -297,13 +297,17 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     return;
                 }
                 ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
-                if(fluidReq.chance < 1F && fluidReq.chance > 0F) {
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
-                    if(fluidReq.chance < 0.01F) {
-                        chanceStr = "< 1";
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
                     }
-                    chanceStr += "%";
-                    tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
                 }
             } else {
                 slotIndex -= finalAmtFluidInputs;
@@ -311,13 +315,17 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     return;
                 }
                 ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
-                if(fluidReq.chance < 1F && fluidReq.chance > 0F) {
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
-                    if(fluidReq.chance < 0.01F) {
-                        chanceStr = "< 1";
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
                     }
-                    chanceStr += "%";
-                    tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
                 }
             }
         });
@@ -329,13 +337,17 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     return;
                 }
                 ComponentRequirement.RequirementItem itemReq = recipeWrapper.immulatbleOrderedInputItems.get(slotIndex);
-                if(itemReq.chance < 1F && itemReq.chance > 0F) {
+                if(itemReq.chance < 1F && itemReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(itemReq.chance * 100F));
-                    if(itemReq.chance < 0.01F) {
-                        chanceStr = "< 1";
+                    if(itemReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in.never"));
+                    } else {
+                        if(itemReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
                     }
-                    chanceStr += "%";
-                    tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
                 }
             } else {
                 slotIndex -= finalAmtItemInputs;
@@ -343,13 +355,17 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     return;
                 }
                 ComponentRequirement.RequirementItem itemReq = recipeWrapper.immulatbleOrderedOutputItems.get(slotIndex);
-                if(itemReq.chance < 1F && itemReq.chance > 0F) {
+                if(itemReq.chance < 1F && itemReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(itemReq.chance * 100F));
-                    if(itemReq.chance < 0.01F) {
-                        chanceStr = "< 1";
+                    if(itemReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
+                    } else {
+                        if(itemReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
                     }
-                    chanceStr += "%";
-                    tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
                 }
             }
         });
