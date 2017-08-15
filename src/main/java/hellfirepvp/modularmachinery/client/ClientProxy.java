@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.client;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.gui.*;
+import hellfirepvp.modularmachinery.client.util.DebugOverlayHelper;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
@@ -63,6 +64,7 @@ public class ClientProxy extends CommonProxy {
     public void preInit() {
         MinecraftForge.EVENT_BUS.register(clientScheduler);
         MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(new DebugOverlayHelper());
         if(Loader.isModLoaded("jei")) {
             registerJEIEventHandler();
         }

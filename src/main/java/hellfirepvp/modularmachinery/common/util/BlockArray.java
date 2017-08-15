@@ -21,6 +21,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
@@ -180,7 +181,7 @@ public class BlockArray {
             BlockInformation info = pattern.get(pos);
             Vector2f vec = new Vector2f(pos.getX(), pos.getZ());
             Vector2f dst = Matrix2f.transform(rotation, vec, null);
-            out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info);
+            out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info.copyRotateYCCW());
         }
         return out;
     }
@@ -226,13 +227,28 @@ public class BlockArray {
                 return new IBlockStateDescriptor(b.getStateFromMeta(meta));
             }
         }
+
+        private BlockInformation copyRotateYCCW() {
+            List<IBlockStateDescriptor> newDescriptors = new ArrayList<>(this.matchingStates.size());
+            for (IBlockStateDescriptor desc : this.matchingStates) {
+                IBlockStateDescriptor copy = new IBlockStateDescriptor();
+                for (IBlockState applicableState : desc.applicable) {
+                    copy.applicable.add(applicableState.withRotation(Rotation.COUNTERCLOCKWISE_90));
+                }
+                newDescriptors.add(copy);
+            }
+            return new BlockInformation(newDescriptors);
+        }
+
     }
 
     public static class IBlockStateDescriptor {
 
         public final List<IBlockState> applicable = Lists.newArrayList();
 
-        public IBlockStateDescriptor(Block block) {
+        private IBlockStateDescriptor() {}
+
+        private IBlockStateDescriptor(Block block) {
             List<Integer> usedMetas = Lists.newArrayList();
             if(!(block instanceof BlockLiquid) && !(block instanceof BlockFluidBase)) {
                 for (IBlockState state : block.getBlockState().getValidStates()) {
