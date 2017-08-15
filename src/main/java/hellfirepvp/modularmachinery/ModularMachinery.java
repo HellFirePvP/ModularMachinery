@@ -29,13 +29,12 @@ import java.io.File;
  * Created by HellFirePvP
  * Date: 26.06.2017 / 20:26
  */
-@Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION,
-        acceptedMinecraftVersions="[1.12]", dependencies = "required-after:forge@[14.21.0.2371,)")
+@Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION, dependencies = "required-after:forge@[14.21.0.2371,)")
 public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
     public static final String NAME = "Modular Machinery";
-    public static final String VERSION = "0.1";
+    public static final String VERSION = "1.2";
     public static final String CLIENT_PROXY = "hellfirepvp.modularmachinery.client.ClientProxy";
     public static final String COMMON_PROXY = "hellfirepvp.modularmachinery.common.CommonProxy";
 

@@ -84,6 +84,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public boolean acceptsEnergyFrom(IEnergyEmitter emitter, EnumFacing side) {
         return true;
     }

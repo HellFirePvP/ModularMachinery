@@ -9,13 +9,9 @@
 package hellfirepvp.modularmachinery.common.tiles.base;
 
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
-import ic2.api.energy.tile.IEnergyEmitter;
-import ic2.api.energy.tile.IEnergySink;
-import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
