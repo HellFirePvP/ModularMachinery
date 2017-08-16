@@ -85,6 +85,8 @@ public class MachineLoader {
     }
 
     public static void prepareContext(List<File> files) {
+        variableContext.clear();
+
         for (File f : files) {
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
                 Map<String, BlockArray.BlockInformation> variables = JsonUtils.fromJson(GSON, isr, BlockInformationVariable.class).getDefinedVariables();

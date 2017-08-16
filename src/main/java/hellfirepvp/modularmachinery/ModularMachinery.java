@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery;
 
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.command.CommandSyntax;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.Mod;
@@ -72,6 +73,7 @@ public class ModularMachinery {
     @Mod.EventHandler
     public void onServerStart(FMLServerStartingEvent event) {
         //Cmd registration
+        event.registerServerCommand(new CommandSyntax());
     }
 
     public static boolean isRunningInDevEnvironment() {

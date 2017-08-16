@@ -1,5 +1,7 @@
 itemGroup.modularmachinery=Modular Machinery
 
+command.modularmachinery.syntax=/mm-syntax
+
 gui.controller.blueprint=Blueprint Found: %s
 gui.controller.blueprint.none=None
 gui.controller.structure=Structure Found: %s

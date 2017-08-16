@@ -18,6 +18,7 @@ import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistr
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.lib.ItemsMM;
+import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
 import hellfirepvp.modularmachinery.common.registry.RegistryBlocks;
@@ -84,8 +85,8 @@ public class CommonProxy implements IGuiHandler {
     public void init() {
         RecipeAdapterRegistry.initDefaultAdapters();
 
-        MachineRegistry.getRegistry().initializeAndLoad();
-        RecipeRegistry.getRegistry().initializeAndLoad();
+        MachineRegistry.getRegistry().registerMachines(MachineRegistry.getRegistry().loadMachines(null));
+        RecipeRegistry.getRegistry().registerRecipes(RecipeRegistry.getRegistry().loadRecipes(null));
     }
 
     public void postInit() {}

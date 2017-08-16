@@ -86,8 +86,16 @@ public class MachineRecipe {
         return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
     }
 
+    static boolean isFrozen() {
+        return frozen;
+    }
+
     static void freezeChanges() {
         frozen = true;
+    }
+
+    static void unfreeze() {
+        frozen = false;
     }
 
     public static class Deserializer implements JsonDeserializer<MachineRecipe> {
