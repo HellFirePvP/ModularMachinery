@@ -144,7 +144,15 @@ public class RecipeCraftingContext {
         lblRequirements:
         for (ComponentRequirement requirement : recipe.getCraftingRequirements()) {
             if(requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY &&
-                    requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+                    requirement.getActionType() == MachineComponent.IOType.OUTPUT) {
+
+                for (MachineComponent component : getComponentsFor(MachineComponent.ComponentType.ENERGY)) {
+                    if(component.getIOType() == MachineComponent.IOType.OUTPUT) {
+                        continue lblRequirements; //Check if it has at least 1 energy output.
+                    }
+                }
+                return false;
+            }
 
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.canStartCrafting(component, this, this.currentRestrictions)) {
