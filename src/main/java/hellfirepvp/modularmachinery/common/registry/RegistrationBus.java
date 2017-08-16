@@ -30,7 +30,6 @@ public class RegistrationBus {
     @SubscribeEvent
     public void registerBlocks(RegistryEvent.Register<Block> event) {
         RegistryBlocks.register(event.getRegistry());
-        RegistryTileEntities.register();
     }
 
 }

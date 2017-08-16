@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -45,6 +46,7 @@ public class DynamicMachine {
     private final ResourceLocation registryName;
     private String localizedName = null;
     private BlockArray pattern = new BlockArray();
+    private int definedColor = TileColorableMachineComponent.DEFAULT_COLOR;
 
     private boolean requiresBlueprint = false;
 
@@ -70,6 +72,10 @@ public class DynamicMachine {
 
     public String getLocalizedName() {
         return localizedName;
+    }
+
+    public int getMachineColor() {
+        return definedColor;
     }
 
     @Nonnull
@@ -121,6 +127,20 @@ public class DynamicMachine {
                 if(requiresBlueprint) {
                     machine.setRequiresBlueprint();
                 }
+            }
+            if(root.has("color")) {
+                JsonElement elementColor = root.get("color");
+                if(!elementColor.isJsonPrimitive()) {
+                    throw new JsonParseException("The Color defined in 'color' should be a hex integer number! Found " + elementColor.toString() + " instead!");
+                }
+                int hexColor;
+                String hexStr = elementColor.getAsJsonPrimitive().getAsString();
+                try {
+                    hexColor = Integer.parseInt(hexStr, 16);
+                } catch (NumberFormatException parseExc) {
+                    throw new JsonParseException("The Color defined in 'color' should be a hex integer number! Found " + elementColor.toString() + " instead!", parseExc);
+                }
+                machine.definedColor = hexColor;
             }
 
             for (int i = 0; i < parts.size(); i++) {

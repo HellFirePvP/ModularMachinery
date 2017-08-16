@@ -23,7 +23,7 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 17:43
  */
-public abstract class TileInventory extends TileEntitySynchronized {
+public abstract class TileInventory extends TileColorableMachineComponent {
 
     protected IOInventory inventory;
 

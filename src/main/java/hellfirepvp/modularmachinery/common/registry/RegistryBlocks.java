@@ -12,7 +12,11 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
+import hellfirepvp.modularmachinery.common.item.ItemBlockMachineComponent;
+import hellfirepvp.modularmachinery.common.item.ItemBlockMachineComponentCustomName;
+import hellfirepvp.modularmachinery.common.item.ItemDynamicColor;
 import hellfirepvp.modularmachinery.common.tiles.*;
+import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
@@ -21,6 +25,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraftforge.fml.common.registry.GameRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import static hellfirepvp.modularmachinery.common.lib.BlocksMM.*;
@@ -35,6 +40,7 @@ import static hellfirepvp.modularmachinery.common.lib.BlocksMM.*;
 public class RegistryBlocks {
 
     static List<Block> blocksToRegister = Lists.newArrayList();
+    public static List<BlockDynamicColor> pendingIBlockColorBlocks = new LinkedList<>();
 
     public static void initialize() {
         registerBlocks();
@@ -66,6 +72,8 @@ public class RegistryBlocks {
     }
 
     private static void registerTiles() {
+        registerTile(TileColorableMachineComponent.class);
+
         registerTile(TileMachineController.class);
 
         registerTile(TileFluidInputHatch.class);
@@ -91,10 +99,18 @@ public class RegistryBlocks {
     }
 
     private static void prepareItemBlockRegister(Block block) {
-        if(block instanceof BlockCustomName) {
-            prepareItemBlockRegister(new ItemBlockCustomName(block));
+        if(block instanceof BlockMachineComponent) {
+            if(block instanceof BlockCustomName) {
+                prepareItemBlockRegister(new ItemBlockMachineComponentCustomName(block));
+            } else {
+                prepareItemBlockRegister(new ItemBlockMachineComponent(block));
+            }
         } else {
-            prepareItemBlockRegister(new ItemBlock(block));
+            if(block instanceof BlockCustomName) {
+                prepareItemBlockRegister(new ItemBlockCustomName(block));
+            } else {
+                prepareItemBlockRegister(new ItemBlock(block));
+            }
         }
     }
 
@@ -102,6 +118,9 @@ public class RegistryBlocks {
         String name = item.getBlock().getClass().getSimpleName().toLowerCase();
         item.setRegistryName(name).setUnlocalizedName(name);
         RegistryItems.itemsToRegister.add(item);
+        if(item instanceof ItemDynamicColor) {
+            RegistryItems.pendingDynamicColorItems.add((ItemDynamicColor) item);
+        }
         return item;
     }
 
@@ -109,6 +128,9 @@ public class RegistryBlocks {
         String name = block.getClass().getSimpleName().toLowerCase();
         block.setRegistryName(name).setUnlocalizedName(name);
         blocksToRegister.add(block);
+        if(block instanceof BlockDynamicColor) {
+            pendingIBlockColorBlocks.add((BlockDynamicColor) block);
+        }
         return block;
     }
 

@@ -1,6 +1,7 @@
 {
-    "parent": "block/cube_all",
+    "parent": "modularmachinery:block/blockmodel_overlay_all",
     "textures": {
-        "all": "modularmachinery:blocks/blockinputbus_reinforced"
+        "bg_all": "modularmachinery:blocks/blockcasing_plain",
+        "ov_all": "modularmachinery:blocks/overlay_inputbus_reinforced"
     }
 }

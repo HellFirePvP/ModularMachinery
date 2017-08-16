@@ -13,9 +13,13 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.gui.*;
 import hellfirepvp.modularmachinery.client.util.DebugOverlayHelper;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.block.BlockDynamicColor;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
+import hellfirepvp.modularmachinery.common.item.ItemDynamicColor;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.registry.RegistryBlocks;
+import hellfirepvp.modularmachinery.common.registry.RegistryItems;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
@@ -25,6 +29,8 @@ import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
+import net.minecraft.client.renderer.color.BlockColors;
+import net.minecraft.client.renderer.color.ItemColors;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
@@ -118,9 +124,26 @@ public class ClientProxy extends CommonProxy {
         }
     }
 
+    private void registerPendingIBlockColorBlocks() {
+        BlockColors colors = Minecraft.getMinecraft().getBlockColors();
+        for (BlockDynamicColor b : RegistryBlocks.pendingIBlockColorBlocks) {
+            colors.registerBlockColorHandler(b::getColorMultiplier, (Block) b);
+        }
+    }
+
+    private void registerPendingIItemColorItems() {
+        ItemColors colors = Minecraft.getMinecraft().getItemColors();
+        for (ItemDynamicColor i : RegistryItems.pendingDynamicColorItems) {
+            colors.registerItemColorHandler(i::getColorFromItemstack, (Item) i);
+        }
+    }
+
     @Override
     public void init() {
         super.init();
+
+        registerPendingIBlockColorBlocks();
+        registerPendingIItemColorItems();
     }
 
     @Override

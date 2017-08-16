@@ -23,6 +23,7 @@ import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
+import net.minecraft.util.BlockRenderLayer;
 import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.EnumHand;
@@ -39,7 +40,7 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 28.06.2017 / 20:48
  */
-public class BlockController extends BlockContainer {
+public class BlockController extends BlockMachineComponent {
 
     public static PropertyEnum<EnumFacing> FACING = PropertyEnum.create("facing", EnumFacing.class, EnumFacing.HORIZONTALS);
 
@@ -123,6 +124,11 @@ public class BlockController extends BlockContainer {
             return ctrl.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING ? 15 : 0;
         }
         return 0;
+    }
+
+    @Override
+    public BlockRenderLayer getBlockLayer() {
+        return BlockRenderLayer.CUTOUT;
     }
 
     @Override

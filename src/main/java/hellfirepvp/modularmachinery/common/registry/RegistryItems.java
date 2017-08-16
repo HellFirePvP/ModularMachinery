@@ -13,10 +13,12 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
+import hellfirepvp.modularmachinery.common.item.ItemDynamicColor;
 import hellfirepvp.modularmachinery.common.item.ItemModularium;
 import net.minecraft.item.Item;
 import net.minecraftforge.registries.IForgeRegistry;
 
+import java.util.LinkedList;
 import java.util.List;
 
 import static hellfirepvp.modularmachinery.common.lib.ItemsMM.*;
@@ -31,6 +33,7 @@ import static hellfirepvp.modularmachinery.common.lib.ItemsMM.*;
 public class RegistryItems {
 
     static List<Item> itemsToRegister = Lists.newArrayList();
+    public static List<ItemDynamicColor> pendingDynamicColorItems = new LinkedList<>();
 
     public static void initialize() {
         blueprint = prepareRegister(new ItemBlueprint());
@@ -43,6 +46,9 @@ public class RegistryItems {
         String name = item.getClass().getSimpleName().toLowerCase();
         item.setRegistryName(name).setUnlocalizedName(name);
         itemsToRegister.add(item);
+        if(item instanceof ItemDynamicColor) {
+            pendingDynamicColorItems.add((ItemDynamicColor) item);
+        }
         return item;
     }
 

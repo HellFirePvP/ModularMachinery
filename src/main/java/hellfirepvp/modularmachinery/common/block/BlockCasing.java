@@ -17,6 +17,8 @@ import net.minecraft.block.state.BlockStateContainer;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.BlockRenderLayer;
+import net.minecraft.util.EnumBlockRenderType;
 import net.minecraft.util.IStringSerializable;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.MathHelper;
@@ -31,7 +33,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 29.06.2017 / 17:32
  */
-public class BlockCasing extends Block implements BlockCustomName, BlockVariants {
+public class BlockCasing extends BlockMachineComponent implements BlockCustomName, BlockVariants {
 
     private static final PropertyEnum<CasingType> CASING = PropertyEnum.create("casing", CasingType.class);
 
@@ -88,6 +90,16 @@ public class BlockCasing extends Block implements BlockCustomName, BlockVariants
     @Override
     public String getBlockStateName(IBlockState state) {
         return state.getValue(CASING).getName();
+    }
+
+    @Override
+    public EnumBlockRenderType getRenderType(IBlockState state) {
+        return EnumBlockRenderType.MODEL;
+    }
+
+    @Override
+    public BlockRenderLayer getBlockLayer() {
+        return BlockRenderLayer.CUTOUT;
     }
 
     public static enum CasingType implements IStringSerializable {

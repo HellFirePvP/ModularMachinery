@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.tiles;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.BlockController;
+import hellfirepvp.modularmachinery.common.block.BlockMachineComponent;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
@@ -21,6 +22,7 @@ import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
+import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
@@ -174,6 +176,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         this.patternRotation = res.getFirst();
                         this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                         markForUpdate();
+
+                        if(this.foundMachine.getMachineColor() != TileColorableMachineComponent.DEFAULT_COLOR) {
+                            distributeCasingColor();
+                        }
                     }
                 } else {
                     for (DynamicMachine machine : MachineRegistry.getRegistry()) {
@@ -185,11 +191,34 @@ public class TileMachineController extends TileEntityRestrictedTick {
                             this.patternRotation = res.getFirst();
                             this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                             markForUpdate();
+
+                            if(this.foundMachine.getMachineColor() != TileColorableMachineComponent.DEFAULT_COLOR) {
+                                distributeCasingColor();
+                            }
                             break;
                         }
                     }
                 }
             }
+        }
+    }
+
+    private void distributeCasingColor() {
+        if(this.foundMachine != null && this.foundPattern != null) {
+            int color = this.foundMachine.getMachineColor();
+            tryColorize(getPos(), color);
+            for (BlockPos pos : this.foundPattern.getPattern().keySet()) {
+                tryColorize(this.getPos().add(pos), color);
+            }
+        }
+    }
+
+    private void tryColorize(BlockPos pos, int color) {
+        TileEntity te = this.getWorld().getTileEntity(pos);
+        if(te != null && te instanceof TileColorableMachineComponent) {
+            ((TileColorableMachineComponent) te).definedColor = color;
+            ((TileColorableMachineComponent) te).markForUpdate();
+            getWorld().addBlockEvent(pos, getWorld().getBlockState(pos).getBlock(), 1, 1);
         }
     }
 

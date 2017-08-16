@@ -26,10 +26,7 @@ import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
+import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
@@ -48,7 +45,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 19:00
  */
-public class BlockFluidOutputHatch extends BlockContainer implements BlockCustomName, BlockVariants {
+public class BlockFluidOutputHatch extends BlockMachineComponent implements BlockCustomName, BlockVariants {
 
     private static final PropertyEnum<FluidHatchSize> BUS_TYPE = PropertyEnum.create("size", FluidHatchSize.class);
 
@@ -103,6 +100,11 @@ public class BlockFluidOutputHatch extends BlockContainer implements BlockCustom
     @Override
     public EnumBlockRenderType getRenderType(IBlockState state) {
         return EnumBlockRenderType.MODEL;
+    }
+
+    @Override
+    public BlockRenderLayer getBlockLayer() {
+        return BlockRenderLayer.CUTOUT;
     }
 
     @Override

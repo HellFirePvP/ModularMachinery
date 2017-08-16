@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 17:51
  */
-public abstract class TileFluidTank extends TileEntitySynchronized implements MachineComponentTile {
+public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile {
 
     private FluidTank tank;
     private MachineComponent.IOType ioType;

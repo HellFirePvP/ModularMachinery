@@ -27,10 +27,7 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
-import net.minecraft.util.EnumBlockRenderType;
-import net.minecraft.util.EnumFacing;
-import net.minecraft.util.EnumHand;
-import net.minecraft.util.NonNullList;
+import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
@@ -50,7 +47,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 08.07.2017 / 10:52
  */
-public class BlockEnergyOutputHatch extends BlockContainer implements BlockCustomName, BlockVariants {
+public class BlockEnergyOutputHatch extends BlockMachineComponent implements BlockCustomName, BlockVariants {
 
     private static final PropertyEnum<EnergyHatchSize> BUS_TYPE = PropertyEnum.create("size", EnergyHatchSize.class);
 
@@ -100,6 +97,11 @@ public class BlockEnergyOutputHatch extends BlockContainer implements BlockCusto
     @Override
     public EnumBlockRenderType getRenderType(IBlockState state) {
         return EnumBlockRenderType.MODEL;
+    }
+
+    @Override
+    public BlockRenderLayer getBlockLayer() {
+        return BlockRenderLayer.CUTOUT;
     }
 
     @Override

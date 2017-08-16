@@ -1,0 +1,26 @@
+{
+    "parent": "modularmachinery:block/blockmodel_overlay",
+    "display": {
+        "firstperson_righthand": {
+            "rotation": [ 0, 135, 0 ],
+            "translation": [ 0, 0, 0 ],
+            "scale": [ 0.40, 0.40, 0.40 ]
+        }
+    },
+    "textures": {
+        "particle": "#bg_all",
+        "bg_down": "#bg_all",
+        "bg_up": "#bg_all",
+        "bg_north": "#bg_all",
+        "bg_east": "#bg_all",
+        "bg_south": "#bg_all",
+        "bg_west": "#bg_all",
+
+        "ov_down": "#ov_top",
+        "ov_up": "#ov_top",
+        "ov_north": "#ov_front",
+        "ov_east": "#ov_side",
+        "ov_south": "#ov_side",
+        "ov_west": "#ov_side"
+    }
+}

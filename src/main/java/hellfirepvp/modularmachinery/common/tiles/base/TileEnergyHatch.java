@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
  * Date: 08.07.2017 / 10:14
  */
 @Optional.Interface(iface = "cofh.redstoneflux.api.IEnergyStorage", modid = "redstoneflux")
-public abstract class TileEnergyHatch extends TileEntitySynchronized implements IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
+public abstract class TileEnergyHatch extends TileColorableMachineComponent implements IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
 
     protected int energy = 0;
     protected EnergyHatchSize size;
