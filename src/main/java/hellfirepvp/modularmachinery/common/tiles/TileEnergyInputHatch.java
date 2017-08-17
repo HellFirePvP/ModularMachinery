@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.tiles;
 
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
+import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -45,14 +46,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();
-        MinecraftServer ms = FMLCommonHandler.instance().getMinecraftServerInstance();
-        if(ms != null) {
-            ms.addScheduledTask(() -> {
-                if(!world.isRemote) {
-                    MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(TileEnergyInputHatch.this));
-                }
-            });
-        }
+        IntegrationIC2EventHandlerHelper.fireLoadEvent(world, this);
     }
 
     @Override
@@ -65,16 +59,19 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public double getDemandedEnergy() {
         return Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, this.size.getEnergyTransmission());
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public int getSinkTier() {
         return Integer.MAX_VALUE;
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public double injectEnergy(EnumFacing directionFrom, double amount, double voltage) {
         double addable = Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, amount);
         amount -= addable;

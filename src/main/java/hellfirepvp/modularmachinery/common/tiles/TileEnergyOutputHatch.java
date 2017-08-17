@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.tiles;
 
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
+import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -45,14 +46,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();
-        MinecraftServer ms = FMLCommonHandler.instance().getMinecraftServerInstance();
-        if(ms != null) {
-            ms.addScheduledTask(() -> {
-                if(!world.isRemote) {
-                    MinecraftForge.EVENT_BUS.post(new EnergyTileLoadEvent(TileEnergyOutputHatch.this));
-                }
-            });
-        }
+        IntegrationIC2EventHandlerHelper.fireLoadEvent(world, this);
     }
 
     @Override
@@ -65,17 +59,20 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public double getOfferedEnergy() {
         return Math.min(this.size.getEnergyTransmission(), this.getCurrentEnergy() / 4);
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public void drawEnergy(double amount) {
         this.energy = MathHelper.clamp(MathHelper.floor(this.energy - (amount * 4)), 0, this.size.maxEnergy);
         markForUpdate();
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public int getSourceTier() {
         return size.energyTier;
     }
