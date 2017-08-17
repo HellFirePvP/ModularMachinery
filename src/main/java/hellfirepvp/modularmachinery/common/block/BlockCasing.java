@@ -98,9 +98,14 @@ public class BlockCasing extends BlockMachineComponent implements BlockCustomNam
     }
 
     @Override
-    public BlockRenderLayer getBlockLayer() {
-        return BlockRenderLayer.CUTOUT;
+    public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer) {
+        return layer == BlockRenderLayer.TRANSLUCENT;
     }
+
+    //@Override
+    //public BlockRenderLayer getBlockLayer() {
+    //    return BlockRenderLayer.CUTOUT;
+    //}
 
     public static enum CasingType implements IStringSerializable {
 
