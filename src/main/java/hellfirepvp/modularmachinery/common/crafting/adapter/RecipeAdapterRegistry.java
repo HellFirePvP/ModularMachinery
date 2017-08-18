@@ -51,10 +51,6 @@ public class RecipeAdapterRegistry {
         .create();
 
         ADAPTER_REGISTRY.register(new AdapterMinecraftFurnace());
-
-        RegistryEvent<RecipeAdapter> adapterRegistryEvent = new RegistryEvent.Register<>(
-                new ResourceLocation(ModularMachinery.MODID, "recipeadapters"), ADAPTER_REGISTRY);
-        MinecraftForge.EVENT_BUS.post(adapterRegistryEvent);
     }
 
 }

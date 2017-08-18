@@ -8,11 +8,16 @@
 
 package hellfirepvp.modularmachinery.common.crafting.adapter;
 
+import com.google.common.collect.ImmutableList;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import net.minecraft.util.ResourceLocation;
 
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -24,6 +29,7 @@ import java.lang.reflect.Type;
 public class RecipeAdapterAccessor {
 
     private final ResourceLocation owningMachine, adapterKey;
+    private List<MachineRecipe> cacheLoaded = new LinkedList<>();
 
     private RecipeAdapterAccessor(ResourceLocation owningMachine, ResourceLocation adapterKey) {
         this.owningMachine = owningMachine;
@@ -36,6 +42,19 @@ public class RecipeAdapterAccessor {
 
     public ResourceLocation getAdapterKey() {
         return adapterKey;
+    }
+
+    public List<MachineRecipe> loadRecipesForAdapter() {
+        cacheLoaded.clear();
+        Collection<MachineRecipe> recipes = RecipeAdapterRegistry.createRecipesFor(owningMachine, adapterKey);
+        if(recipes != null) {
+            cacheLoaded.addAll(recipes);
+        }
+        return cacheLoaded;
+    }
+
+    public List<MachineRecipe> getCachedRecipes() {
+        return ImmutableList.copyOf(cacheLoaded);
     }
 
     public static class Deserializer implements JsonDeserializer<RecipeAdapterAccessor> {

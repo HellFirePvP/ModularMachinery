@@ -37,6 +37,11 @@ repositories {
         url = "http://dvs1.progwml6.com/files/maven"
     }
 
+    maven {
+        // CraftTweaker
+        url "http://maven.blamejared.com/"
+    }
+
 }
 
 dependencies {
@@ -51,6 +56,11 @@ dependencies {
     def rf_version = "2.0.0.1"
 
     deobfCompile "cofh:RedstoneFlux:${mc_version}-${rf_version}:universal"
+
+    def ct_mc_version = "MC1120"
+    def ct_version = "4.0.3.247"
+
+    deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:${mc_version}-${ct_version}"
 
 }
 

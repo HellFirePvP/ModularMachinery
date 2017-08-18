@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.container.ContainerItemBus;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
+import hellfirepvp.modularmachinery.common.integration.ModIntegrationCrafttweaker;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.lib.ItemsMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
@@ -38,6 +39,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.ProgressManager;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
@@ -80,6 +82,10 @@ public class CommonProxy implements IGuiHandler {
         RegistryItems.initialize();
 
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularMachinery.MODID, this);
+
+        if(Loader.isModLoaded("crafttweaker")) {
+            MinecraftForge.EVENT_BUS.register(new ModIntegrationCrafttweaker());
+        }
     }
 
     public void init() {

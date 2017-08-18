@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterAccessor;
 import hellfirepvp.modularmachinery.common.data.DataLoadProfiler;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import net.minecraft.entity.player.EntityPlayer;
@@ -150,6 +151,35 @@ public class RecipeRegistry {
             }
         }
         MachineRecipe.freezeChanges();
+    }
+
+    public void reloadAdapters() {
+        boolean frozen = MachineRecipe.isFrozen();
+        if(frozen) {
+            MachineRecipe.unfreeze();
+        }
+
+        for (RecipeAdapterAccessor accessor : RecipeLoader.recipeAdapters) {
+            List<MachineRecipe> machineRecipeList = REGISTRY_RECIPE_BY_MACHINE.get(accessor.getOwningMachine());
+            for (MachineRecipe cached : accessor.getCachedRecipes()) {
+                RECIPE_REGISTRY.remove(cached.getRegistryName());
+                if(machineRecipeList != null) {
+                    machineRecipeList.remove(cached);
+                }
+            }
+        }
+
+        for (RecipeAdapterAccessor accessor : RecipeLoader.recipeAdapters) {
+            for (MachineRecipe recipe : accessor.loadRecipesForAdapter()) {
+                RECIPE_REGISTRY.put(recipe.getRegistryName(), recipe);
+                List<MachineRecipe> recipeList = REGISTRY_RECIPE_BY_MACHINE.computeIfAbsent(accessor.getOwningMachine(), k -> Lists.newArrayList());
+                recipeList.add(recipe);
+            }
+        }
+
+        if(frozen) {
+            MachineRecipe.freezeChanges();
+        }
     }
 
 }

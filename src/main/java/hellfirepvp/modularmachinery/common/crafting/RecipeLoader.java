@@ -35,6 +35,7 @@ public class RecipeLoader {
             .registerTypeHierarchyAdapter(RecipeAdapterAccessor.class, new RecipeAdapterAccessor.Deserializer())
             .create();
 
+    public static List<RecipeAdapterAccessor> recipeAdapters = new LinkedList<>();
     private static Map<String, Exception> failedAttempts = new HashMap<>();
     public static String currentlyReadingPath = null;
 
@@ -63,6 +64,8 @@ public class RecipeLoader {
     }
 
     public static List<MachineRecipe> loadRecipes(Map<RecipeLoader.FileType, List<File>> candidates) {
+        recipeAdapters.clear();
+
         List<MachineRecipe> loadedRecipes = Lists.newArrayList();
         for (File f : candidates.get(FileType.RECIPE)) {
             currentlyReadingPath = f.getPath();
@@ -77,15 +80,13 @@ public class RecipeLoader {
         for (File f : candidates.get(FileType.ADAPTER)) {
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
                 RecipeAdapterAccessor accessor = JsonUtils.fromJson(GSON, isr, RecipeAdapterAccessor.class);
-                Collection<MachineRecipe> recipes = RecipeAdapterRegistry.createRecipesFor(accessor.getOwningMachine(), accessor.getAdapterKey());
-                if(recipes == null) {
-                    throw new Exception("Couldn't find adapter with name " + accessor.getAdapterKey().toString() + " !");
-                }
+                Collection<MachineRecipe> recipes = accessor.loadRecipesForAdapter();
                 if(recipes.isEmpty()) {
                     ModularMachinery.log.warn("Adapter with name " + accessor.getAdapterKey().toString() + " didn't provide have any recipes!");
                 } else {
                     loadedRecipes.addAll(recipes);
                 }
+                recipeAdapters.add(accessor);
             } catch (Exception exc) {
                 failedAttempts.put(f.getPath(), exc);
             }
