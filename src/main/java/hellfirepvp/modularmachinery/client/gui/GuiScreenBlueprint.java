@@ -8,22 +8,42 @@
 
 package hellfirepvp.modularmachinery.client.gui;
 
+import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
+import hellfirepvp.modularmachinery.client.util.RenderingUtils;
+import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.util.BlockArray;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
-import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
-import net.minecraft.client.renderer.Tessellator;
-import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Tuple;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec2f;
+import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
 import java.io.IOException;
+import java.util.*;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -90,8 +110,10 @@ public class GuiScreenBlueprint extends GuiScreen {
         }
 
         ScaledResolution res = new ScaledResolution(mc);
+        Rectangle scissorFrame = new Rectangle((guiLeft + 8) * res.getScaleFactor(), (guiTop + 43) * res.getScaleFactor(),
+                160 * res.getScaleFactor(), 94 * res.getScaleFactor());
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((guiLeft + 8) * res.getScaleFactor(), (guiTop + 43) * res.getScaleFactor(), 160 * res.getScaleFactor(), 94 * res.getScaleFactor());
+        GL11.glScissor(scissorFrame.x, scissorFrame.y, scissorFrame.width, scissorFrame.height);
         x = 88;
         z = 66;
         renderContext.renderAt(this.guiLeft + x, this.guiTop + z, partialTicks);
@@ -106,6 +128,71 @@ public class GuiScreenBlueprint extends GuiScreen {
             fontRenderer.drawString(reqBlueprint, this.guiLeft + 10, this.guiTop + 106, 0x444444);
         }
         GlStateManager.enableDepth();
+
+        scissorFrame = new Rectangle(MathHelper.floor(this.guiLeft + 8), MathHelper.floor(this.guiTop + 8), 160, 94);
+        if(!renderContext.doesRenderIn3D() && scissorFrame.contains(mouseX, mouseY)) {
+            double scale = renderContext.getScale();
+            Vec2f offset = renderContext.getCurrentRenderOffset(guiLeft + x, guiTop + z);
+            int jumpWidth = 14;
+            double scaleJump = jumpWidth * scale;
+            Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(renderContext.getRenderSlice());
+            if(renderContext.getRenderSlice() == 0) {
+                slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
+            }
+            for (BlockPos pos : slice.keySet()) {
+                int xMod = pos.getX() + 1;
+                int zMod = pos.getZ() + 1;
+                Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
+                if(rct.contains(mouseX, mouseY)) {
+                    IBlockState state = slice.get(pos).getSampleState();
+                    Block type = state.getBlock();
+                    int meta = type.getMetaFromState(state);
+                    ItemStack s;
+                    if(type instanceof BlockFluidBase) {
+                        s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
+                    } else if(type instanceof BlockLiquid) {
+                        Material m = state.getMaterial();
+                        if(m == Material.WATER) {
+                            s = new ItemStack(Items.WATER_BUCKET);
+                        } else if(m == Material.LAVA) {
+                            s = new ItemStack(Items.LAVA_BUCKET);
+                        } else {
+                            s = ItemStack.EMPTY;
+                        }
+                    } else {
+                        Item i = Item.getItemFromBlock(type);
+                        if(i == Items.AIR) continue;
+                        if(i.getHasSubtypes()) {
+                            s = new ItemStack(i, 1, meta);
+                        } else {
+                            s = new ItemStack(i);
+                        }
+                    }
+                    List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                    List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
+                    boolean first = true;
+                    for (String str : tooltip) {
+                        if(first) {
+                            stacks.add(new Tuple<>(s, str));
+                            first = false;
+                        } else {
+                            stacks.add(new Tuple<>(ItemStack.EMPTY, str));
+                        }
+                    }
+
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(mouseX, mouseY, 0);
+                    GlStateManager.disableDepth();
+                    GlStateManager.disableBlend();
+                    RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
+                    GlStateManager.enableBlend();
+                    GlStateManager.enableDepth();
+                    GlStateManager.popMatrix();
+                    break;
+                }
+            }
+        }
     }
 
     private void drawButtons(int mouseX, int mouseY) {
@@ -147,6 +234,7 @@ public class GuiScreenBlueprint extends GuiScreen {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
             this.drawTexturedModalRect(guiLeft + 150, guiTop + 102, 192, 0, 16, 16);
+            GlStateManager.color(1F, 1F, 1F, 1F);
         }
         if(renderContext.hasSliceDown()) {
             if(!renderContext.doesRenderIn3D() && mouseX >= this.guiLeft + 150 && mouseX <= this.guiLeft + 150 + 16 &&
@@ -154,6 +242,7 @@ public class GuiScreenBlueprint extends GuiScreen {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
             this.drawTexturedModalRect(guiLeft + 150, guiTop + 124, 176, 0, 16, 16);
+            GlStateManager.color(1F, 1F, 1F, 1F);
         }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         int width = fontRenderer.getStringWidth(String.valueOf(renderContext.getRenderSlice()));

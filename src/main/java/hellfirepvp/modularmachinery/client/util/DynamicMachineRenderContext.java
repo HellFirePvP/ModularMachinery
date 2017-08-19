@@ -13,10 +13,15 @@ import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec2f;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Vec3i;
 
 import java.util.List;
 import java.util.Optional;
@@ -67,6 +72,26 @@ public class DynamicMachineRenderContext {
         renderSlice = 0;
         render.resetRotation();
         scale = 1F;
+    }
+
+    public float getScale() {
+        return scale;
+    }
+
+    public Vec3d getCurrentMachineTranslate() {
+        if(render3D) {
+            return new Vec3d(0, 0, 0);
+        }
+        return this.render.getCurrentTranslation();
+    }
+
+    public Vec2f getCurrentRenderOffset(float x, float z) {
+        Minecraft mc = Minecraft.getMinecraft();
+        double sc = new ScaledResolution(mc).getScaleFactor();
+        double oX = x + 16D / sc;
+        double oZ = z + 16D / sc;
+        Vec3d tr = getCurrentMachineTranslate();
+        return new Vec2f((float) (oX + tr.x), (float) (oZ + tr.z));
     }
 
     public void zoomOut() {

@@ -8,27 +8,49 @@
 
 package hellfirepvp.modularmachinery.common.integration.preview;
 
+import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.ClientMouseJEIGuiEventHandler;
 import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
+import hellfirepvp.modularmachinery.client.util.RenderingUtils;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.util.BlockArray;
 import mezz.jei.api.IGuiHelper;
 import mezz.jei.api.gui.IDrawable;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.material.Material;
+import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.util.ITooltipFlag;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Tuple;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec2f;
+import net.minecraftforge.fluids.BlockFluidBase;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
+import java.awt.*;
+import java.awt.List;
+import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
+import java.util.*;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -131,7 +153,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
         GL11.glScissor((guiLeft + 4) * res.getScaleFactor(), (guiTop + 14) * res.getScaleFactor(),
                 160 * res.getScaleFactor(), 94 * res.getScaleFactor());
-        context.renderAt(88,  64);
+        int x = 88;
+        int z = 64;
+        GlStateManager.enableBlend();
+        context.renderAt(x,  z);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
         drawButtons(minecraft, mouseX, mouseY, 0, 0);
@@ -145,6 +170,71 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             minecraft.fontRenderer.drawString(reqBlueprint, 6, 102, 0x222222);
         }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+        Rectangle scissorFrame = new Rectangle(4, 4,
+                160, 94);
+        if(!context.doesRenderIn3D() && scissorFrame.contains(mouseX, mouseY)) {
+            double scale = context.getScale();
+            Vec2f offset = context.getCurrentRenderOffset(x, z);
+            int jumpWidth = 14;
+            double scaleJump = jumpWidth * scale;
+            Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(context.getRenderSlice());
+            if(context.getRenderSlice() == 0) {
+                slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
+            }
+            for (BlockPos pos : slice.keySet()) {
+                int xMod = pos.getX() + 1;
+                int zMod = pos.getZ() + 1;
+                Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
+                if(rct.contains(mouseX, mouseY)) {
+                    IBlockState state = slice.get(pos).getSampleState();
+                    Block type = state.getBlock();
+                    int meta = type.getMetaFromState(state);
+                    ItemStack s;
+                    if(type instanceof BlockFluidBase) {
+                        s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
+                    } else if(type instanceof BlockLiquid) {
+                        Material m = state.getMaterial();
+                        if(m == Material.WATER) {
+                            s = new ItemStack(Items.WATER_BUCKET);
+                        } else if(m == Material.LAVA) {
+                            s = new ItemStack(Items.LAVA_BUCKET);
+                        } else {
+                            s = ItemStack.EMPTY;
+                        }
+                    } else {
+                        Item i = Item.getItemFromBlock(type);
+                        if(i == Items.AIR) continue;
+                        if(i.getHasSubtypes()) {
+                            s = new ItemStack(i, 1, meta);
+                        } else {
+                            s = new ItemStack(i);
+                        }
+                    }
+                    java.util.List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                    java.util.List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
+                    boolean first = true;
+                    for (String str : tooltip) {
+                        if(first) {
+                            stacks.add(new Tuple<>(s, str));
+                            first = false;
+                        } else {
+                            stacks.add(new Tuple<>(ItemStack.EMPTY, str));
+                        }
+                    }
+
+                    GlStateManager.pushMatrix();
+                    GlStateManager.translate(mouseX, mouseY, 0);
+                    GlStateManager.disableDepth();
+                    GlStateManager.disableBlend();
+                    RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
+                    GlStateManager.enableBlend();
+                    GlStateManager.enableDepth();
+                    GlStateManager.popMatrix();
+                    break;
+                }
+            }
+        }
     }
 
     private void drawButtons(Minecraft minecraft, int mouseX, int mouseY, int guiLeft, int guiTop) {
@@ -187,6 +277,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
             drawableArrowUp.draw(minecraft, guiLeft + 150, guiTop + 102);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
         if(context.hasSliceDown()) {
             if(!context.doesRenderIn3D() && mouseX >= guiLeft + 150 && mouseX <= guiLeft + 150 + 16 &&
@@ -194,6 +285,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
             drawableArrowDown.draw(minecraft, guiLeft + 150, guiTop + 124);
+            GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

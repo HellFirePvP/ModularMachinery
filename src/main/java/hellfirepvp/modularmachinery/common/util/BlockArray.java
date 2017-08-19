@@ -111,10 +111,20 @@ public class BlockArray {
         return pattern;
     }
 
+    public Map<BlockPos, BlockInformation> getPatternSlice(int slice) {
+        Map<BlockPos, BlockInformation> copy = new HashMap<>();
+        for (BlockPos pos : pattern.keySet()) {
+            if(pos.getY() == slice) {
+                copy.put(pos, pattern.get(pos));
+            }
+        }
+        return copy;
+    }
+
     public List<ItemStack> getAsDescriptiveStacks() {
         List<ItemStack> out = new LinkedList<>();
         for (BlockInformation info : pattern.values()) {
-            IBlockState state = info.getSampleState(ClientScheduler.getClientTick());
+            IBlockState state = info.getSampleState();
             Block type = state.getBlock();
             int meta = type.getMetaFromState(state);
             ItemStack s;
@@ -199,8 +209,13 @@ public class BlockArray {
             }
         }
 
-        public IBlockState getSampleState(long tick) {
-            int part = (int) ((tick % CYCLE_TICK_SPEED) % matchingStates.size());
+        public IBlockState getSampleState() {
+            int tickSpeed = CYCLE_TICK_SPEED;
+            if(samples.size() > 10) {
+                tickSpeed *= 0.6;
+            }
+            int p = (int) (ClientScheduler.getClientTick() / tickSpeed);
+            int part = p % samples.size();
             return samples.get(part);
         }
 
