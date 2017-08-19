@@ -15,9 +15,11 @@ import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTException;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fluids.Fluid;
@@ -224,6 +226,17 @@ public class MachineRecipe {
                         float chance = requirement.getAsJsonPrimitive("chance").getAsFloat();
                         if(chance >= 0 && chance <= 1) {
                             ((ComponentRequirement.RequirementItem) req).setChance(chance);
+                        }
+                    }
+                    if (requirement.has("nbt")) {
+                        if(!requirement.has("nbt") || !requirement.get("nbt").isJsonObject()) {
+                            throw new JsonParseException("The ComponentType 'nbt' expects a json compound that defines the NBT tag!");
+                        }
+                        String nbtString = requirement.getAsJsonObject("nbt").toString();
+                        try {
+                            ((ComponentRequirement.RequirementItem) req).tag = NBTJsonDeserializer.deserialize(nbtString);
+                        } catch (NBTException exc) {
+                            throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
                         }
                     }
                     return req;

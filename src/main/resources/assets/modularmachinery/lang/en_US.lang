@@ -1,6 +1,8 @@
 itemGroup.modularmachinery=Modular Machinery
 
 command.modularmachinery.syntax=/mm-syntax
+command.modularmachinery.hand=/mm-hand
+command.modularmachinery.hand.empty=Please hold an item to get the data from.
 
 gui.controller.blueprint=Blueprint Found: %s
 gui.controller.blueprint.none=None

@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
 import net.minecraft.client.Minecraft;
@@ -196,7 +197,11 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             }
             return stacksOut;
         } else {
-            return Lists.newArrayList(itemRequirement.required);
+            ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());
+            if(itemRequirement.tag != null) {
+                stack.setTagCompound(itemRequirement.tag);
+            }
+            return Lists.newArrayList(stack);
         }
     }
 

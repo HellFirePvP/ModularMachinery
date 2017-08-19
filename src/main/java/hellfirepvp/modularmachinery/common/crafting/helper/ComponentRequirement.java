@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
@@ -216,6 +217,7 @@ public abstract class ComponentRequirement {
         public final ItemStack required;
         public final String oreDictName;
         public final int oreDictItemAmount;
+        public NBTTagCompound tag = null;
 
         public float chance = 1F;
 
@@ -246,9 +248,9 @@ public abstract class ComponentRequirement {
             switch (getActionType()) {
                 case INPUT:
                     if(oreDictName != null) {
-                        return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true);
+                        return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
                     } else {
-                        return ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                        return ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
                     }
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyInventory(handler);
@@ -262,9 +264,13 @@ public abstract class ComponentRequirement {
                             }
                         }
                     }
-                    boolean inserted = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+                    ItemStack stack = ItemUtils.copyStackWithSize(required, required.getCount());
+                    if(tag != null) {
+                        stack.setTagCompound(tag);
+                    }
+                    boolean inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
                     if(inserted) {
-                        context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(this.required.copy(), component));
+                        context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(stack.copy(), component));
                     }
                     return inserted;
             }
@@ -281,17 +287,17 @@ public abstract class ComponentRequirement {
                 case INPUT:
                     if(oreDictName != null) {
                         //If it doesn't consume the item, we only need to see if it's actually there.
-                        boolean can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true);
+                        boolean can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
                         if(chance.canProduce(this.chance)) {
                             return can;
                         }
-                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false);
+                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false, this.tag);
                     } else {
-                        boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true);
+                        boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
                         if(chance.canProduce(this.chance)) {
                             return can;
                         }
-                        return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false);
+                        return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false, this.tag);
                     }
             }
             return false;
@@ -309,12 +315,16 @@ public abstract class ComponentRequirement {
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case OUTPUT:
+                    ItemStack stack = ItemUtils.copyStackWithSize(required, required.getCount());
+                    if(tag != null) {
+                        stack.setTagCompound(tag);
+                    }
                     //If we don't produce the item, we only need to see if there would be space for it at all.
-                    boolean hasSpace = ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, true);
+                    boolean hasSpace = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
                     if(chance.canProduce(this.chance)) {
                         return hasSpace;
                     }
-                    return hasSpace && ItemUtils.tryPlaceItemInInventory(this.required.copy(), handler, false);
+                    return hasSpace && ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, false);
             }
             return false;
         }

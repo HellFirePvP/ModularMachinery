@@ -9,8 +9,11 @@
 package hellfirepvp.modularmachinery;
 
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.command.CommandHand;
 import hellfirepvp.modularmachinery.common.command.CommandSyntax;
+import hellfirepvp.modularmachinery.common.network.PktCopyToClipboard;
 import net.minecraft.launchwrapper.Launch;
+import net.minecraft.nbt.JsonToNBT;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
@@ -18,6 +21,9 @@ import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
+import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
+import net.minecraftforge.fml.relauncher.Side;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -39,6 +45,8 @@ public class ModularMachinery {
     public static final String CLIENT_PROXY = "hellfirepvp.modularmachinery.client.ClientProxy";
     public static final String COMMON_PROXY = "hellfirepvp.modularmachinery.common.CommonProxy";
 
+    public static final SimpleNetworkWrapper NET_CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
+
     private static boolean devEnvChache = false;
 
     @Mod.Instance(MODID)
@@ -54,6 +62,8 @@ public class ModularMachinery {
         event.getModMetadata().version = VERSION;
         log = event.getModLog();
         devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
+
+        NET_CHANNEL.registerMessage(PktCopyToClipboard.class, PktCopyToClipboard.class, 0, Side.CLIENT);
 
         proxy.loadModData(event.getModConfigurationDirectory());
 
@@ -74,6 +84,7 @@ public class ModularMachinery {
     public void onServerStart(FMLServerStartingEvent event) {
         //Cmd registration
         event.registerServerCommand(new CommandSyntax());
+        event.registerServerCommand(new CommandHand());
     }
 
     public static boolean isRunningInDevEnvironment() {
