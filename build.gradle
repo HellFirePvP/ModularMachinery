@@ -58,7 +58,7 @@ dependencies {
     deobfCompile "cofh:RedstoneFlux:${mc_version}-${rf_version}:universal"
 
     def ct_mc_version = "MC1120"
-    def ct_version = "4.0.3.247"
+    def ct_version = "4.0.4.250"
 
     deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:${mc_version}-${ct_version}"
 
