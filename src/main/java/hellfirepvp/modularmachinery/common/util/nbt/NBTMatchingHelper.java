@@ -94,9 +94,13 @@ public class NBTMatchingHelper {
     }
 
     private static boolean matchList(NBTTagList baseOriginal, NBTTagList baseStack) {
-        if(baseOriginal.tagCount() != baseStack.tagCount()) {
+        if(baseOriginal.tagCount() == 0) {
+            return true;
+        }
+        if(baseStack.tagCount() == 0) {
             return false;
         }
+
         if(baseOriginal.getTagType() != baseStack.getTagType()) {
             return false;
         }
