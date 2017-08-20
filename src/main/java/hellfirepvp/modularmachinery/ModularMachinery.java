@@ -36,7 +36,8 @@ import java.io.File;
  * Created by HellFirePvP
  * Date: 26.06.2017 / 20:26
  */
-@Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION, dependencies = "required-after:forge@[14.21.0.2371,)")
+@Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION,
+dependencies = "required-after:forge@[14.21.0.2371,);after:crafttweaker@[4.0.4,)")
 public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
