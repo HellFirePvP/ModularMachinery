@@ -89,8 +89,8 @@ public class ModIntegrationJEI implements IModPlugin {
         registry.addRecipes(previews, CATEGORY_PREVIEW);
 
         for (DynamicMachine machine : MachineRegistry.getRegistry()) {
-            List<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(machine);
-            List<DynamicRecipeWrapper> recipeWrappers = new ArrayList<>(recipes.size());
+            Iterable<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(machine);
+            List<DynamicRecipeWrapper> recipeWrappers = new ArrayList<>();
             for (MachineRecipe recipe : recipes) {
                 recipeWrappers.add(new DynamicRecipeWrapper(recipe));
             }

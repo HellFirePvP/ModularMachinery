@@ -84,7 +84,7 @@ public class DynamicMachine {
     }
 
     @Nonnull
-    public List<MachineRecipe> getAvailableRecipes() {
+    public Iterable<MachineRecipe> getAvailableRecipes() {
         return RecipeRegistry.getRegistry().getRecipesFor(this);
     }
 

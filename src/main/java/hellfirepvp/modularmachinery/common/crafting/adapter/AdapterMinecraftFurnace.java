@@ -45,7 +45,7 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
             MachineRecipe recipe = createRecipeShell(
                     new ResourceLocation("minecraft", "smelting_recipe_" + incId),
                     owningMachineName,
-                    120);
+                    120, 0);
             recipe.addRequirement(new ComponentRequirement.RequirementItem(MachineComponent.IOType.INPUT,
                     ItemUtils.copyStackWithSize(smelting.getKey(), smelting.getKey().getCount())));
             recipe.addRequirement(new ComponentRequirement.RequirementItem(MachineComponent.IOType.OUTPUT,

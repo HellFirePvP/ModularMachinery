@@ -32,6 +32,7 @@ import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -40,20 +41,29 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 27.06.2017 / 00:24
  */
-public class MachineRecipe {
+public class MachineRecipe implements Comparable<MachineRecipe> {
 
+    private static int counter = 0;
     private static boolean frozen = false;
+    private static final int PRIORITY_WEIGHT_ENERGY = 50_000_000;
+    private static final int PRIORITY_WEIGHT_FLUID  = 1_000_000;
+    private static final int PRIORITY_WEIGHT_ITEM   = 5_000_000;
 
+    private final int sortId;
     private final String recipeFilePath;
     private final ResourceLocation owningMachine, registryName;
     private final int tickTime;
     private final List<ComponentRequirement> recipeRequirements = Lists.newArrayList();
+    private final int configuredPriority;
 
-    public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime) {
+    public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority) {
+        this.sortId = counter;
+        counter++;
         this.recipeFilePath = path;
         this.registryName = registryName;
         this.owningMachine = owningMachine;
         this.tickTime = tickTime;
+        this.configuredPriority = configuredPriority;
     }
 
     public String getRecipeFilePath() {
@@ -83,6 +93,10 @@ public class MachineRecipe {
         return tickTime;
     }
 
+    public int getConfiguredPriority() {
+        return configuredPriority;
+    }
+
     @Nullable
     public DynamicMachine getOwningMachine() {
         return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
@@ -98,6 +112,30 @@ public class MachineRecipe {
 
     static void unfreeze() {
         frozen = false;
+    }
+
+    @Override
+    public int compareTo(MachineRecipe o) {
+        return Integer.compare(buildWeight(), o.buildWeight());
+    }
+
+    private int buildWeight() {
+        int weightOut = sortId;
+        for (ComponentRequirement req : this.recipeRequirements) {
+            if(req.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+            switch (req.getRequiredComponentType()) {
+                case ITEM:
+                    weightOut -= PRIORITY_WEIGHT_ITEM;
+                    break;
+                case FLUID:
+                    weightOut -= PRIORITY_WEIGHT_FLUID;
+                    break;
+                case ENERGY:
+                    weightOut -= PRIORITY_WEIGHT_ENERGY;
+                    break;
+            }
+        }
+        return weightOut;
     }
 
     public static class Deserializer implements JsonDeserializer<MachineRecipe> {
@@ -126,12 +164,20 @@ public class MachineRecipe {
             if(!elementTime.isJsonPrimitive() || !elementTime.getAsJsonPrimitive().isNumber()) {
                 throw new JsonParseException("'recipeTime' has to be a number!");
             }
+            int priority = 0;
+            if(root.has("priority")) {
+                JsonElement elementPriority = root.get("priority");
+                if(!elementPriority.isJsonPrimitive() || !elementPriority.getAsJsonPrimitive().isNumber()) {
+                    throw new JsonParseException("'priority' has to be a number! (if specified)");
+                }
+                priority = elementPriority.getAsInt();
+            }
             String name = elementMachine.getAsJsonPrimitive().getAsString();
             String registryName = elementRegistryName.getAsJsonPrimitive().getAsString();
             int recipeTime = elementTime.getAsJsonPrimitive().getAsInt();
             MachineRecipe recipe = new MachineRecipe(RecipeLoader.currentlyReadingPath,
                     new ResourceLocation(ModularMachinery.MODID, registryName),
-                    new ResourceLocation(ModularMachinery.MODID, name), recipeTime);
+                    new ResourceLocation(ModularMachinery.MODID, name), recipeTime, priority);
 
             if(!root.has("requirements")) {
                 throw new JsonParseException("No 'requirements'-entry specified!");

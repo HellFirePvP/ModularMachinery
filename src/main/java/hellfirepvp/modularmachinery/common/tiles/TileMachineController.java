@@ -132,7 +132,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     }
 
     private void searchMatchingRecipe() {
-        List<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
+        Iterable<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
         for (MachineRecipe recipe : availableRecipes) {
             RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents);
             if(context.canStartCrafting()) {

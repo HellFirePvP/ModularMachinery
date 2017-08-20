@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.crafting;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
@@ -23,9 +24,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.crypto.Mac;
 import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -37,7 +36,7 @@ import java.util.Map;
 public class RecipeRegistry {
 
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
-    private static Map<ResourceLocation, List<MachineRecipe>> REGISTRY_RECIPE_BY_MACHINE;
+    private static Map<ResourceLocation, TreeMap<Integer, TreeSet<MachineRecipe>>> REGISTRY_RECIPE_BY_MACHINE;
     private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY;
 
     private RecipeRegistry() {}
@@ -47,13 +46,12 @@ public class RecipeRegistry {
     }
 
     @Nonnull
-    public List<MachineRecipe> getRecipesFor(DynamicMachine machine) {
-        List<MachineRecipe> recipes = REGISTRY_RECIPE_BY_MACHINE.get(machine.getRegistryName());
+    public Iterable<MachineRecipe> getRecipesFor(DynamicMachine machine) {
+        TreeMap<Integer, TreeSet<MachineRecipe>> recipes = REGISTRY_RECIPE_BY_MACHINE.get(machine.getRegistryName());
         if(recipes == null) {
-            recipes = Lists.newArrayList();
-            REGISTRY_RECIPE_BY_MACHINE.put(machine.getRegistryName(), recipes);
+            return Lists.newArrayList();
         }
-        return recipes;
+        return Iterables.concat(recipes.descendingMap().values());
     }
 
     @Nullable
@@ -146,8 +144,9 @@ public class RecipeRegistry {
             List<MachineRecipe> recipes = map.get(machine);
             for (MachineRecipe recipe : recipes) {
                 RECIPE_REGISTRY.put(recipe.getRegistryName(), recipe);
-                List<MachineRecipe> recipeList = REGISTRY_RECIPE_BY_MACHINE.computeIfAbsent(machine.getRegistryName(), k -> Lists.newArrayList());
-                recipeList.add(recipe);
+                Map<Integer, TreeSet<MachineRecipe>> recipeList = REGISTRY_RECIPE_BY_MACHINE.computeIfAbsent(machine.getRegistryName(), k -> new TreeMap<>());
+                TreeSet<MachineRecipe> recipeSet = recipeList.computeIfAbsent(recipe.getConfiguredPriority(), inte -> new TreeSet<>());
+                recipeSet.add(recipe);
             }
         }
         MachineRecipe.freezeChanges();
@@ -160,11 +159,14 @@ public class RecipeRegistry {
         }
 
         for (RecipeAdapterAccessor accessor : RecipeLoader.recipeAdapters) {
-            List<MachineRecipe> machineRecipeList = REGISTRY_RECIPE_BY_MACHINE.get(accessor.getOwningMachine());
+            Map<Integer, TreeSet<MachineRecipe>> machineRecipeList = REGISTRY_RECIPE_BY_MACHINE.get(accessor.getOwningMachine());
             for (MachineRecipe cached : accessor.getCachedRecipes()) {
                 RECIPE_REGISTRY.remove(cached.getRegistryName());
                 if(machineRecipeList != null) {
-                    machineRecipeList.remove(cached);
+                    TreeSet<MachineRecipe> recipeTreeSet = machineRecipeList.get(cached.getConfiguredPriority());
+                    if(recipeTreeSet != null) {
+                        recipeTreeSet.remove(cached);
+                    }
                 }
             }
         }
@@ -172,8 +174,9 @@ public class RecipeRegistry {
         for (RecipeAdapterAccessor accessor : RecipeLoader.recipeAdapters) {
             for (MachineRecipe recipe : accessor.loadRecipesForAdapter()) {
                 RECIPE_REGISTRY.put(recipe.getRegistryName(), recipe);
-                List<MachineRecipe> recipeList = REGISTRY_RECIPE_BY_MACHINE.computeIfAbsent(accessor.getOwningMachine(), k -> Lists.newArrayList());
-                recipeList.add(recipe);
+                Map<Integer, TreeSet<MachineRecipe>> recipeList = REGISTRY_RECIPE_BY_MACHINE.computeIfAbsent(accessor.getOwningMachine(), k -> new TreeMap<>());
+                TreeSet<MachineRecipe> recipeSet = recipeList.computeIfAbsent(recipe.getConfiguredPriority(), inte -> new TreeSet<>());
+                recipeSet.add(recipe);
             }
         }
 

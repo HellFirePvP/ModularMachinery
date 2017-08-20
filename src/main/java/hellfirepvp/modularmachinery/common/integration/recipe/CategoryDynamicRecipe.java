@@ -63,7 +63,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
     }
 
     private Point buildRecipeComponents() {
-        List<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(this.machine);
+        Iterable<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(this.machine);
         int offsetX = 8;
         int offsetY = 0;
         int highestY = 0;
