@@ -31,7 +31,7 @@ import java.util.*;
 public class RecipeLoader {
 
     private static final Gson GSON = new GsonBuilder()
-            .registerTypeHierarchyAdapter(MachineRecipe.class, new MachineRecipe.Deserializer())
+            .registerTypeHierarchyAdapter(MachineRecipe.MachineRecipeContainer.class, new MachineRecipe.Deserializer())
             .registerTypeHierarchyAdapter(RecipeAdapterAccessor.class, new RecipeAdapterAccessor.Deserializer())
             .create();
 
@@ -70,7 +70,8 @@ public class RecipeLoader {
         for (File f : candidates.get(FileType.RECIPE)) {
             currentlyReadingPath = f.getPath();
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
-                loadedRecipes.add(JsonUtils.fromJson(GSON, isr, MachineRecipe.class));
+                MachineRecipe.MachineRecipeContainer container = JsonUtils.fromJson(GSON, isr, MachineRecipe.MachineRecipeContainer.class);
+                loadedRecipes.addAll(container.getRecipes());
             } catch (Exception exc) {
                 failedAttempts.put(f.getPath(), exc);
             } finally {

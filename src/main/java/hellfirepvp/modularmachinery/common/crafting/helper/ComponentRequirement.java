@@ -55,6 +55,8 @@ public abstract class ComponentRequirement {
 
     public abstract boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
+    public abstract ComponentRequirement deepCopy();
+
     public static class RequirementEnergy extends ComponentRequirement {
 
         private int requirementPerTick;
@@ -64,6 +66,13 @@ public abstract class ComponentRequirement {
             super(MachineComponent.ComponentType.ENERGY, ioType);
             this.requirementPerTick = requirementPerTick;
             this.activeIO = this.requirementPerTick;
+        }
+
+        @Override
+        public ComponentRequirement deepCopy() {
+            RequirementEnergy energy = new RequirementEnergy(this.getActionType(), this.requirementPerTick);
+            energy.activeIO = this.activeIO;
+            return energy;
         }
 
         public int getRequiredEnergyPerTick() {
@@ -137,6 +146,13 @@ public abstract class ComponentRequirement {
         public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
             super(MachineComponent.ComponentType.FLUID, ioType);
             this.required = fluid;
+        }
+
+        @Override
+        public ComponentRequirement deepCopy() {
+            RequirementFluid fluid = new RequirementFluid(this.getActionType(), this.required);
+            fluid.chance = this.chance;
+            return fluid;
         }
 
         public void setChance(float chance) {
@@ -233,6 +249,19 @@ public abstract class ComponentRequirement {
             this.oreDictName = oreDictName;
             this.oreDictItemAmount = oreDictAmount;
             this.required = ItemStack.EMPTY;
+        }
+
+        @Override
+        public ComponentRequirement deepCopy() {
+            RequirementItem item;
+            if(oreDictName != null) {
+                item = new RequirementItem(this.getActionType(), this.oreDictName, this.oreDictItemAmount);
+            } else {
+                item = new RequirementItem(this.getActionType(), this.required.copy());
+            }
+            item.chance = this.chance;
+            item.tag = this.tag;
+            return item;
         }
 
         public void setChance(float chance) {

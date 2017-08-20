@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.crafting;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
@@ -30,6 +31,7 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -138,10 +140,36 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         return weightOut;
     }
 
-    public static class Deserializer implements JsonDeserializer<MachineRecipe> {
+    public static class MachineRecipeContainer {
+
+        private final MachineRecipe parent;
+        private List<ResourceLocation> recipeOwnerList = Lists.newLinkedList();
+
+        private MachineRecipeContainer(MachineRecipe copyParent) {
+            this.parent = copyParent;
+        }
+
+        public List<MachineRecipe> getRecipes() {
+            List<MachineRecipe> out = Lists.newArrayListWithCapacity(recipeOwnerList.size());
+            for (int i = 0; i < recipeOwnerList.size(); i++) {
+                ResourceLocation location = recipeOwnerList.get(i);
+                MachineRecipe rec = new MachineRecipe(parent.recipeFilePath + "_sub_" + i,
+                        new ResourceLocation(parent.registryName.getResourceDomain(), parent.registryName.getResourcePath() + "_sub_" + i),
+                        location, parent.tickTime, parent.configuredPriority);
+                for (ComponentRequirement req : parent.recipeRequirements) {
+                    rec.recipeRequirements.add(req.deepCopy());
+                }
+                out.add(rec);
+            }
+            return out;
+        }
+
+    }
+
+    public static class Deserializer implements JsonDeserializer<MachineRecipeContainer> {
 
         @Override
-        public MachineRecipe deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        public MachineRecipeContainer deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             JsonObject root = json.getAsJsonObject();
             if(!root.has("machine")) {
                 throw new JsonParseException("No 'machine'-entry specified!");
@@ -153,8 +181,27 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 throw new JsonParseException("No 'recipeTime'-entry specified!");
             }
             JsonElement elementMachine = root.get("machine");
-            if(!elementMachine.isJsonPrimitive() || !elementMachine.getAsJsonPrimitive().isString()) {
-                throw new JsonParseException("'machine' has to have as value only a String that defines its owning machine!");
+            List<ResourceLocation> qualifiedMachineNames = Lists.newLinkedList();
+            if(elementMachine.isJsonArray()) {
+                if(elementMachine.getAsJsonArray().size() <= 0) {
+                    throw new JsonParseException("'machine' is an array, but it's empty! Provide at least 1 owning-machine name!");
+                }
+                JsonArray jar = elementMachine.getAsJsonArray();
+                for (JsonElement je : jar) {
+                    if(je.isJsonPrimitive() && je.getAsJsonPrimitive().isString()) {
+                        qualifiedMachineNames.add(new ResourceLocation(ModularMachinery.MODID, je.getAsJsonPrimitive().getAsString()));
+                        continue;
+                    }
+                    throw new JsonParseException("Found an element in the array specified in 'machine' that is not a string! " + je.toString());
+                }
+                if(qualifiedMachineNames.isEmpty()) {
+                    //We capture this before already, but just to be safe...
+                    throw new JsonParseException("'machine' is an array, but it's empty! Provide at least 1 owning-machine name!");
+                }
+            } else if(elementMachine.isJsonPrimitive() && elementMachine.getAsJsonPrimitive().isString()) {
+                qualifiedMachineNames.add(new ResourceLocation(ModularMachinery.MODID, elementMachine.getAsJsonPrimitive().getAsString()));
+            } else {
+                throw new JsonParseException("'machine' has to be either an array of strings or just a string! - Found " + elementMachine.toString() + " instead!");
             }
             JsonElement elementRegistryName = root.get("registryName");
             if(!elementRegistryName.isJsonPrimitive() || !elementRegistryName.getAsJsonPrimitive().isString()) {
@@ -172,12 +219,21 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 }
                 priority = elementPriority.getAsInt();
             }
-            String name = elementMachine.getAsJsonPrimitive().getAsString();
+
+            ResourceLocation parentName = Iterables.getFirst(qualifiedMachineNames, null);
+            if(parentName == null) {
+                //This actually never happens. Never. But just to be sure and prevent weird issues down the line.
+                throw new IllegalStateException("Couldn't find machine name from qualified-names list: " + Arrays.toString(qualifiedMachineNames.toArray()));
+            }
+
             String registryName = elementRegistryName.getAsJsonPrimitive().getAsString();
             int recipeTime = elementTime.getAsJsonPrimitive().getAsInt();
             MachineRecipe recipe = new MachineRecipe(RecipeLoader.currentlyReadingPath,
                     new ResourceLocation(ModularMachinery.MODID, registryName),
-                    new ResourceLocation(ModularMachinery.MODID, name), recipeTime, priority);
+                    parentName, recipeTime, priority);
+
+            MachineRecipeContainer outContainer = new MachineRecipeContainer(recipe);
+            outContainer.recipeOwnerList.addAll(qualifiedMachineNames);
 
             if(!root.has("requirements")) {
                 throw new JsonParseException("No 'requirements'-entry specified!");
@@ -197,7 +253,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             if(recipe.recipeRequirements.isEmpty()) {
                 throw new JsonParseException("A recipe needs to have at least 1 requirement!");
             }
-            return recipe;
+            return outContainer;
         }
 
         @Nonnull
