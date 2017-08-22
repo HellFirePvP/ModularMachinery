@@ -198,8 +198,11 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             return stacksOut;
         } else {
             ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());
-            if(itemRequirement.tag != null) {
-                stack.setTagCompound(itemRequirement.tag);
+            if(itemRequirement.previewDisplayTag != null) {
+                stack.setTagCompound(itemRequirement.previewDisplayTag);
+            } else if(itemRequirement.tag != null) {
+                itemRequirement.previewDisplayTag = itemRequirement.tag.copy();
+                stack.setTagCompound(itemRequirement.previewDisplayTag.copy());
             }
             return Lists.newArrayList(stack);
         }

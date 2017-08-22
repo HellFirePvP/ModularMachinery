@@ -340,6 +340,20 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                         } catch (NBTException exc) {
                             throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
                         }
+
+                        if (requirement.has("nbt-display")) {
+                            if(!requirement.has("nbt-display") || !requirement.get("nbt-display").isJsonObject()) {
+                                throw new JsonParseException("The ComponentType 'nbt-display' expects a json compound that defines the NBT tag meant to be used for displaying!");
+                            }
+                            String nbtDisplayString = requirement.getAsJsonObject("nbt-display").toString();
+                            try {
+                                ((ComponentRequirement.RequirementItem) req).previewDisplayTag = NBTJsonDeserializer.deserialize(nbtDisplayString);
+                            } catch (NBTException exc) {
+                                throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
+                            }
+                        } else {
+                            ((ComponentRequirement.RequirementItem) req).previewDisplayTag = ((ComponentRequirement.RequirementItem) req).tag.copy();
+                        }
                     }
                     return req;
                 case FLUID:

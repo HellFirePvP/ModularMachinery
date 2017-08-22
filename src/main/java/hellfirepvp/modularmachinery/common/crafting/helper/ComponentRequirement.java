@@ -271,6 +271,7 @@ public abstract class ComponentRequirement {
         public final String oreDictName;
         public final int oreDictItemAmount;
         public NBTTagCompound tag = null;
+        public NBTTagCompound previewDisplayTag = null;
 
         public float chance = 1F;
 
@@ -297,7 +298,8 @@ public abstract class ComponentRequirement {
                 item = new RequirementItem(this.getActionType(), this.required.copy());
             }
             item.chance = this.chance;
-            item.tag = this.tag;
+            item.tag = this.tag.copy();
+            item.previewDisplayTag = this.previewDisplayTag.copy();
             return item;
         }
 
@@ -338,7 +340,7 @@ public abstract class ComponentRequirement {
                     }
                     ItemStack stack = ItemUtils.copyStackWithSize(required, required.getCount());
                     if(tag != null) {
-                        stack.setTagCompound(tag);
+                        stack.setTagCompound(tag.copy());
                     }
                     boolean inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
                     if(inserted) {
