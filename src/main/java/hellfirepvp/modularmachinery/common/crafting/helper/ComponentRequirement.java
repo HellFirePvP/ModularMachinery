@@ -11,14 +11,11 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
-import net.minecraft.inventory.ItemStackHelper;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.items.ItemHandlerHelper;
 
 import java.util.List;
 
@@ -57,6 +54,10 @@ public abstract class ComponentRequirement {
 
     public abstract ComponentRequirement deepCopy();
 
+    public abstract void startRequirementCheck(ResultChance contextChance);
+
+    public abstract void endRequirementCheck();
+
     public static class RequirementEnergy extends ComponentRequirement {
 
         private int requirementPerTick;
@@ -74,6 +75,12 @@ public abstract class ComponentRequirement {
             energy.activeIO = this.activeIO;
             return energy;
         }
+
+        @Override
+        public void startRequirementCheck(ResultChance contextChance) {}
+
+        @Override
+        public void endRequirementCheck() {}
 
         public int getRequiredEnergyPerTick() {
             return requirementPerTick;
@@ -143,9 +150,13 @@ public abstract class ComponentRequirement {
         public final FluidStack required;
         public float chance = 1F;
 
+        private FluidStack requirementCheck;
+        private boolean doesntConsumeInput;
+
         public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
             super(MachineComponent.ComponentType.FLUID, ioType);
             this.required = fluid;
+            this.requirementCheck = this.required.copy();
         }
 
         @Override
@@ -160,6 +171,18 @@ public abstract class ComponentRequirement {
         }
 
         @Override
+        public void startRequirementCheck(ResultChance contextChance) {
+            this.requirementCheck = this.required.copy();
+            this.doesntConsumeInput = contextChance.canProduce(this.chance);
+        }
+
+        @Override
+        public void endRequirementCheck() {
+            this.requirementCheck = this.required.copy();
+            this.doesntConsumeInput = true;
+        }
+
+        @Override
         public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
@@ -168,7 +191,12 @@ public abstract class ComponentRequirement {
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    return handler.drainInternal(this.required.copy(), false) != null;
+                    FluidStack drained = handler.drainInternal(this.requirementCheck.copy(), false);
+                    if(drained == null) {
+                        return false;
+                    }
+                    this.requirementCheck.amount = Math.max(this.requirementCheck.amount - drained.amount, 0);
+                    return this.requirementCheck.amount <= 0;
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyTank(handler);
 
@@ -200,11 +228,20 @@ public abstract class ComponentRequirement {
             switch (getActionType()) {
                 case INPUT:
                     //If it doesn't consume the item, we only need to see if it's actually there.
-                    FluidStack drainedSimulated = handler.drainInternal(this.required.copy(), false);
-                    if(chance.canProduce(this.chance)) {
-                        return drainedSimulated != null;
+                    FluidStack drainedSimulated = handler.drainInternal(this.requirementCheck.copy(), false);
+                    if(drainedSimulated == null) {
+                        return false;
                     }
-                    return drainedSimulated != null && handler.drainInternal(this.required.copy(), true) != null;
+                    if(this.doesntConsumeInput) {
+                        this.requirementCheck.amount = Math.max(this.requirementCheck.amount - drainedSimulated.amount, 0);
+                        return this.requirementCheck.amount <= 0;
+                    }
+                    FluidStack actualDrained = handler.drainInternal(this.requirementCheck.copy(), true);
+                    if(actualDrained == null) {
+                        return false;
+                    }
+                    this.requirementCheck.amount = Math.max(this.requirementCheck.amount - actualDrained.amount, 0);
+                    return this.requirementCheck.amount <= 0;
             }
             return false;
         }
@@ -263,6 +300,12 @@ public abstract class ComponentRequirement {
             item.tag = this.tag;
             return item;
         }
+
+        @Override
+        public void startRequirementCheck(ResultChance contextChance) {}
+
+        @Override
+        public void endRequirementCheck() {}
 
         public void setChance(float chance) {
             this.chance = chance;

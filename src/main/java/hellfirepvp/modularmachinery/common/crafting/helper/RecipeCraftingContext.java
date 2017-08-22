@@ -113,11 +113,14 @@ public class RecipeCraftingContext {
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
             if(requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
 
+            requirement.startRequirementCheck(chance);
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.startCrafting(component, this, chance)) {
+                    requirement.endRequirementCheck();
                     break;
                 }
             }
+            requirement.endRequirementCheck();
         }
     }
 
@@ -130,11 +133,14 @@ public class RecipeCraftingContext {
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
             if(requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
 
+            requirement.startRequirementCheck(chance);
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.finishCrafting(component, this, chance)) {
+                    requirement.endRequirementCheck();
                     break;
                 }
             }
+            requirement.endRequirementCheck();
         }
     }
 
@@ -154,11 +160,16 @@ public class RecipeCraftingContext {
                 return false;
             }
 
+            requirement.startRequirementCheck(ResultChance.GUARANTEED);
+
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.canStartCrafting(component, this, this.currentRestrictions)) {
+                    requirement.endRequirementCheck();
                     continue lblRequirements;
                 }
             }
+
+            requirement.endRequirementCheck();
             currentRestrictions.clear();
             return false;
         }

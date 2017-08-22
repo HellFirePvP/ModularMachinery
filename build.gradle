@@ -9,7 +9,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.3"
+version = "1.4"
 group = "hellfirepvp.modularmachinery"
 archivesBaseName = "modularmachinery"
 
@@ -53,7 +53,7 @@ dependencies {
     deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}:api"
     runtime "mezz.jei:jei_${mc_version}:${jei_version}"
 
-    def rf_version = "2.0.0.1"
+    def rf_version = "2.0.1.2"
 
     deobfCompile "cofh:RedstoneFlux:${mc_version}-${rf_version}:universal"
 

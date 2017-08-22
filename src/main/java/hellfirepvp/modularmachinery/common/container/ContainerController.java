@@ -27,10 +27,12 @@ import javax.annotation.Nonnull;
  */
 public class ContainerController extends ContainerBase<TileMachineController> {
 
+    private final Slot slotBlueprint;
+
     public ContainerController(TileMachineController owner, EntityPlayer opening) {
         super(owner, opening);
 
-        addSlotToContainer(new SlotBlueprint(owner.getInventory().asGUIAccess(), TileMachineController.BLUEPRINT_SLOT, 151, 8));
+        this.slotBlueprint = addSlotToContainer(new SlotBlueprint(owner.getInventory().asGUIAccess(), TileMachineController.BLUEPRINT_SLOT, 151, 8));
     }
 
     @Override
@@ -41,6 +43,17 @@ public class ContainerController extends ContainerBase<TileMachineController> {
         if (slot != null && slot.getHasStack()) {
             ItemStack itemstack1 = slot.getStack();
             itemstack = itemstack1.copy();
+
+            if(index >= 0 && index < 36) {
+                if(!itemstack1.isEmpty() && itemstack1.getItem() instanceof ItemBlueprint) {
+                    Slot sb = this.inventorySlots.get(this.slotBlueprint.slotNumber);
+                    if(!sb.getHasStack()) {
+                        if(!this.mergeItemStack(itemstack1, sb.slotNumber, sb.slotNumber + 1, false)) {
+                            return ItemStack.EMPTY;
+                        }
+                    }
+                }
+            }
 
             if (index >= 0 && index < 27) {
                 if (!this.mergeItemStack(itemstack1, 27, 36, false)) {
