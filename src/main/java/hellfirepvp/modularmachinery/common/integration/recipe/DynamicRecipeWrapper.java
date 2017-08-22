@@ -110,39 +110,47 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int offsetY = recipeCategory.realHeight;
 
-        int totalEnergy = 0;
+        int totalEnergyIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                         .filter(r -> r instanceof ComponentRequirement.RequirementEnergy)
                         .filter(r -> r.getActionType() == MachineComponent.IOType.INPUT).collect(Collectors.toList())) {
-            totalEnergy += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
+            totalEnergyIn += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
         }
-        if(totalEnergy > 0) {
+        if(totalEnergyIn > 0) {
+            offsetY -= 36;
+        }
+
+        int totalEnergyOut = 0;
+        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
+                .filter(r -> r instanceof ComponentRequirement.RequirementEnergy)
+                .filter(r -> r.getActionType() == MachineComponent.IOType.OUTPUT).collect(Collectors.toList())) {
+            totalEnergyOut += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
+        }
+        if(totalEnergyOut > 0) {
+            offsetY -= 36;
+        }
+
+        if(totalEnergyIn > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.inputComponents.stream()
                     .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
                     RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getSize().x, r.getSize().y));
 
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", totalEnergy), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", totalEnergy * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", totalEnergyIn), 8,  offsetY + 20, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", totalEnergyIn * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
             GlStateManager.color(1F, 1F, 1F, 1F);
             offsetY += 36;
         }
 
-        totalEnergy = 0;
-        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                .filter(r -> r instanceof ComponentRequirement.RequirementEnergy)
-                .filter(r -> r.getActionType() == MachineComponent.IOType.OUTPUT).collect(Collectors.toList())) {
-            totalEnergy += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
-        }
-        if(totalEnergy > 0) {
+        if(totalEnergyOut > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.outputComponents.stream()
                     .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
                     RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getSize().x, r.getSize().y));
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergy), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergy * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergyOut), 8,  offsetY + 20, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergyOut * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
             GlStateManager.color(1F, 1F, 1F, 1F);
         }
     }

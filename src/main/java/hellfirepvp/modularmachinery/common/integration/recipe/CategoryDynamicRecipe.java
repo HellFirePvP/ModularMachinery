@@ -59,7 +59,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
         Point maxPoint = buildRecipeComponents();
         this.realHeight = maxPoint.y;
-        this.sizeEmptyDrawable = ModIntegrationJEI.jeiHelpers.getGuiHelper().createBlankDrawable(maxPoint.x, 180);
+        this.sizeEmptyDrawable = ModIntegrationJEI.jeiHelpers.getGuiHelper().createBlankDrawable(maxPoint.x, this.realHeight);
     }
 
     private Point buildRecipeComponents() {
@@ -219,6 +219,14 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         offsetProcessArrow = new Point(tempArrowOffsetX, halfY / 2);
         rectangleProcessArrow = new Rectangle(offsetProcessArrow.x, offsetProcessArrow.y,
                 RecipeLayoutHelper.PART_PROCESS_ARROW.xSize, RecipeLayoutHelper.PART_PROCESS_ARROW.zSize);
+
+        //Texts for input consumed/produced
+        if(energyIn > 0) {
+            highestY += 36;
+        }
+        if(energyOut > 0) {
+            highestY += 36;
+        }
 
         return new Point(offsetX, highestY);
     }
