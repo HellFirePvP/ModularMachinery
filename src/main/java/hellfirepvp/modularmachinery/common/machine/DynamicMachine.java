@@ -16,9 +16,12 @@ import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTException;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
@@ -149,6 +152,20 @@ public class DynamicMachine {
                     throw new JsonParseException("A part of 'parts' is not a compound object!");
                 }
                 JsonObject part = element.getAsJsonObject();
+                NBTTagCompound match = null;
+                if(part.has("nbt")) {
+                    JsonElement je = part.get("nbt");
+                    if(!je.isJsonObject()) {
+                        throw new JsonParseException("The ComponentType 'nbt' expects a json compound that defines the NBT tag to match the tileentity's nbt against!");
+                    }
+                    String jsonStr = je.toString();
+                    try {
+                        match = NBTJsonDeserializer.deserialize(jsonStr);
+                    } catch (NBTException exc) {
+                        throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
+                    }
+                }
+
                 if(!part.has("elements")) {
                     throw new JsonParseException("Part contained no element!");
                 }
@@ -158,6 +175,11 @@ public class DynamicMachine {
                     BlockArray.BlockInformation descr = MachineLoader.variableContext.get(strDesc);
                     if(descr == null) {
                         descr = new BlockArray.BlockInformation(Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(partElement.getAsJsonPrimitive())));
+                    } else {
+                        descr = descr.copy(); //Avoid NBT-definitions bleed into variable context
+                    }
+                    if(match != null) {
+                        descr.setMatchingTag(match);
                     }
                     addDescriptorWithPattern(machine.getPattern(), descr, part);
                 } else if(partElement.isJsonArray()) {
@@ -173,7 +195,11 @@ public class DynamicMachine {
                     if(descriptors.isEmpty()) {
                         throw new JsonParseException("'elements' array didn't contain any blockstate descriptors!");
                     }
-                    addDescriptorWithPattern(machine.getPattern(), new BlockArray.BlockInformation(descriptors), part);
+                    BlockArray.BlockInformation bi = new BlockArray.BlockInformation(descriptors);
+                    if(match != null) {
+                        bi.setMatchingTag(match);
+                    }
+                    addDescriptorWithPattern(machine.getPattern(), bi, part);
                 } else {
                     throw new JsonParseException("'elements' has to either be a blockstate description, variable or array of blockstate descriptions!");
                 }

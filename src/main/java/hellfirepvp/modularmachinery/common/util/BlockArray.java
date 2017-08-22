@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
+import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
@@ -21,6 +22,8 @@ import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
@@ -34,6 +37,7 @@ import org.lwjgl.util.vector.Matrix2f;
 import org.lwjgl.util.vector.Vector2f;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -170,6 +174,18 @@ public class BlockArray {
             if(!world.isBlockLoaded(at)) { //We can't say if it's actually properly formed, but it didn't get changed from the last check so....
                 return oldState;
             }
+
+            if(info.matchingTag != null) {
+                TileEntity te = world.getTileEntity(at);
+                if(te != null && info.matchingTag.getSize() > 0) {
+                    NBTTagCompound cmp = new NBTTagCompound();
+                    te.writeToNBT(cmp);
+                    if(!NBTMatchingHelper.matchNBTCompound(info.matchingTag, cmp)) {
+                        return false; //No match at this position.
+                    }
+                }
+            }
+
             IBlockState state = world.getBlockState(at);
             Block atBlock = state.getBlock();
             int atMeta = atBlock.getMetaFromState(state);
@@ -211,12 +227,17 @@ public class BlockArray {
         public static final int CYCLE_TICK_SPEED = 30;
         public final List<IBlockStateDescriptor> matchingStates;
         private final List<IBlockState> samples = Lists.newLinkedList();
+        private NBTTagCompound matchingTag = null;
 
         public BlockInformation(List<IBlockStateDescriptor> matching) {
             this.matchingStates = ImmutableList.copyOf(matching);
             for (IBlockStateDescriptor desc : matchingStates) {
                 samples.addAll(desc.applicable);
             }
+        }
+
+        public void setMatchingTag(@Nullable NBTTagCompound matchingTag) {
+            this.matchingTag = matchingTag;
         }
 
         public IBlockState getSampleState() {
@@ -263,6 +284,16 @@ public class BlockArray {
                 newDescriptors.add(copy);
             }
             return new BlockInformation(newDescriptors);
+        }
+
+        public BlockInformation copy() {
+            List<IBlockStateDescriptor> descr = new ArrayList<>(this.matchingStates.size());
+            for (IBlockStateDescriptor desc : this.matchingStates) {
+                IBlockStateDescriptor copy = new IBlockStateDescriptor();
+                copy.applicable.addAll(desc.applicable);
+                descr.add(copy);
+            }
+            return new BlockInformation(descr);
         }
 
     }
