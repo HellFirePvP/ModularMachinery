@@ -201,7 +201,7 @@ public class NBTJsonDeserializer {
     }
 
     protected NBTBase readList() throws NBTException {
-        return this.canRead(2) && this.peek(1) != '"' && this.peek(2) == ';' ? this.readArrayTag() : this.readListTag();
+        return this.readListTag();
     }
 
     private NBTBase readListTag() throws NBTException {
@@ -237,55 +237,6 @@ public class NBTJsonDeserializer {
 
             this.expect(']');
             return nbttaglist;
-        }
-    }
-
-    private NBTBase readArrayTag() throws NBTException {
-        this.expect('[');
-        char c0 = this.pop();
-        this.pop();
-        this.skipWhitespace();
-
-        if (!this.canRead()) {
-            throw this.exception("Expected value");
-        } else if (c0 == 'B') {
-            return new NBTTagByteArray(this.readArray((byte)7, (byte)1));
-        } else if (c0 == 'I') {
-            return new NBTTagIntArray(this.readArray((byte)11, (byte)3));
-        } else {
-            throw this.exception("Invalid array type '" + c0 + "' found");
-        }
-    }
-
-    private <T extends Number> List<T> readArray(byte dataTypeArray, byte dataTypeElement) throws NBTException {
-        List<T> list = Lists.newArrayList();
-
-        while (true) {
-            if (this.peek() != ']') {
-                NBTBase nbtbase = this.readValue();
-                int i = nbtbase.getId();
-
-                if (i != dataTypeElement) {
-                    throw this.exception("Unable to insert " + NBTBase.getTagTypeName(i) + " into " + NBTBase.getTagTypeName(dataTypeArray));
-                }
-
-                if (dataTypeElement == 1) {
-                    list.add((T) Byte.valueOf(((NBTPrimitive)nbtbase).getByte()));
-                } else {
-                    list.add((T) Integer.valueOf(((NBTPrimitive)nbtbase).getInt()));
-                }
-
-                if (this.hasElementSeparator()) {
-                    if (!this.canRead()) {
-                        throw this.exception("Expected value");
-                    }
-
-                    continue;
-                }
-            }
-
-            this.expect(']');
-            return list;
         }
     }
 

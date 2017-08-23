@@ -29,6 +29,7 @@ import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
 import hellfirepvp.modularmachinery.common.tiles.base.TileInventory;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
+import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
 import net.minecraft.block.Block;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
@@ -89,6 +90,7 @@ public class CommonProxy implements IGuiHandler {
     }
 
     public void init() {
+        FuelItemHelper.initialize();
         RecipeAdapterRegistry.initDefaultAdapters();
 
         MachineRegistry.getRegistry().registerMachines(MachineRegistry.getRegistry().loadMachines(null));

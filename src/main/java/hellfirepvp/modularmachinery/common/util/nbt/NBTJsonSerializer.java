@@ -49,19 +49,6 @@ public class NBTJsonSerializer {
                 sb.append(NBTTagString.quoteAndEscape(nbtBase.toString()));
                 break;
             }
-            case Constants.NBT.TAG_BYTE_ARRAY: {
-                NBTTagByteArray ba = (NBTTagByteArray) nbtBase;
-                byte[] data = ba.getByteArray();
-                StringBuilder stringbuilder = new StringBuilder("[B;");
-                for (int i = 0; i < data.length; ++i) {
-                    if (i != 0) {
-                        stringbuilder.append(',');
-                    }
-                    stringbuilder.append(data[i]);
-                }
-                sb.append(stringbuilder.append(']'));
-                break;
-            }
             case Constants.NBT.TAG_STRING: {
                 sb.append(nbtBase.toString());
                 break;
@@ -94,22 +81,6 @@ public class NBTJsonSerializer {
                 }
 
                 sb.append(stringbuilder.append('}'));
-                break;
-            }
-            case Constants.NBT.TAG_INT_ARRAY: {
-                NBTTagIntArray ba = (NBTTagIntArray) nbtBase;
-                int[] data = ba.getIntArray();
-                StringBuilder stringbuilder = new StringBuilder("[I;");
-
-                for (int i = 0; i < data.length; ++i) {
-                    if (i != 0) {
-                        stringbuilder.append(',');
-                    }
-
-                    stringbuilder.append(data[i]);
-                }
-
-                sb.append(stringbuilder.append(']'));
                 break;
             }
         }
