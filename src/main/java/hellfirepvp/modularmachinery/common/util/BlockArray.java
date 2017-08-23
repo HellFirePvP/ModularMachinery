@@ -333,7 +333,11 @@ public class BlockArray {
                 }
                 newDescriptors.add(copy);
             }
-            return new BlockInformation(newDescriptors);
+            BlockInformation bi =  new BlockInformation(newDescriptors);
+            if(this.matchingTag != null) {
+                bi.matchingTag = this.matchingTag;
+            }
+            return bi;
         }
 
         public BlockInformation copy() {
@@ -343,7 +347,11 @@ public class BlockArray {
                 copy.applicable.addAll(desc.applicable);
                 descr.add(copy);
             }
-            return new BlockInformation(descr);
+            BlockInformation bi =  new BlockInformation(descr);
+            if(this.matchingTag != null) {
+                bi.matchingTag = this.matchingTag;
+            }
+            return bi;
         }
 
     }
