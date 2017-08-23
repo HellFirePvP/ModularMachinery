@@ -131,23 +131,34 @@ public class GuiScreenBlueprint extends GuiScreen {
 
         scissorFrame = new Rectangle(MathHelper.floor(this.guiLeft + 8), MathHelper.floor(this.guiTop + 8), 160, 94);
         if(!renderContext.doesRenderIn3D() && scissorFrame.contains(mouseX, mouseY)) {
-            double scale = renderContext.getScale();
-            Vec2f offset = renderContext.getCurrentRenderOffset(guiLeft + x, guiTop + z);
-            int jumpWidth = 14;
-            double scaleJump = jumpWidth * scale;
-            Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(renderContext.getRenderSlice());
-            if(renderContext.getRenderSlice() == 0) {
-                slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
-            }
-            for (BlockPos pos : slice.keySet()) {
-                int xMod = pos.getX() + 1;
-                int zMod = pos.getZ() + 1;
-                Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
-                if(rct.contains(mouseX, mouseY)) {
-                    IBlockState state = slice.get(pos).getSampleState();
-                    Block type = state.getBlock();
-                    int meta = type.getMetaFromState(state);
-                    ItemStack s;
+            render2DHover(mouseX, mouseY, x, z);
+        }
+    }
+
+    private void render2DHover(int mouseX, int mouseY, int x, int z) {
+        double scale = renderContext.getScale();
+        Vec2f offset = renderContext.getCurrentRenderOffset(guiLeft + x, guiTop + z);
+        int jumpWidth = 14;
+        double scaleJump = jumpWidth * scale;
+        Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(renderContext.getRenderSlice());
+        if(renderContext.getRenderSlice() == 0) {
+            slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
+        }
+        for (BlockPos pos : slice.keySet()) {
+            int xMod = pos.getX() + 1;
+            int zMod = pos.getZ() + 1;
+            Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
+            if(rct.contains(mouseX, mouseY)) {
+                IBlockState state = slice.get(pos).getSampleState();
+                Block type = state.getBlock();
+                int meta = type.getMetaFromState(state);
+
+                ItemStack s = ItemStack.EMPTY;
+                try {
+                    s = state.getBlock().getPickBlock(state, null, null, pos, null);
+                } catch (Exception exc) {}
+
+                if(s.isEmpty()) {
                     if(type instanceof BlockFluidBase) {
                         s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
                     } else if(type instanceof BlockLiquid) {
@@ -168,29 +179,30 @@ public class GuiScreenBlueprint extends GuiScreen {
                             s = new ItemStack(i);
                         }
                     }
-                    List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
-                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-                    List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
-                    boolean first = true;
-                    for (String str : tooltip) {
-                        if(first) {
-                            stacks.add(new Tuple<>(s, str));
-                            first = false;
-                        } else {
-                            stacks.add(new Tuple<>(ItemStack.EMPTY, str));
-                        }
-                    }
-
-                    GlStateManager.pushMatrix();
-                    GlStateManager.translate(mouseX, mouseY, 0);
-                    GlStateManager.disableDepth();
-                    GlStateManager.disableBlend();
-                    RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
-                    GlStateManager.enableBlend();
-                    GlStateManager.enableDepth();
-                    GlStateManager.popMatrix();
-                    break;
                 }
+
+                List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                        ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
+                boolean first = true;
+                for (String str : tooltip) {
+                    if(first) {
+                        stacks.add(new Tuple<>(s, str));
+                        first = false;
+                    } else {
+                        stacks.add(new Tuple<>(ItemStack.EMPTY, str));
+                    }
+                }
+
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(mouseX, mouseY, 0);
+                GlStateManager.disableDepth();
+                GlStateManager.disableBlend();
+                RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
+                GlStateManager.enableBlend();
+                GlStateManager.enableDepth();
+                GlStateManager.popMatrix();
+                break;
             }
         }
     }

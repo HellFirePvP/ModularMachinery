@@ -19,6 +19,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -34,6 +35,8 @@ import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.util.vector.Matrix2f;
 import org.lwjgl.util.vector.Vector2f;
 
@@ -127,29 +130,38 @@ public class BlockArray {
         return copy;
     }
 
+    @SideOnly(Side.CLIENT)
     public List<ItemStack> getAsDescriptiveStacks() {
         List<ItemStack> out = new LinkedList<>();
-        for (BlockInformation info : pattern.values()) {
-            IBlockState state = info.getSampleState();
+        for (Map.Entry<BlockPos, BlockInformation> infoEntry : pattern.entrySet()) {
+            IBlockState state = infoEntry.getValue().getSampleState();
             Block type = state.getBlock();
             int meta = type.getMetaFromState(state);
-            ItemStack s;
-            if(type instanceof BlockFluidBase) {
-                s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
-            } else if(type instanceof BlockLiquid) {
-                Material m = state.getMaterial();
-                if(m == Material.LAVA) {
-                    s = new ItemStack(Items.LAVA_BUCKET);
-                } else if(m == Material.WATER) {
-                    s = new ItemStack(Items.WATER_BUCKET);
+            ItemStack s = ItemStack.EMPTY;
+
+            try {
+                s = state.getBlock().getPickBlock(state, null, null, infoEntry.getKey(), null);
+            } catch (Exception exc) {}
+
+            if(s.isEmpty()) {
+                if(type instanceof BlockFluidBase) {
+                    s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
+                } else if(type instanceof BlockLiquid) {
+                    Material m = state.getMaterial();
+                    if(m == Material.LAVA) {
+                        s = new ItemStack(Items.LAVA_BUCKET);
+                    } else if(m == Material.WATER) {
+                        s = new ItemStack(Items.WATER_BUCKET);
+                    } else {
+                        s = ItemStack.EMPTY;
+                    }
                 } else {
-                    s = ItemStack.EMPTY;
+                    Item i = Item.getItemFromBlock(type);
+                    if(i == Items.AIR) continue;
+                    s = new ItemStack(i, 1, meta);
                 }
-            } else {
-                Item i = Item.getItemFromBlock(type);
-                if(i == Items.AIR) continue;
-                s = new ItemStack(i, 1, meta);
             }
+
             if(!s.isEmpty()) {
                 boolean found = false;
                 for (ItemStack stack : out) {
