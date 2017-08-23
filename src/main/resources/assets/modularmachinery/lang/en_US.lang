@@ -18,6 +18,13 @@ gui.controller.status.crafting.progress=Progress: %s
 
 jei.category.preview=Structure Preview
 
+message.structurebuild.confirmrotation=Controller is facing %s
+message.structurebuild.confirmrotation.rotating=Rotating structure for saving by %s degrees...
+message.structurebuild.empty=You have nothing selected to save.
+message.structurebuild.warndedicated=You're saving the machine on a dedicated server! Be sure to download it from the server!
+message.structurebuild.save=Machine saved as %s in the machinery directory!
+message.structurebuild.fail=Failed to save the machine to a file! Check the log for more information!
+
 tooltip.machinery.empty=Empty
 tooltip.machinery.blueprint.required=Requires Blueprint
 tooltip.machinery.duration=Processing Time: %s ticks
@@ -31,6 +38,8 @@ tooltip.machinery.energy.in.total=Total: %s FE
 tooltip.machinery.energy.out=Produced Energy:
 tooltip.machinery.energy.out.tick=Per Tick: %s FE/t
 tooltip.machinery.energy.out.total=Total: %s FE
+
+tooltip.constructtool.creative=Creative Structure-To-JSON Tool
 
 tooltip.itembus.slot=1 Slot
 tooltip.itembus.slots=%s Slots
@@ -67,6 +76,7 @@ tooltip.ic2.powertier.12.name=UXV
 
 item.itemblueprint.name=Machine Blueprint
 item.itemmodularium.name=Modularium
+item.itemconstructtool.name=Construct Selection Tool
 
 tile.blockcontroller.name=Machine Controller
 

@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.gui.*;
 import hellfirepvp.modularmachinery.client.util.DebugOverlayHelper;
+import hellfirepvp.modularmachinery.client.util.SelectionBoxRenderHelper;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.BlockDynamicColor;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
@@ -71,6 +72,7 @@ public class ClientProxy extends CommonProxy {
         MinecraftForge.EVENT_BUS.register(clientScheduler);
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHelper());
+        MinecraftForge.EVENT_BUS.register(new SelectionBoxRenderHelper());
         if(Loader.isModLoaded("jei")) {
             registerJEIEventHandler();
         }

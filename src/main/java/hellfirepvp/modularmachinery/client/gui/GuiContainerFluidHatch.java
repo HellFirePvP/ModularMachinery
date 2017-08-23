@@ -92,7 +92,7 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
             ResourceLocation rl = content.getFluid().getStill(content);
             TextureAtlasSprite tas = Minecraft.getMinecraft().getTextureMapBlocks().getTextureExtry(rl.toString());
             if(tas == null) {
-                Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
+                tas = Minecraft.getMinecraft().getTextureMapBlocks().getMissingSprite();
             }
             this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
             drawTexturedModalRect(15, 10 + 61 - pxFilled, tas, 20, pxFilled);

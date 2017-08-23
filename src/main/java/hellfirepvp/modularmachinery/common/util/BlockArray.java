@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonPrimitive;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
+import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonSerializer;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
@@ -220,6 +221,55 @@ public class BlockArray {
             out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info.copyRotateYCCW());
         }
         return out;
+    }
+
+    public String serializeAsMachineJson() {
+        String newline = System.getProperty("line.separator");
+        String move = "    ";
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("{").append(newline);
+        sb.append(move).append("\"parts\": [").append(newline);
+
+        for (Iterator<BlockPos> iterator = this.pattern.keySet().iterator(); iterator.hasNext(); ) {
+            BlockPos pos = iterator.next();
+            sb.append(move).append(move).append("{").append(newline);
+
+            sb.append(move).append(move).append(move).append("\"x\": ").append(pos.getX()).append(",").append(newline);
+            sb.append(move).append(move).append(move).append("\"y\": ").append(pos.getY()).append(",").append(newline);
+            sb.append(move).append(move).append(move).append("\"z\": ").append(pos.getZ()).append(",").append(newline);
+
+            BlockInformation bi = this.pattern.get(pos);
+            if(bi.matchingTag != null) {
+                String strTag = NBTJsonSerializer.serializeNBT(bi.matchingTag);
+                sb.append(move).append(move).append(move).append("\"nbt\": ").append(strTag).append(",").append(newline);
+            }
+
+            sb.append(move).append(move).append(move).append("\"elements\": [").append(newline);
+            for (Iterator<IBlockState> iterator1 = bi.samples.iterator(); iterator1.hasNext(); ) {
+                IBlockState descriptor = iterator1.next();
+
+                int meta = descriptor.getBlock().getMetaFromState(descriptor);
+                String str = descriptor.getBlock().getRegistryName().toString() + "@" + meta;
+                sb.append(move).append(move).append(move).append(move).append("\"").append(str).append("\"");
+
+                if(iterator1.hasNext()) {
+                    sb.append(",");
+                }
+                sb.append(newline);
+            }
+
+            sb.append(move).append(move).append(move).append("]").append(newline);
+            sb.append(move).append(move).append("}");
+            if(iterator.hasNext()) {
+                sb.append(",");
+            }
+            sb.append(newline);
+        }
+
+        sb.append(move).append("]");
+        sb.append("}");
+        return sb.toString();
     }
 
     public static class BlockInformation {

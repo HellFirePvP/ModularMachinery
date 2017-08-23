@@ -8,14 +8,22 @@
 
 package hellfirepvp.modularmachinery.client.util;
 
+import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Tuple;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraftforge.client.event.DrawBlockHighlightEvent;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
@@ -29,6 +37,76 @@ import java.util.List;
  * Date: 18.08.2017 / 14:02
  */
 public class RenderingUtils {
+
+    static void drawWhiteOutlineCubes(List<BlockPos> positions, float partialTicks) {
+        GlStateManager.enableBlend();
+        GlStateManager.tryBlendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+        GlStateManager.color(1F, 1F, 1F, 0.4F);
+        GlStateManager.disableTexture2D();
+        GlStateManager.enableColorMaterial();
+        GlStateManager.disableCull();
+
+        Entity player = Minecraft.getMinecraft().getRenderViewEntity();
+        if(player == null) {
+            player = Minecraft.getMinecraft().player;
+        }
+
+        Tessellator tes = Tessellator.getInstance();
+        BufferBuilder vb = tes.getBuffer();
+        vb.begin(GL11.GL_QUADS, DefaultVertexFormats.POSITION);
+
+        double dX = player.lastTickPosX + (player.posX - player.lastTickPosX) * (double) partialTicks;
+        double dY = player.lastTickPosY + (player.posY - player.lastTickPosY) * (double) partialTicks;
+        double dZ = player.lastTickPosZ + (player.posZ - player.lastTickPosZ) * (double) partialTicks;
+        for (BlockPos pos : positions) {
+            AxisAlignedBB box = Block.FULL_BLOCK_AABB.offset(pos).grow(0.002).offset(-dX, -dY, -dZ);
+
+            vb.pos(box.minX, box.minY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.minY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.minY, box.maxZ).endVertex();
+            vb.pos(box.minX, box.minY, box.maxZ).endVertex();
+
+            vb.pos(box.minX, box.maxY, box.maxZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.maxZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.minZ).endVertex();
+            vb.pos(box.minX, box.maxY, box.minZ).endVertex();
+
+
+            vb.pos(box.maxX, box.minY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.maxZ).endVertex();
+            vb.pos(box.maxX, box.minY, box.maxZ).endVertex();
+
+            vb.pos(box.minX, box.minY, box.maxZ).endVertex();
+            vb.pos(box.minX, box.maxY, box.maxZ).endVertex();
+            vb.pos(box.minX, box.maxY, box.minZ).endVertex();
+            vb.pos(box.minX, box.minY, box.minZ).endVertex();
+
+
+            vb.pos(box.minX, box.maxY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.minZ).endVertex();
+            vb.pos(box.maxX, box.minY, box.minZ).endVertex();
+            vb.pos(box.minX, box.minY, box.minZ).endVertex();
+
+            vb.pos(box.minX, box.minY, box.maxZ).endVertex();
+            vb.pos(box.maxX, box.minY, box.maxZ).endVertex();
+            vb.pos(box.maxX, box.maxY, box.maxZ).endVertex();
+            vb.pos(box.minX, box.maxY, box.maxZ).endVertex();
+        }
+
+        vb.sortVertexData(
+                (float) TileEntityRendererDispatcher.staticPlayerX,
+                (float) TileEntityRendererDispatcher.staticPlayerY,
+                (float) TileEntityRendererDispatcher.staticPlayerZ);
+        tes.draw();
+
+        GlStateManager.enableCull();
+        GlStateManager.enableTexture2D();
+        GlStateManager.disableColorMaterial();
+        GlStateManager.color(1F, 1F, 1F, 1F);
+    }
+
+
 
     public static void renderBlueStackTooltip(int x, int y, List<Tuple<ItemStack, String>> tooltipData, FontRenderer fr, RenderItem ri) {
         renderStackTooltip(x, y, tooltipData, new Color(0x000058), new Color(0x000000), Color.WHITE, fr, ri);

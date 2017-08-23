@@ -33,7 +33,9 @@ public class DebugOverlayHelper {
                 BlockPos pos = mc.objectMouseOver.getBlockPos();
                 IBlockState state = mc.world.getBlockState(pos);
                 try {
-                    event.getRight().add("serialized as metadata: " + state.getBlock().getMetaFromState(state));
+                    int meta = state.getBlock().getMetaFromState(state);
+                    event.getRight().add("");
+                    event.getRight().add("serialized as metadata: " + meta);
                 } catch (Exception ignored) {}
             }
         }

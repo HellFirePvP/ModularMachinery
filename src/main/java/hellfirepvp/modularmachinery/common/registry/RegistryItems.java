@@ -11,10 +11,7 @@ package hellfirepvp.modularmachinery.common.registry;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
-import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
-import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
-import hellfirepvp.modularmachinery.common.item.ItemDynamicColor;
-import hellfirepvp.modularmachinery.common.item.ItemModularium;
+import hellfirepvp.modularmachinery.common.item.*;
 import net.minecraft.item.Item;
 import net.minecraftforge.registries.IForgeRegistry;
 
@@ -38,6 +35,7 @@ public class RegistryItems {
     public static void initialize() {
         blueprint = prepareRegister(new ItemBlueprint());
         modularium = prepareRegister(new ItemModularium());
+        constructTool = prepareRegister(new ItemConstructTool());
 
         registerItemModels();
     }

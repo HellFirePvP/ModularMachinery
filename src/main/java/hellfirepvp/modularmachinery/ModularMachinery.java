@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.command.CommandHand;
 import hellfirepvp.modularmachinery.common.command.CommandSyntax;
 import hellfirepvp.modularmachinery.common.network.PktCopyToClipboard;
+import hellfirepvp.modularmachinery.common.network.PktSyncSelection;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraftforge.fluids.FluidRegistry;
@@ -65,6 +66,7 @@ public class ModularMachinery {
         devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
 
         NET_CHANNEL.registerMessage(PktCopyToClipboard.class, PktCopyToClipboard.class, 0, Side.CLIENT);
+        NET_CHANNEL.registerMessage(PktSyncSelection.class, PktSyncSelection.class, 1, Side.CLIENT);
 
         proxy.loadModData(event.getModConfigurationDirectory());
 

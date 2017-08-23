@@ -298,8 +298,12 @@ public abstract class ComponentRequirement {
                 item = new RequirementItem(this.getActionType(), this.required.copy());
             }
             item.chance = this.chance;
-            item.tag = this.tag.copy();
-            item.previewDisplayTag = this.previewDisplayTag.copy();
+            if(this.tag != null) {
+                item.tag = this.tag.copy();
+            }
+            if(this.previewDisplayTag != null) {
+                item.previewDisplayTag = this.previewDisplayTag.copy();
+            }
             return item;
         }
 
