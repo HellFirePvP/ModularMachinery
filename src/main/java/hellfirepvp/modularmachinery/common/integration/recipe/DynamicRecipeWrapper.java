@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
@@ -130,6 +131,18 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             offsetY -= 36;
         }
 
+        int totalFuelIn = 0;
+        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
+                .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
+                .filter(c -> ((ComponentRequirement.RequirementItem) c).requirementType == ComponentRequirement.ItemRequirementType.FUEL)
+                .collect(Collectors.toList())) {
+            totalFuelIn += ((ComponentRequirement.RequirementItem) req).fuelBurntime;
+        }
+        if(totalFuelIn > 0) {
+            offsetY -= 26;
+        }
+
         if(totalEnergyIn > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.inputComponents.stream()
@@ -143,6 +156,14 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             offsetY += 36;
         }
 
+        if(totalFuelIn > 0) {
+            GlStateManager.color(1F, 1F, 1F, 1F);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.fuel.in"), 8,  offsetY + 10, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.fuel.in.total", totalFuelIn), 8,  offsetY + 20, 0x222222);
+            GlStateManager.color(1F, 1F, 1F, 1F);
+            offsetY += 26;
+        }
+
         if(totalEnergyOut > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.outputComponents.stream()
@@ -152,7 +173,9 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergyOut), 8,  offsetY + 20, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergyOut * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
             GlStateManager.color(1F, 1F, 1F, 1F);
+            offsetY += 36;
         }
+
     }
 
     @Override
@@ -187,33 +210,37 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
     }
 
     private List<ItemStack> getIIngredientComponents(ComponentRequirement.RequirementItem itemRequirement) {
-        if(itemRequirement.oreDictName != null) {
-            NonNullList<ItemStack> stacks = OreDictionary.getOres(itemRequirement.oreDictName);
-            NonNullList<ItemStack> out = NonNullList.create();
-            for (ItemStack oreDictIn : stacks) {
-                if (oreDictIn.getItemDamage() == OreDictionary.WILDCARD_VALUE && !oreDictIn.isItemStackDamageable() && oreDictIn.getItem().getCreativeTab() != null) {
-                    oreDictIn.getItem().getSubItems(oreDictIn.getItem().getCreativeTab(), out);
-                } else {
-                    out.add(oreDictIn);
+        switch (itemRequirement.requirementType) {
+            case ITEMSTACKS:
+                ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());
+                if(itemRequirement.previewDisplayTag != null) {
+                    stack.setTagCompound(itemRequirement.previewDisplayTag);
+                } else if(itemRequirement.tag != null) {
+                    itemRequirement.previewDisplayTag = itemRequirement.tag.copy();
+                    stack.setTagCompound(itemRequirement.previewDisplayTag.copy());
                 }
-            }
-            NonNullList<ItemStack> stacksOut = NonNullList.create();
-            for (ItemStack s : out) {
-                ItemStack copy = s.copy();
-                copy.setCount(itemRequirement.oreDictItemAmount);
-                stacksOut.add(copy);
-            }
-            return stacksOut;
-        } else {
-            ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());
-            if(itemRequirement.previewDisplayTag != null) {
-                stack.setTagCompound(itemRequirement.previewDisplayTag);
-            } else if(itemRequirement.tag != null) {
-                itemRequirement.previewDisplayTag = itemRequirement.tag.copy();
-                stack.setTagCompound(itemRequirement.previewDisplayTag.copy());
-            }
-            return Lists.newArrayList(stack);
+                return Lists.newArrayList(stack);
+            case OREDICT:
+                NonNullList<ItemStack> stacks = OreDictionary.getOres(itemRequirement.oreDictName);
+                NonNullList<ItemStack> out = NonNullList.create();
+                for (ItemStack oreDictIn : stacks) {
+                    if (oreDictIn.getItemDamage() == OreDictionary.WILDCARD_VALUE && !oreDictIn.isItemStackDamageable() && oreDictIn.getItem().getCreativeTab() != null) {
+                        oreDictIn.getItem().getSubItems(oreDictIn.getItem().getCreativeTab(), out);
+                    } else {
+                        out.add(oreDictIn);
+                    }
+                }
+                NonNullList<ItemStack> stacksOut = NonNullList.create();
+                for (ItemStack s : out) {
+                    ItemStack copy = s.copy();
+                    copy.setCount(itemRequirement.oreDictItemAmount);
+                    stacksOut.add(copy);
+                }
+                return stacksOut;
+            case FUEL:
+                return FuelItemHelper.getFuelItems();
         }
+        return Lists.newArrayList();
     }
 
 }

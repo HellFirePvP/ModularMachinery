@@ -26,6 +26,10 @@ message.structurebuild.save=Machine saved as %s in the machinery directory!
 message.structurebuild.fail=Failed to save the machine to a file! Check the log for more information!
 
 tooltip.machinery.empty=Empty
+tooltip.machinery.fuel=Accepts any fuel.
+tooltip.machinery.fuel.item=BurnTime: %s
+tooltip.machinery.fuel.in=Required total Fuel Burntime:
+tooltip.machinery.fuel.in.total=%s ticks.
 tooltip.machinery.blueprint.required=Requires Blueprint
 tooltip.machinery.duration=Processing Time: %s ticks
 tooltip.machinery.chance.in=Consumption Chance: %s

@@ -19,6 +19,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextComponentTranslation;
 
@@ -74,6 +75,11 @@ public class CommandHand extends CommandBase {
         String str = sb.toString();
         player.sendMessage(new TextComponentString(str));
         ModularMachinery.NET_CHANNEL.sendTo(new PktCopyToClipboard(str), player);
+
+        int burn = TileEntityFurnace.getItemBurnTime(held);
+        if(burn > 0) {
+            player.sendMessage(new TextComponentString("Fuel BurnTime: " + burn));
+        }
     }
 
 }

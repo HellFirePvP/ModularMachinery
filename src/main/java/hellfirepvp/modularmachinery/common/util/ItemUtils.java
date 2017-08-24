@@ -12,7 +12,9 @@ import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.IItemHandlerModifiable;
 import net.minecraftforge.items.ItemStackHandler;
@@ -40,6 +42,47 @@ public class ItemUtils {
         if (st.getCount() <= 0) {
             handler.setStackInSlot(slot, ItemStack.EMPTY);
         }
+    }
+
+    //Negative amount: overhead fuel burnt
+    //Positive amount: Failure/couldn't find enough fuel
+    public static int consumeFromInventoryFuel(IItemHandlerModifiable handler, int fuelAmtToConsume, boolean simulate, @Nullable NBTTagCompound matchNBTTag) {
+        Map<Integer, ItemStack> contents = findItemsIndexedInInventoryFuel(handler, matchNBTTag);
+        if (contents.isEmpty()) {
+            return fuelAmtToConsume;
+        }
+
+        for (int slot : contents.keySet()) {
+            ItemStack inSlot = contents.get(slot);
+            if(inSlot.getItem().hasContainerItem(inSlot)) {
+                if(inSlot.getCount() > 1) {
+                    continue; //uh... rip. we won't consume 16 buckets at once.
+                }
+                ItemStack stack = ForgeHooks.getContainerItem(inSlot);
+                fuelAmtToConsume -= ForgeEventFactory.getItemBurnTime(inSlot);
+                if (!simulate) {
+                    handler.setStackInSlot(slot, stack.copy());
+                }
+                if (fuelAmtToConsume <= 0) {
+                    break;
+                }
+            }
+            int fuelPer = ForgeEventFactory.getItemBurnTime(inSlot);
+            int toConsumeDiv = fuelAmtToConsume / fuelPer;
+            int fuelMod = fuelAmtToConsume % fuelPer;
+
+            int toConsume = toConsumeDiv + (fuelMod > 0 ? 1 : 0);
+            int toRemove = toConsume > inSlot.getCount() ? inSlot.getCount() : toConsume;
+
+            fuelAmtToConsume -= toRemove * fuelPer;
+            if (!simulate) {
+                handler.setStackInSlot(slot, copyStackWithSize(inSlot, inSlot.getCount() - toRemove));
+            }
+            if (fuelAmtToConsume <= 0) {
+                break;
+            }
+        }
+        return fuelAmtToConsume;
     }
 
     public static boolean consumeFromInventory(IItemHandlerModifiable handler, ItemStack toConsume, boolean simulate, @Nullable NBTTagCompound matchNBTTag) {
@@ -183,6 +226,17 @@ public class ItemUtils {
         ItemStack s = stack.copy();
         s.setCount(amount);
         return s;
+    }
+
+    public static Map<Integer, ItemStack> findItemsIndexedInInventoryFuel(IItemHandlerModifiable handler, @Nullable NBTTagCompound matchNBTTag) {
+        Map<Integer, ItemStack> stacksOut = new HashMap<>();
+        for (int j = 0; j < handler.getSlots(); j++) {
+            ItemStack s = handler.getStackInSlot(j);
+            if (ForgeEventFactory.getItemBurnTime(s) > 0 && NBTMatchingHelper.matchNBTCompound(matchNBTTag, s.getTagCompound())) {
+                stacksOut.put(j, s.copy());
+            }
+        }
+        return stacksOut;
     }
 
     public static Map<Integer, ItemStack> findItemsIndexedInInventoryOreDict(IItemHandlerModifiable handler, String oreDict, @Nullable NBTTagCompound matchNBTTag) {

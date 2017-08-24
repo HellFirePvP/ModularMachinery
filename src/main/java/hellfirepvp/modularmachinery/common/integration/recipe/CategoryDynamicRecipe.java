@@ -22,10 +22,13 @@ import mezz.jei.api.recipe.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fluids.FluidStack;
 
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -72,6 +75,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         int fluidIn  = 0, fluidOut  = 0;
         int itemIn   = 0, itemOut   = 0;
 
+        boolean fuelItemIn = false;
+
         for (MachineRecipe recipe : recipes) {
             List<ComponentRequirement> energyInput = recipe.getCraftingRequirements().stream()
                     .filter(c -> c instanceof ComponentRequirement.RequirementEnergy)
@@ -85,6 +90,9 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     .filter(c -> c instanceof ComponentRequirement.RequirementItem)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                     .collect(Collectors.toList());
+            List<ComponentRequirement> itemFuelInput = new ArrayList<>(itemInput).stream()
+                    .filter(c -> ((ComponentRequirement.RequirementItem) c).requirementType == ComponentRequirement.ItemRequirementType.FUEL)
+                    .collect(Collectors.toList());
             if(energyInput.size() > energyIn) {
                 energyIn = energyInput.size();
             }
@@ -93,6 +101,9 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             }
             if(itemInput.size() > itemIn) {
                 itemIn = itemInput.size();
+            }
+            if(!itemFuelInput.isEmpty()) {
+                fuelItemIn = true;
             }
 
             List<ComponentRequirement> energyOutput = recipe.getCraftingRequirements().stream()
@@ -227,6 +238,9 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         if(energyOut > 0) {
             highestY += 36;
         }
+        if(fuelItemIn) {
+            highestY += 26;
+        }
 
         return new Point(offsetX, highestY);
     }
@@ -345,6 +359,13 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                     return;
                 }
                 ComponentRequirement.RequirementItem itemReq = recipeWrapper.immulatbleOrderedInputItems.get(slotIndex);
+                if(itemReq.requirementType == ComponentRequirement.ItemRequirementType.FUEL) {
+                    int burn = TileEntityFurnace.getItemBurnTime(ingredient);
+                    if(burn > 0) {
+                        tooltip.add(TextFormatting.GRAY.toString() + I18n.format("tooltip.machinery.fuel.item", burn));
+                    }
+                    tooltip.add(I18n.format("tooltip.machinery.fuel"));
+                }
                 if(itemReq.chance < 1F && itemReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(itemReq.chance * 100F));
                     if(itemReq.chance == 0F) {

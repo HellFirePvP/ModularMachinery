@@ -13,10 +13,10 @@ import com.google.common.collect.Lists;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.NonNullList;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.minecraftforge.fml.common.registry.GameRegistry;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +42,7 @@ public class FuelItemHelper {
         }
         List<ItemStack> out = new LinkedList<>();
         for (ItemStack stack : stacks) {
-            int burn = ForgeEventFactory.getItemBurnTime(stack);
+            int burn = TileEntityFurnace.getItemBurnTime(stack); //Respects vanilla values.
             if(burn > 0) {
                 out.add(stack);
             }

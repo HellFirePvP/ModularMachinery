@@ -302,8 +302,19 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                         }
                         amount = MathHelper.clamp(requirement.getAsJsonPrimitive("amount").getAsInt(), 1, 64);
                     }
+
                     ResourceLocation res = new ResourceLocation(itemDefinition);
-                    if(res.getResourceDomain().equalsIgnoreCase("ore")) {
+                    if(res.getResourceDomain().equalsIgnoreCase("any") && res.getResourcePath().equalsIgnoreCase("fuel")) {
+                        if(machineIoType == MachineComponent.IOType.OUTPUT) {
+                            throw new JsonParseException("You cannot define 'fuel' as item output! Offending item-output entry: " + res.toString());
+                        }
+                        if(!requirement.has("time") || !requirement.get("time").isJsonPrimitive() ||
+                                !requirement.get("time").getAsJsonPrimitive().isNumber()) {
+                            throw new JsonParseException("If you define any:fuel as item input, you have to define the burntime required in total in the 'time' entry alongside the 'item' entry!");
+                        }
+                        int burntime = requirement.getAsJsonPrimitive("time").getAsInt();
+                        req = new ComponentRequirement.RequirementItem(machineIoType, burntime);
+                    } else if(res.getResourceDomain().equalsIgnoreCase("ore")) {
                         if(machineIoType == MachineComponent.IOType.OUTPUT) {
                             throw new JsonParseException("You cannot define an oredict as item output! Offending oredict entry: " + res.toString());
                         }

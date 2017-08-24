@@ -267,9 +267,15 @@ public abstract class ComponentRequirement {
 
     public static class RequirementItem extends ComponentRequirement {
 
+        public final ItemRequirementType requirementType;
+
         public final ItemStack required;
+
         public final String oreDictName;
         public final int oreDictItemAmount;
+
+        public final int fuelBurntime;
+
         public NBTTagCompound tag = null;
         public NBTTagCompound previewDisplayTag = null;
 
@@ -277,25 +283,47 @@ public abstract class ComponentRequirement {
 
         public RequirementItem(MachineComponent.IOType ioType, ItemStack item) {
             super(MachineComponent.ComponentType.ITEM, ioType);
+            this.requirementType = ItemRequirementType.ITEMSTACKS;
             this.required = item.copy();
             this.oreDictName = null;
             this.oreDictItemAmount = 0;
+            this.fuelBurntime = 0;
         }
 
         public RequirementItem(MachineComponent.IOType ioType, String oreDictName, int oreDictAmount) {
             super(MachineComponent.ComponentType.ITEM, ioType);
+            this.requirementType = ItemRequirementType.OREDICT;
             this.oreDictName = oreDictName;
             this.oreDictItemAmount = oreDictAmount;
+            this.required = ItemStack.EMPTY;
+            this.fuelBurntime = 0;
+        }
+
+        public RequirementItem(MachineComponent.IOType actionType, int fuelBurntime) {
+            super(MachineComponent.ComponentType.ITEM, actionType);
+            this.requirementType = ItemRequirementType.FUEL;
+            this.fuelBurntime = fuelBurntime;
+            this.oreDictName = null;
+            this.oreDictItemAmount = 0;
             this.required = ItemStack.EMPTY;
         }
 
         @Override
         public ComponentRequirement deepCopy() {
             RequirementItem item;
-            if(oreDictName != null) {
-                item = new RequirementItem(this.getActionType(), this.oreDictName, this.oreDictItemAmount);
-            } else {
-                item = new RequirementItem(this.getActionType(), this.required.copy());
+            switch (this.requirementType) {
+                case OREDICT:
+                    item = new RequirementItem(this.getActionType(), this.oreDictName, this.oreDictItemAmount);
+                    break;
+
+                case FUEL:
+                    item = new RequirementItem(this.getActionType(), this.fuelBurntime);
+                    break;
+
+                default:
+                case ITEMSTACKS:
+                    item = new RequirementItem(this.getActionType(), this.required.copy());
+                    break;
             }
             item.chance = this.chance;
             if(this.tag != null) {
@@ -325,10 +353,13 @@ public abstract class ComponentRequirement {
             IOInventory handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
-                    if(oreDictName != null) {
-                        return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
-                    } else {
-                        return ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
+                    switch (this.requirementType) {
+                        case ITEMSTACKS:
+                            return ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
+                        case OREDICT:
+                            return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
+                        case FUEL:
+                            return ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0;
                     }
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyInventory(handler);
@@ -363,19 +394,26 @@ public abstract class ComponentRequirement {
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
-                    if(oreDictName != null) {
+                    switch (this.requirementType) {
                         //If it doesn't consume the item, we only need to see if it's actually there.
-                        boolean can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
-                        if(chance.canProduce(this.chance)) {
-                            return can;
-                        }
-                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false, this.tag);
-                    } else {
-                        boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
-                        if(chance.canProduce(this.chance)) {
-                            return can;
-                        }
-                        return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false, this.tag);
+                        case ITEMSTACKS:
+                            boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
+                            if(chance.canProduce(this.chance)) {
+                                return can;
+                            }
+                            return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false, this.tag);
+                        case OREDICT:
+                            can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
+                            if(chance.canProduce(this.chance)) {
+                                return can;
+                            }
+                            return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false, this.tag);
+                        case FUEL:
+                            can = ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0;
+                            if(chance.canProduce(this.chance)) {
+                                return can;
+                            }
+                            return can && ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, false, this.tag) <= 0;
                     }
             }
             return false;
@@ -406,6 +444,14 @@ public abstract class ComponentRequirement {
             }
             return false;
         }
+
+    }
+
+    public static enum ItemRequirementType {
+
+        ITEMSTACKS,
+        OREDICT,
+        FUEL
 
     }
 
