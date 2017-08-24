@@ -9,7 +9,7 @@
 package hellfirepvp.modularmachinery.common.item;
 
 import hellfirepvp.modularmachinery.common.block.BlockMachineComponent;
-import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
+import hellfirepvp.modularmachinery.common.data.Config;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemStack;
@@ -33,7 +33,7 @@ public class ItemBlockMachineComponentCustomName extends ItemBlockCustomName imp
             return 0;
         }
         if(stack.getItem() instanceof ItemBlock && ((ItemBlock) stack.getItem()).getBlock() instanceof BlockMachineComponent) {
-            return TileColorableMachineComponent.DEFAULT_COLOR;
+            return Config.machineColor;
         }
         return 0;
     }

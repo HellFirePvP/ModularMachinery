@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
@@ -49,7 +50,7 @@ public class DynamicMachine {
     private final ResourceLocation registryName;
     private String localizedName = null;
     private BlockArray pattern = new BlockArray();
-    private int definedColor = TileColorableMachineComponent.DEFAULT_COLOR;
+    private int definedColor = Config.machineColor;
 
     private boolean requiresBlueprint = false;
 

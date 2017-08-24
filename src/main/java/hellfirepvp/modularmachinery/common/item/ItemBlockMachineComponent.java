@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.item;
 
+import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import net.minecraft.block.Block;
 import net.minecraft.item.ItemBlock;
@@ -31,7 +32,7 @@ public class ItemBlockMachineComponent extends ItemBlock implements ItemDynamicC
         if(stack.isEmpty()) {
             return 0;
         }
-        return TileColorableMachineComponent.DEFAULT_COLOR;
+        return Config.machineColor;
     }
 
 }

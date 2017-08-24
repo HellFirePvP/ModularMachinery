@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
@@ -177,7 +178,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                         markForUpdate();
 
-                        if(this.foundMachine.getMachineColor() != TileColorableMachineComponent.DEFAULT_COLOR) {
+                        if(this.foundMachine.getMachineColor() != Config.machineColor) {
                             distributeCasingColor();
                         }
                     }
@@ -192,7 +193,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
                             this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
                             markForUpdate();
 
-                            if(this.foundMachine.getMachineColor() != TileColorableMachineComponent.DEFAULT_COLOR) {
+                            if(this.foundMachine.getMachineColor() != Config.machineColor) {
                                 distributeCasingColor();
                             }
                             break;

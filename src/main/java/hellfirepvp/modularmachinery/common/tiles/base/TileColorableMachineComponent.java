@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.tiles.base;
 
+import hellfirepvp.modularmachinery.common.data.Config;
 import net.minecraft.nbt.NBTTagCompound;
 
 /**
@@ -19,16 +20,14 @@ import net.minecraft.nbt.NBTTagCompound;
  */
 public class TileColorableMachineComponent extends TileEntitySynchronized {
 
-    public static final int DEFAULT_COLOR = 0xFFFF4900;
-
-    public int definedColor = DEFAULT_COLOR;
+    public int definedColor = Config.machineColor;
 
     @Override
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
 
         if(!compound.hasKey("casingColor")) {
-            definedColor = DEFAULT_COLOR;
+            definedColor = Config.machineColor;
         } else {
             definedColor = compound.getInteger("casingColor");
         }

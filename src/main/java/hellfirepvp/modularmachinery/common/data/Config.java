@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.data;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.block.prop.ItemBusSize;
@@ -27,6 +28,8 @@ public class Config {
     private static File lastReadFile;
     private static Configuration lastReadConfig;
 
+    public static int machineColor;
+
     public static void loadFrom(File file) {
         lastReadFile = file;
         lastReadConfig = new Configuration(file);
@@ -41,6 +44,16 @@ public class Config {
     private static void load() {
         FluidHatchSize.loadSizeFromConfig(lastReadConfig);
         EnergyHatchSize.loadSizeFromConfig(lastReadConfig);
+
+        String strColor = lastReadConfig.getString("general-casing-color", "general", "FF4900", "Defines the _default_ color for machine casings as items or blocks. (Hex color without alpha) Has to be defined both server and clientside!");
+        int col = 0xFF4900;
+        try {
+            col = Integer.parseInt(strColor, 16);
+        } catch (Exception exc) {
+            ModularMachinery.log.error("Machine-Casing color defined in the config is not a hex color: " + strColor);
+            ModularMachinery.log.error("Using default color instead...");
+        }
+        machineColor = col;
     }
 
 }
