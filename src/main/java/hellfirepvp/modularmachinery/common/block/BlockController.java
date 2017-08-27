@@ -121,7 +121,7 @@ public class BlockController extends BlockMachineComponent {
         TileEntity te = worldIn.getTileEntity(pos);
         if(te != null && te instanceof TileMachineController) {
             TileMachineController ctrl = (TileMachineController) te;
-            return ctrl.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING ? 15 : 0;
+            return ctrl.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING ? 15 : ctrl.getFoundMachine() != null ? 1 : 0;
         }
         return 0;
     }
