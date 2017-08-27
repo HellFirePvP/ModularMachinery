@@ -50,8 +50,7 @@ dependencies {
     def jei_version = "4.7.0.67"
 
     ////JEI stuff
-    deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}:api"
-    runtime "mezz.jei:jei_${mc_version}:${jei_version}"
+    deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
 
     def rf_version = "2.0.1.2"
 

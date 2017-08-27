@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.event.ForgeEventFactory;
@@ -59,7 +60,7 @@ public class ItemUtils {
                     continue; //uh... rip. we won't consume 16 buckets at once.
                 }
                 ItemStack stack = ForgeHooks.getContainerItem(inSlot);
-                fuelAmtToConsume -= ForgeEventFactory.getItemBurnTime(inSlot);
+                fuelAmtToConsume -= TileEntityFurnace.getItemBurnTime(inSlot);
                 if (!simulate) {
                     handler.setStackInSlot(slot, stack.copy());
                 }
@@ -67,7 +68,7 @@ public class ItemUtils {
                     break;
                 }
             }
-            int fuelPer = ForgeEventFactory.getItemBurnTime(inSlot);
+            int fuelPer = TileEntityFurnace.getItemBurnTime(inSlot);
             int toConsumeDiv = fuelAmtToConsume / fuelPer;
             int fuelMod = fuelAmtToConsume % fuelPer;
 
@@ -232,7 +233,7 @@ public class ItemUtils {
         Map<Integer, ItemStack> stacksOut = new HashMap<>();
         for (int j = 0; j < handler.getSlots(); j++) {
             ItemStack s = handler.getStackInSlot(j);
-            if (ForgeEventFactory.getItemBurnTime(s) > 0 && NBTMatchingHelper.matchNBTCompound(matchNBTTag, s.getTagCompound())) {
+            if (TileEntityFurnace.getItemBurnTime(s) > 0 && NBTMatchingHelper.matchNBTCompound(matchNBTTag, s.getTagCompound())) {
                 stacksOut.put(j, s.copy());
             }
         }
