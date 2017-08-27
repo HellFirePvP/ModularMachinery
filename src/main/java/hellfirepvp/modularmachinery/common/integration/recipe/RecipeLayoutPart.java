@@ -28,9 +28,18 @@ public abstract class RecipeLayoutPart {
     public static class Tank extends RecipeLayoutPart {
 
         private final Rectangle size;
+        private boolean gasTank = false;
 
         public Tank(Point offset) {
             this.size = new Rectangle(offset.x, offset.y, 22, 63);
+        }
+
+        public void setGasTank(boolean gasTank) {
+            this.gasTank = gasTank;
+        }
+
+        public boolean isGasTank() {
+            return gasTank;
         }
 
         @Override

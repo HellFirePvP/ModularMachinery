@@ -8,10 +8,14 @@
 
 package hellfirepvp.modularmachinery.common.block.prop;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntitySynchronized;
+import hellfirepvp.modularmachinery.common.util.HybridGasTank;
+import hellfirepvp.modularmachinery.common.util.HybridTank;
 import net.minecraft.util.IStringSerializable;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fluids.FluidTank;
+import net.minecraftforge.fml.common.Optional;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -39,17 +43,37 @@ public enum FluidHatchSize implements IStringSerializable {
         this.defaultConfigurationValue = defaultConfigurationValue;
     }
 
-    public FluidTank buildTank(TileEntitySynchronized tileEntity, boolean canFill, boolean canDrain) {
-        FluidTank tank = new FluidTank(this.size) {
+    public HybridTank buildTank(TileEntitySynchronized tileEntity, boolean canFill, boolean canDrain) {
+        HybridTank tank;
+        if(ModularMachinery.isMekanismLoaded) {
+            tank = buildMekTank(tileEntity);
+        } else {
+            tank = buildDefaultTank(tileEntity);
+        }
+        tank.setCanFill(canFill);
+        tank.setCanDrain(canDrain);
+        return tank;
+    }
+
+    private HybridTank buildDefaultTank(TileEntitySynchronized tileEntity) {
+        return new HybridTank(this.size) {
             @Override
             protected void onContentsChanged() {
                 super.onContentsChanged();
                 tileEntity.markForUpdate();
             }
         };
-        tank.setCanFill(canFill);
-        tank.setCanDrain(canDrain);
-        return tank;
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private HybridTank buildMekTank(TileEntitySynchronized tileEntity) {
+        return new HybridGasTank(this.size) {
+            @Override
+            protected void onContentsChanged() {
+                super.onContentsChanged();
+                tileEntity.markForUpdate();
+            }
+        };
     }
 
     public int getSize() {

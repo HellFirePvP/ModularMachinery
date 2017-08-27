@@ -8,9 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import net.minecraft.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -23,10 +23,10 @@ abstract class ComponentOutputRestrictor {
 
     static class RestrictionTank extends ComponentOutputRestrictor {
 
-        final FluidStack inserted;
+        final HybridFluid inserted;
         final MachineComponent exactComponent;
 
-        RestrictionTank(FluidStack inserted, MachineComponent exactComponent) {
+        RestrictionTank(HybridFluid inserted, MachineComponent exactComponent) {
             this.inserted = inserted;
             this.exactComponent = exactComponent;
         }

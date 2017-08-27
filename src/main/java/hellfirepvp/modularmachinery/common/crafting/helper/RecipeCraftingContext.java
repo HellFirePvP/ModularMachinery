@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.HybridTank;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -34,7 +35,7 @@ public class RecipeCraftingContext {
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
     private Map<MachineComponent, IOInventory> itemComponents = new HashMap<>();
-    private Map<MachineComponent, FluidTank> fluidComponents = new HashMap<>();
+    private Map<MachineComponent, HybridTank> fluidComponents = new HashMap<>();
     private Map<MachineComponent, IEnergyHandler> energyComponents = new HashMap<>();
 
     private List<ComponentOutputRestrictor> currentRestrictions = Lists.newArrayList();
@@ -196,7 +197,7 @@ public class RecipeCraftingContext {
         return itemComponents.get(component);
     }
 
-    public FluidTank getFluidHandler(MachineComponent component) {
+    public HybridTank getFluidHandler(MachineComponent component) {
         return fluidComponents.get(component);
     }
 

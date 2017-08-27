@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
@@ -188,11 +189,11 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         }
         ingredients.setInputLists(ItemStack.class, applicableStacksIn);
 
-        List<FluidStack> applicableFluidsIn = Lists.newLinkedList();
+        List<HybridFluid> applicableFluidsIn = Lists.newLinkedList();
         for (ComponentRequirement.RequirementFluid fluidIn : this.immulatbleOrderedInputFluids) {
             applicableFluidsIn.add(fluidIn.required);
         }
-        ingredients.setInputs(FluidStack.class, applicableFluidsIn);
+        ingredients.setInputs(HybridFluid.class, applicableFluidsIn);
 
 
 
@@ -202,11 +203,11 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         }
         ingredients.setOutputLists(ItemStack.class, applicableStacksOut);
 
-        List<FluidStack> applicableFluidsOut = Lists.newLinkedList();
+        List<HybridFluid> applicableFluidsOut = Lists.newLinkedList();
         for (ComponentRequirement.RequirementFluid fluidIn : this.immulatbleOrderedOutputFluids) {
             applicableFluidsOut.add(fluidIn.required);
         }
-        ingredients.setOutputs(FluidStack.class, applicableFluidsOut);
+        ingredients.setOutputs(HybridFluid.class, applicableFluidsOut);
     }
 
     private List<ItemStack> getIIngredientComponents(ComponentRequirement.RequirementItem itemRequirement) {

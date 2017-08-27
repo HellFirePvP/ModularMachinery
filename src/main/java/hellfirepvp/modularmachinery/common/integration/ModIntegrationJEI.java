@@ -9,8 +9,13 @@
 package hellfirepvp.modularmachinery.common.integration;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidRenderer;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridStackHelper;
 import hellfirepvp.modularmachinery.common.integration.preview.CategoryStructurePreview;
 import hellfirepvp.modularmachinery.common.integration.preview.StructurePreviewWrapper;
 import hellfirepvp.modularmachinery.common.integration.recipe.CategoryDynamicRecipe;
@@ -21,15 +26,26 @@ import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.lib.ItemsMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import mekanism.api.gas.Gas;
+import mekanism.api.gas.GasRegistry;
+import mekanism.api.gas.GasStack;
 import mezz.jei.api.*;
+import mezz.jei.api.ingredients.IIngredientRegistry;
+import mezz.jei.api.ingredients.IModIngredientRegistration;
 import mezz.jei.api.recipe.IRecipeCategoryRegistration;
 import mezz.jei.api.recipe.IStackHelper;
+import net.minecraft.block.Block;
+import net.minecraft.init.Items;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.fluids.Fluid;
+import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.*;
+import net.minecraftforge.fml.common.Optional;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -46,6 +62,7 @@ public class ModIntegrationJEI implements IModPlugin {
 
     public static IStackHelper stackHelper;
     public static IJeiHelpers jeiHelpers;
+    public static IIngredientRegistry ingredientRegistry;
     public static IRecipeRegistry recipeRegistry;
 
     public static String getCategoryStringFor(DynamicMachine machine) {
@@ -54,6 +71,39 @@ public class ModIntegrationJEI implements IModPlugin {
 
     public static CategoryDynamicRecipe getCategory(DynamicMachine machine) {
         return recipeCategories.get(machine);
+    }
+
+    @Override
+    public void registerIngredients(IModIngredientRegistration registry) {
+        List<HybridFluid> wrappers = new LinkedList<>();
+
+        Map<String, Fluid> registeredFluids = FluidRegistry.getRegisteredFluids();
+        for (Fluid fluid : registeredFluids.values()) {
+            Block fluidBlock = fluid.getBlock();
+            if (Item.getItemFromBlock(fluidBlock) == Items.AIR) {
+                wrappers.add(new HybridFluid(new FluidStack(fluid, Fluid.BUCKET_VOLUME)));
+            }
+        }
+        registry.register(HybridFluid.class, wrappers, new HybridStackHelper<>(), new HybridFluidRenderer<>());
+        if(ModularMachinery.isMekanismLoaded) {
+            registerHybridGas(registry);
+        }
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private void registerHybridGas(IModIngredientRegistration registry) {
+        List<HybridFluidGas> wrappers = new LinkedList<>();
+        addGasWrappers(wrappers);
+        registry.register(HybridFluidGas.class, wrappers, new HybridStackHelper<>(), new HybridFluidRenderer<>());
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private void addGasWrappers(List<HybridFluidGas> wrappers) {
+        for (Gas g : GasRegistry.getRegisteredGasses()) {
+            if(g.isVisible()) {
+                wrappers.add(new HybridFluidGas(new GasStack(g, Fluid.BUCKET_VOLUME)));
+            }
+        }
     }
 
     @Override
@@ -73,6 +123,7 @@ public class ModIntegrationJEI implements IModPlugin {
     @Override
     public void register(IModRegistry registry) {
         jeiHelpers = registry.getJeiHelpers();
+        ingredientRegistry = registry.getIngredientRegistry();
         RecipeLayoutHelper.init();
 
         registry.addRecipeCatalyst(new ItemStack(BlocksMM.blockController), CATEGORY_PREVIEW);

@@ -51,6 +51,7 @@ tooltip.itembus.slots=%s Slots
 tooltip.fluidhatch.empty=Empty
 tooltip.fluidhatch.tank=%smb / %smb
 tooltip.fluidhatch.tank.info=Can hold %s mb
+tooltip.fluidhatch.tank.mek=Accepts Mekanism Gas
 
 tooltip.energyhatch.charge=%s / %s Energy
 tooltip.energyhatch.storage=Stores %s FE

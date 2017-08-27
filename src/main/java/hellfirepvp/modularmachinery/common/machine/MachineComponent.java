@@ -8,10 +8,12 @@
 
 package hellfirepvp.modularmachinery.common.machine;
 
+import hellfirepvp.modularmachinery.common.util.HybridTank;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nullable;
@@ -58,12 +60,22 @@ public abstract class MachineComponent {
 
         ITEM,
         FLUID,
-        ENERGY;
+        ENERGY,
+
+        GAS("mekanism");
+
+        private String modidRequired = null;
+
+        ComponentType() {}
+
+        ComponentType(String modidRequired) {
+            this.modidRequired = modidRequired;
+        }
 
         @Nullable
         public static ComponentType getByString(String name) {
             for (ComponentType val : values()) {
-                if(val.name().equalsIgnoreCase(name)) {
+                if(val.name().equalsIgnoreCase(name) && (val.modidRequired == null || Loader.isModLoaded(val.modidRequired))) {
                     return val;
                 }
             }
@@ -93,7 +105,7 @@ public abstract class MachineComponent {
             super(ioType);
         }
 
-        public abstract FluidTank getTank();
+        public abstract HybridTank getTank();
 
         @Override
         public ComponentType getComponentType() {

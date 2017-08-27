@@ -14,18 +14,22 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidRenderer;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import mezz.jei.api.gui.*;
+import mezz.jei.api.ingredients.IIngredientRenderer;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeCategory;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.Optional;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -278,24 +282,14 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
     @Override
     public void setRecipe(IRecipeLayout recipeLayout, DynamicRecipeWrapper recipeWrapper, IIngredients ingredients) {
-        IGuiFluidStackGroup fluidStacks = recipeLayout.getFluidStacks();
         IGuiItemStackGroup itemStacks = recipeLayout.getItemStacks();
 
-        int amtItemInputs = 0, amtFluidInputs = 0;
+        int amtItemInputs = 0;
 
-        int fluidIndex = 0;
-        for (RecipeLayoutPart fluidTank : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
-            fluidStacks.init(fluidIndex, true, partSize.x, partSize.y, partSize.width, partSize.height,
-                    1000, true, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidIndex++;
-            amtFluidInputs++;
-        }
-        for (RecipeLayoutPart fluidTank : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
-            fluidStacks.init(fluidIndex, false, partSize.x, partSize.y, partSize.width, partSize.height,
-                    1000, true, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidIndex++;
+        if(ModularMachinery.isMekanismLoaded) {
+            addFluidStacksWithMekanism(recipeLayout, recipeWrapper, ingredients);
+        } else {
+            addFluidsWithoutMekanism(recipeLayout, recipeWrapper, ingredients);
         }
 
         int itemSlotIndex = 0;
@@ -311,46 +305,6 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             itemSlotIndex++;
         }
 
-        fluidStacks.set(ingredients);
-        int finalAmtFluidInputs = amtFluidInputs;
-        fluidStacks.addTooltipCallback((slotIndex, input, ingredient, tooltip) -> {
-            if(input) {
-                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputFluids.size()) {
-                    return;
-                }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
-                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
-                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
-                    if(fluidReq.chance == 0F) {
-                        tooltip.add(I18n.format("tooltip.machinery.chance.in.never"));
-                    } else {
-                        if(fluidReq.chance < 0.01F) {
-                            chanceStr = "< 1";
-                        }
-                        chanceStr += "%";
-                        tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
-                    }
-                }
-            } else {
-                slotIndex -= finalAmtFluidInputs;
-                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputFluids.size()) {
-                    return;
-                }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
-                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
-                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
-                    if(fluidReq.chance == 0F) {
-                        tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
-                    } else {
-                        if(fluidReq.chance < 0.01F) {
-                            chanceStr = "< 1";
-                        }
-                        chanceStr += "%";
-                        tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
-                    }
-                }
-            }
-        });
         itemStacks.set(ingredients);
         int finalAmtItemInputs = amtItemInputs;
         itemStacks.addTooltipCallback((slotIndex, input, ingredient, tooltip) -> {
@@ -390,6 +344,142 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                         tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
                     } else {
                         if(itemReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
+                    }
+                }
+            }
+        });
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private void addFluidStacksWithMekanism(IRecipeLayout recipeLayout, DynamicRecipeWrapper recipeWrapper, IIngredients ingredients) {
+        IGuiIngredientGroup<HybridFluid> fluidGroup = recipeLayout.getIngredientsGroup(HybridFluid.class);
+        HybridFluidRenderer<HybridFluid> hybridFluidRenderer = new HybridFluidRenderer<>();
+
+        //IGuiIngredientGroup<HybridFluidGas> gasGroup = recipeLayout.getIngredientsGroup(HybridFluidGas.class);
+        //HybridFluidRenderer<HybridFluidGas> gasRenderer = new HybridFluidRenderer<>();
+        int amtFluidInputs = 0;
+        int fluidIndex = 0;
+        for (RecipeLayoutPart fluidTank : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
+            Rectangle partSize = fluidTank.getSize();
+            HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
+                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            copy = copy.
+                    copyPrepareGasRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, true, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+            fluidIndex++;
+            amtFluidInputs++;
+        }
+        for (RecipeLayoutPart fluidTank : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
+            Rectangle partSize = fluidTank.getSize();
+            HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
+                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            copy = copy.
+                    copyPrepareGasRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, false, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+            fluidIndex++;
+        }
+
+
+        fluidGroup.set(ingredients);
+        int finalAmtFluidInputs = amtFluidInputs;
+        fluidGroup.addTooltipCallback((slotIndex, input, ingredient, tooltip) -> {
+            if(input) {
+                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputFluids.size()) {
+                    return;
+                }
+                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
+                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
+                    }
+                }
+            } else {
+                slotIndex -= finalAmtFluidInputs;
+                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputFluids.size()) {
+                    return;
+                }
+                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
+                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out", chanceStr));
+                    }
+                }
+            }
+        });
+    }
+
+    private void addFluidsWithoutMekanism(IRecipeLayout recipeLayout, DynamicRecipeWrapper recipeWrapper, IIngredients ingredients) {
+        IGuiIngredientGroup<HybridFluid> fluidGroup = recipeLayout.getIngredientsGroup(HybridFluid.class);
+        HybridFluidRenderer<HybridFluid> hybridFluidRenderer = new HybridFluidRenderer<>();
+
+        int amtFluidInputs = 0;
+        int fluidIndex = 0;
+        for (RecipeLayoutPart fluidTank : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
+            Rectangle partSize = fluidTank.getSize();
+            HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
+                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, true, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+            fluidIndex++;
+            amtFluidInputs++;
+        }
+        for (RecipeLayoutPart fluidTank : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
+            Rectangle partSize = fluidTank.getSize();
+            HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
+                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, false, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+            fluidIndex++;
+        }
+
+        fluidGroup.set(ingredients);
+        int finalAmtFluidInputs = amtFluidInputs;
+        fluidGroup.addTooltipCallback((slotIndex, input, ingredient, tooltip) -> {
+            if(input) {
+                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputFluids.size()) {
+                    return;
+                }
+                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
+                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
+                            chanceStr = "< 1";
+                        }
+                        chanceStr += "%";
+                        tooltip.add(I18n.format("tooltip.machinery.chance.in", chanceStr));
+                    }
+                }
+            } else {
+                slotIndex -= finalAmtFluidInputs;
+                if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputFluids.size()) {
+                    return;
+                }
+                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
+                if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
+                    String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
+                    if(fluidReq.chance == 0F) {
+                        tooltip.add(I18n.format("tooltip.machinery.chance.out.never"));
+                    } else {
+                        if(fluidReq.chance < 0.01F) {
                             chanceStr = "< 1";
                         }
                         chanceStr += "%";

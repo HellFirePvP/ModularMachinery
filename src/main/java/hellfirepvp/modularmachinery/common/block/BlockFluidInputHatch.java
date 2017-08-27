@@ -70,6 +70,9 @@ public class BlockFluidInputHatch extends BlockMachineComponent implements Block
     public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
         FluidHatchSize size = FluidHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, FluidHatchSize.values().length - 1)];
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.info", size.getSize()));
+        if(ModularMachinery.isMekanismLoaded) {
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.mek"));
+        }
     }
 
     @Override

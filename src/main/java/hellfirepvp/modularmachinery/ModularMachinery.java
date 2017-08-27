@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.network.PktSyncSelection;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.nbt.JsonToNBT;
 import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -55,6 +56,7 @@ public class ModularMachinery {
     public static ModularMachinery instance;
 
     public static Logger log;
+    public static boolean isMekanismLoaded = false;
 
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
     public static CommonProxy proxy;
@@ -64,6 +66,7 @@ public class ModularMachinery {
         event.getModMetadata().version = VERSION;
         log = event.getModLog();
         devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
+        isMekanismLoaded = Loader.isModLoaded("mekanism");
 
         NET_CHANNEL.registerMessage(PktCopyToClipboard.class, PktCopyToClipboard.class, 0, Side.CLIENT);
         NET_CHANNEL.registerMessage(PktSyncSelection.class, PktSyncSelection.class, 1, Side.CLIENT);

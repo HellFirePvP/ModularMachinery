@@ -8,8 +8,10 @@
 
 package hellfirepvp.modularmachinery.common.util;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraftforge.fluids.FluidTank;
+import net.minecraftforge.fml.common.Optional;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -20,12 +22,40 @@ import net.minecraftforge.fluids.FluidTank;
  */
 public class CopyHandlerHelper {
 
-    public static FluidTank copyTank(FluidTank tank) {
+    public static HybridTank copyTank(HybridTank tank) {
         NBTTagCompound cmp = new NBTTagCompound();
         tank.writeToNBT(cmp);
-        FluidTank newTank = new FluidTank(tank.getCapacity());
+        if(ModularMachinery.isMekanismLoaded) {
+            writeGasTag(tank, cmp);
+        }
+        HybridTank newTank = new HybridTank(tank.getCapacity());
+        if(ModularMachinery.isMekanismLoaded) {
+            newTank = buildMekGasTank(tank.getCapacity());
+        }
         newTank.readFromNBT(cmp);
+        if(ModularMachinery.isMekanismLoaded) {
+            readGasTag(newTank, cmp);
+        }
         return newTank;
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private static HybridTank buildMekGasTank(int capacity) {
+        return new HybridGasTank(capacity);
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private static void writeGasTag(HybridTank tank, NBTTagCompound compound) {
+        if(tank instanceof HybridGasTank) {
+            ((HybridGasTank) tank).writeGasToNBT(compound);
+        }
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private static void readGasTag(HybridTank tank, NBTTagCompound compound) {
+        if(tank instanceof HybridGasTank) {
+            ((HybridGasTank) tank).readGasFromNBT(compound);
+        }
     }
 
     public static IOInventory copyInventory(IOInventory inventory) {

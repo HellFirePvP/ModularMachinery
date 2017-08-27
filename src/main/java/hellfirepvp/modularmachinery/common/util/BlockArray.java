@@ -19,7 +19,6 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
-import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -29,6 +28,7 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
@@ -37,8 +37,6 @@ import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-import org.lwjgl.util.vector.Matrix2f;
-import org.lwjgl.util.vector.Vector2f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -220,19 +218,17 @@ public class BlockArray {
     public BlockArray rotateYCCW() {
         BlockArray out = new BlockArray();
 
-        Matrix2f rotation = new Matrix2f();
-        rotation.m00 = 0;
-        rotation.m01 = -1;
-        rotation.m10 = 1;
-        rotation.m11 = 0;
-
         for (BlockPos pos : pattern.keySet()) {
             BlockInformation info = pattern.get(pos);
-            Vector2f vec = new Vector2f(pos.getX(), pos.getZ());
-            Vector2f dst = Matrix2f.transform(rotation, vec, null);
+            Vec2f vec = new Vec2f(pos.getX(), pos.getZ());
+            Vec2f dst = rotateCCW(vec);
             out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info.copyRotateYCCW());
         }
         return out;
+    }
+
+    private Vec2f rotateCCW(Vec2f vec) {
+        return new Vec2f(vec.y, -vec.x);
     }
 
     public String serializeAsMachineJson() {

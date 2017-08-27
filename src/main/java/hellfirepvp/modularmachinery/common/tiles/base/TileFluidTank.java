@@ -8,8 +8,14 @@
 
 package hellfirepvp.modularmachinery.common.tiles.base;
 
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.HybridGasTank;
+import hellfirepvp.modularmachinery.common.util.HybridTank;
+import mekanism.api.gas.Gas;
+import mekanism.api.gas.GasStack;
+import mekanism.api.gas.IGasHandler;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
@@ -17,6 +23,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
 
@@ -27,9 +34,10 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 17:51
  */
-public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile {
+@Optional.Interface(iface = "mekanism.api.gas.IGasHandler", modid = "mekanism")
+public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile, IGasHandler {
 
-    private FluidTank tank;
+    private HybridTank tank;
     private MachineComponent.IOType ioType;
     private FluidHatchSize hatchSize;
 
@@ -41,7 +49,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         this.ioType = type;
     }
 
-    public FluidTank getTank() {
+    public HybridTank getTank() {
         return tank;
     }
 
@@ -65,10 +73,13 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
 
         this.ioType = compound.getBoolean("input") ? MachineComponent.IOType.INPUT : MachineComponent.IOType.OUTPUT;
         this.hatchSize = FluidHatchSize.values()[MathHelper.clamp(compound.getInteger("size"), 0, FluidHatchSize.values().length - 1)];
-        FluidTank newTank = hatchSize.buildTank(this, ioType == MachineComponent.IOType.INPUT, ioType == MachineComponent.IOType.OUTPUT);
+        HybridTank newTank = hatchSize.buildTank(this, ioType == MachineComponent.IOType.INPUT, ioType == MachineComponent.IOType.OUTPUT);
         NBTTagCompound tankTag = compound.getCompoundTag("tank");
         newTank.readFromNBT(tankTag);
         this.tank = newTank;
+        if(ModularMachinery.isMekanismLoaded) {
+            this.readMekGasData(tankTag);
+        }
     }
 
     @Override
@@ -79,6 +90,9 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         compound.setInteger("size", this.hatchSize.ordinal());
         NBTTagCompound tankTag = new NBTTagCompound();
         this.tank.writeToNBT(tankTag);
+        if(ModularMachinery.isMekanismLoaded) {
+            this.writeMekGasData(tankTag);
+        }
         compound.setTag("tank", tankTag);
     }
 
@@ -87,9 +101,55 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     public MachineComponent provideComponent() {
         return new MachineComponent.FluidHatch(ioType) {
             @Override
-            public FluidTank getTank() {
+            public HybridTank getTank() {
                 return TileFluidTank.this.tank;
             }
         };
+    }
+
+    //Mek things
+
+    @Optional.Method(modid = "mekanism")
+    private void writeMekGasData(NBTTagCompound compound) {
+        if(this.tank instanceof HybridGasTank) {
+            ((HybridGasTank) this.tank).writeGasToNBT(compound);
+        }
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private void readMekGasData(NBTTagCompound compound) {
+        if(this.tank instanceof HybridGasTank) {
+            ((HybridGasTank) this.tank).readGasFromNBT(compound);
+        }
+    }
+
+    @Override
+    @Optional.Method(modid = "mekanism")
+    public int receiveGas(EnumFacing side, GasStack stack, boolean doTransfer) {
+        if(this.tank instanceof HybridGasTank) {
+            return ((HybridGasTank) this.tank).receiveGas(side, stack, doTransfer);
+        }
+        return 0;
+    }
+
+    @Override
+    @Optional.Method(modid = "mekanism")
+    public GasStack drawGas(EnumFacing side, int amount, boolean doTransfer) {
+        if(this.tank instanceof HybridGasTank) {
+            return ((HybridGasTank) this.tank).drawGas(side, amount, doTransfer);
+        }
+        return null;
+    }
+
+    @Override
+    @Optional.Method(modid = "mekanism")
+    public boolean canReceiveGas(EnumFacing side, Gas type) {
+        return this.tank instanceof HybridGasTank && ((HybridGasTank) this.tank).canReceiveGas(side, type);
+    }
+
+    @Override
+    @Optional.Method(modid = "mekanism")
+    public boolean canDrawGas(EnumFacing side, Gas type) {
+        return this.tank instanceof HybridGasTank && ((HybridGasTank) this.tank).canDrawGas(side, type);
     }
 }

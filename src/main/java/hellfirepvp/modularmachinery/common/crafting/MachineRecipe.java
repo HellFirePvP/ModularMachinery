@@ -17,6 +17,9 @@ import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
+import mekanism.api.gas.Gas;
+import mekanism.api.gas.GasRegistry;
+import mekanism.api.gas.GasStack;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -26,6 +29,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
 import javax.annotation.Nonnull;
@@ -34,7 +38,6 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -396,6 +399,11 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                         }
                     }
                     return req;
+                case GAS:
+                    if(ModularMachinery.isMekanismLoaded) {
+                        return deserializeMekanismGasRequirement(machineIoType, requirement);
+                    }
+                    throw new IllegalStateException("Inconsistent state: FML says Mekanism is loaded now, but didn't state that before! This is a mod-loading issue apparently! Report this!");
                 case ENERGY:
                     if(!requirement.has("energyPerTick") || !requirement.get("energyPerTick").isJsonPrimitive() ||
                             !requirement.get("energyPerTick").getAsJsonPrimitive().isNumber()) {
@@ -406,6 +414,38 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                     return req;
             }
             throw new JsonParseException("Unknown machine component type: " + type);
+        }
+
+        @Optional.Method(modid = "mekanism")
+        private ComponentRequirement deserializeMekanismGasRequirement(MachineComponent.IOType machineIoType, JsonObject requirement) throws JsonParseException {
+            if(!requirement.has("gas") || !requirement.get("gas").isJsonPrimitive() ||
+                    !requirement.get("gas").getAsJsonPrimitive().isString()) {
+                throw new JsonParseException("The ComponentType 'gas' expects an 'gas'-entry that defines the type of gas!");
+            }
+            if(!requirement.has("amount") || !requirement.get("amount").isJsonPrimitive() ||
+                    !requirement.get("amount").getAsJsonPrimitive().isNumber()) {
+                throw new JsonParseException("The ComponentType 'gas' expects an 'amount'-entry that defines the type of gas!");
+            }
+            String gasName = requirement.getAsJsonPrimitive("gas").getAsString();
+            int mbAmount = requirement.getAsJsonPrimitive("amount").getAsInt();
+            Gas gas = GasRegistry.getGas(gasName);
+            if(gas == null) {
+                throw new JsonParseException("The gas specified in the 'gas'-entry (" + gasName + ") doesn't exist!");
+            }
+            mbAmount = Math.max(0, mbAmount);
+            GasStack gasStack = new GasStack(gas, mbAmount);
+            ComponentRequirement.RequirementFluid req = ComponentRequirement.RequirementFluid.createMekanismGasRequirement(machineIoType, gasStack);
+
+            if(requirement.has("chance")) {
+                if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
+                    throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
+                }
+                float chance = requirement.getAsJsonPrimitive("chance").getAsFloat();
+                if(chance >= 0 && chance <= 1) {
+                    req.setChance(chance);
+                }
+            }
+            return req;
         }
 
     }
