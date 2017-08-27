@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.util.HybridTank;
 import mekanism.api.gas.Gas;
 import mekanism.api.gas.GasStack;
 import mekanism.api.gas.IGasHandler;
+import mekanism.api.gas.ITubeConnection;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
@@ -34,8 +35,11 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 07.07.2017 / 17:51
  */
-@Optional.Interface(iface = "mekanism.api.gas.IGasHandler", modid = "mekanism")
-public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile, IGasHandler {
+@Optional.InterfaceList({
+        @Optional.Interface(modid = "mekanism", iface = "mekanism.api.gas.IGasHandler"),
+        @Optional.Interface(modid = "mekanism", iface = "mekanism.api.gas.ITubeConnection")
+})
+public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile, IGasHandler, ITubeConnection {
 
     private HybridTank tank;
     private MachineComponent.IOType ioType;
@@ -55,7 +59,15 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
 
     @Override
     public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
-        return capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY || super.hasCapability(capability, facing);
+        if(capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
+            return true;
+        }
+        if(ModularMachinery.isMekanismLoaded) {
+            if(checkMekanismGasCapabilities(capability)) {
+                return true;
+            }
+        }
+        return super.hasCapability(capability, facing);
     }
 
     @Nullable
@@ -64,7 +76,18 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         if(capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             return (T) tank;
         }
+        if(ModularMachinery.isMekanismLoaded) {
+            if(checkMekanismGasCapabilities(capability)) {
+                return (T) this;
+            }
+        }
         return super.getCapability(capability, facing);
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private boolean checkMekanismGasCapabilities(Capability<?> capability) {
+        Object defaultInstance = capability.getDefaultInstance();
+        return defaultInstance instanceof IGasHandler || defaultInstance instanceof ITubeConnection;
     }
 
     @Override
@@ -108,6 +131,13 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     }
 
     //Mek things
+
+
+    @Override
+    @Optional.Method(modid = "mekanism")
+    public boolean canTubeConnect(EnumFacing side) {
+        return true;
+    }
 
     @Optional.Method(modid = "mekanism")
     private void writeMekGasData(NBTTagCompound compound) {

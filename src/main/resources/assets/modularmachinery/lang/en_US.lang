@@ -49,7 +49,10 @@ tooltip.itembus.slot=1 Slot
 tooltip.itembus.slots=%s Slots
 
 tooltip.fluidhatch.empty=Empty
+tooltip.fluidhatch.fluid=[Fluid]
+tooltip.fluidhatch.gas=[Gas]
 tooltip.fluidhatch.tank=%smb / %smb
+tooltip.fluidhatch.tank.gas=%s / %s
 tooltip.fluidhatch.tank.info=Can hold %s mb
 tooltip.fluidhatch.tank.mek=Accepts Mekanism Gas
 

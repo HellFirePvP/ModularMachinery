@@ -117,8 +117,8 @@ public class HybridGasTank extends HybridTank implements IGasHandler {
         int filled = capacity - getGas().amount;
 
         if (getGas().amount < filled) {
-            getGas().amount += getGas().amount;
-            filled = getGas().amount;
+            getGas().amount += stack.amount;
+            filled = stack.amount;
         } else {
             getGas().amount = capacity;
         }
@@ -168,8 +168,8 @@ public class HybridGasTank extends HybridTank implements IGasHandler {
     public void readGasFromNBT(NBTTagCompound nbt) {
         NBTTagCompound subGas = nbt.getCompoundTag("gasTag");
         if (subGas.getSize() > 0) {
-            if (!nbt.hasKey("Empty")) {
-                setGas(GasStack.readFromNBT(nbt));
+            if (!subGas.hasKey("Empty")) {
+                setGas(GasStack.readFromNBT(subGas));
             } else {
                 setGas(null);
             }
