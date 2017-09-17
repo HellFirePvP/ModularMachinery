@@ -8,6 +8,8 @@
 
 package hellfirepvp.modularmachinery.common.tiles;
 
+import cofh.redstoneflux.api.IEnergyReceiver;
+import cofh.redstoneflux.api.IEnergyStorage;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -18,10 +20,14 @@ import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -43,10 +49,80 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     }
 
     @Override
+    public void update() {
+        if(this.needsOutputUpdate) {
+            int transferCap = this.size.transferLimit;
+            for (EnumFacing face : EnumFacing.VALUES) {
+                if(Loader.isModLoaded("redstoneflux")) {
+                    transferCap = attemptFERFTransfer(face, transferCap);
+                } else {
+                    transferCap = attemptFETransfer(face, transferCap);
+                }
+                if(transferCap <= 0) {
+                    break;
+                }
+            }
+
+            //Means we transferred all energy. No need for further updates until we get updated again.
+            if(transferCap > 0) {
+                this.needsOutputUpdate = false;
+            }
+        }
+    }
+
+    private int attemptFETransfer(EnumFacing face, int maxTransferLeft) {
+        BlockPos at = this.getPos().offset(face);
+        EnumFacing accessingSide = face.getOpposite();
+
+        int receivedEnergy = 0;
+        TileEntity te = world.getTileEntity(at);
+        if(te != null && !(te instanceof TileEnergyHatch)) {
+            if(te.hasCapability(CapabilityEnergy.ENERGY, accessingSide)) {
+                net.minecraftforge.energy.IEnergyStorage ce = te.getCapability(CapabilityEnergy.ENERGY, accessingSide);
+                if(ce != null && ce.canReceive()) {
+                    receivedEnergy = ce.receiveEnergy(maxTransferLeft, false);
+                }
+            }
+        }
+        return maxTransferLeft - receivedEnergy;
+    }
+
+    @Optional.Method(modid = "redstoneflux")
+    private int attemptFERFTransfer(EnumFacing face, int maxTransferLeft) {
+        BlockPos at = this.getPos().offset(face);
+        EnumFacing accessingSide = face.getOpposite();
+
+        int receivedEnergy = 0;
+        TileEntity te = world.getTileEntity(at);
+        if(te != null && !(te instanceof TileEnergyHatch)) {
+            if(te instanceof cofh.redstoneflux.api.IEnergyReceiver && ((IEnergyReceiver) te).canConnectEnergy(accessingSide)) {
+                receivedEnergy = ((IEnergyReceiver) te).receiveEnergy(accessingSide, maxTransferLeft, false);
+            }
+            if(receivedEnergy <= 0 && te instanceof IEnergyStorage) {
+                receivedEnergy = ((IEnergyStorage) te).receiveEnergy(maxTransferLeft, false);
+            }
+            if(receivedEnergy <= 0 && te.hasCapability(CapabilityEnergy.ENERGY, accessingSide)) {
+                net.minecraftforge.energy.IEnergyStorage ce = te.getCapability(CapabilityEnergy.ENERGY, accessingSide);
+                if(ce != null && ce.canReceive()) {
+                    receivedEnergy = ce.receiveEnergy(maxTransferLeft, false);
+                }
+            }
+        }
+        return maxTransferLeft - receivedEnergy;
+    }
+
+    @Override
+    public void markForUpdate() {
+        super.markForUpdate();
+        this.needsOutputUpdate = true;
+    }
+
+    @Override
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();
         IntegrationIC2EventHandlerHelper.fireLoadEvent(world, this);
+        this.needsOutputUpdate = true;
     }
 
     @Override

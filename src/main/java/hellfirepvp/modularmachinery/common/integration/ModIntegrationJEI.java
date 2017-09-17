@@ -75,35 +75,21 @@ public class ModIntegrationJEI implements IModPlugin {
 
     @Override
     public void registerIngredients(IModIngredientRegistration registry) {
-        List<HybridFluid> wrappers = new LinkedList<>();
-
-        Map<String, Fluid> registeredFluids = FluidRegistry.getRegisteredFluids();
-        for (Fluid fluid : registeredFluids.values()) {
-            Block fluidBlock = fluid.getBlock();
-            if (Item.getItemFromBlock(fluidBlock) == Items.AIR) {
-                wrappers.add(new HybridFluid(new FluidStack(fluid, Fluid.BUCKET_VOLUME)));
+        try {
+            registry.register(HybridFluid.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
+            if(ModularMachinery.isMekanismLoaded) {
+                registerHybridGas(registry);
             }
-        }
-        registry.register(HybridFluid.class, wrappers, new HybridStackHelper<>(), new HybridFluidRenderer<>());
-        if(ModularMachinery.isMekanismLoaded) {
-            registerHybridGas(registry);
+        } catch (Exception exc) {
+            ModularMachinery.log.warn("Error setting up HybridFluid JEI registration! Check the log after this for more details! Report this error!");
+            exc.printStackTrace();
+            throw exc;
         }
     }
 
     @Optional.Method(modid = "mekanism")
     private void registerHybridGas(IModIngredientRegistration registry) {
-        List<HybridFluidGas> wrappers = new LinkedList<>();
-        addGasWrappers(wrappers);
-        registry.register(HybridFluidGas.class, wrappers, new HybridStackHelper<>(), new HybridFluidRenderer<>());
-    }
-
-    @Optional.Method(modid = "mekanism")
-    private void addGasWrappers(List<HybridFluidGas> wrappers) {
-        for (Gas g : GasRegistry.getRegisteredGasses()) {
-            if(g.isVisible()) {
-                wrappers.add(new HybridFluidGas(new GasStack(g, Fluid.BUCKET_VOLUME)));
-            }
-        }
+        registry.register(HybridFluidGas.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
     }
 
     @Override

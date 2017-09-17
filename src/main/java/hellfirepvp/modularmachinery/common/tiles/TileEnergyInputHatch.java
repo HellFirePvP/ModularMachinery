@@ -43,6 +43,9 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     }
 
     @Override
+    public void update() {}
+
+    @Override
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();

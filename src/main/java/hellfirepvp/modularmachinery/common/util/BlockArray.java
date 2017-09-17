@@ -28,7 +28,6 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Rotation;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
@@ -220,15 +219,9 @@ public class BlockArray {
 
         for (BlockPos pos : pattern.keySet()) {
             BlockInformation info = pattern.get(pos);
-            Vec2f vec = new Vec2f(pos.getX(), pos.getZ());
-            Vec2f dst = rotateCCW(vec);
-            out.pattern.put(new BlockPos(dst.x, pos.getY(), dst.y), info.copyRotateYCCW());
+            out.pattern.put(new BlockPos(pos.getZ(), pos.getY(), -pos.getX()), info.copyRotateYCCW());
         }
         return out;
-    }
-
-    private Vec2f rotateCCW(Vec2f vec) {
-        return new Vec2f(vec.y, -vec.x);
     }
 
     public String serializeAsMachineJson() {
