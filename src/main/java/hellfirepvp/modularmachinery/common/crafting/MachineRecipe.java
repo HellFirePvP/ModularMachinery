@@ -398,6 +398,30 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                             ((ComponentRequirement.RequirementFluid) req).setChance(chance);
                         }
                     }
+                    if (requirement.has("nbt")) {
+                        if (!requirement.has("nbt") || !requirement.get("nbt").isJsonObject()) {
+                            throw new JsonParseException("The ComponentType 'nbt' expects a json compound that defines the NBT tag!");
+                        }
+                        String nbtString = requirement.getAsJsonObject("nbt").toString();
+                        try {
+                            ((ComponentRequirement.RequirementFluid) req).setMatchNBTTag(NBTJsonDeserializer.deserialize(nbtString));
+                        } catch (NBTException exc) {
+                            throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
+                        }
+                        if (requirement.has("nbt-display")) {
+                            if(!requirement.has("nbt-display") || !requirement.get("nbt-display").isJsonObject()) {
+                                throw new JsonParseException("The ComponentType 'nbt-display' expects a json compound that defines the NBT tag meant to be used for displaying!");
+                            }
+                            String nbtDisplayString = requirement.getAsJsonObject("nbt-display").toString();
+                            try {
+                                ((ComponentRequirement.RequirementFluid) req).setDisplayNBTTag(NBTJsonDeserializer.deserialize(nbtDisplayString));
+                            } catch (NBTException exc) {
+                                throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
+                            }
+                        } else {
+                            ((ComponentRequirement.RequirementFluid) req).setDisplayNBTTag(((ComponentRequirement.RequirementFluid) req).getTagMatch());
+                        }
+                    }
                     return req;
                 case GAS:
                     if(ModularMachinery.isMekanismLoaded) {

@@ -51,7 +51,7 @@ public class RecipeRegistry {
         if(recipes == null) {
             return Lists.newArrayList();
         }
-        return Iterables.concat(recipes.descendingMap().values());
+        return Iterables.concat(recipes.values());
     }
 
     @Nullable

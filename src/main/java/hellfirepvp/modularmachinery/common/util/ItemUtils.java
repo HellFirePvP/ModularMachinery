@@ -150,38 +150,44 @@ public class ItemUtils {
         return cAmt <= 0;
     }
 
-    public static boolean tryPlaceItemInInventory(@Nonnull ItemStack stack, IItemHandlerModifiable handler, boolean simulate) {
+    //Returns the amount inserted
+    public static int tryPlaceItemInInventory(@Nonnull ItemStack stack, IItemHandlerModifiable handler, boolean simulate) {
         return tryPlaceItemInInventory(stack, handler, 0, handler.getSlots(), simulate);
     }
 
-    public static boolean tryPlaceItemInInventory(@Nonnull ItemStack stack, IItemHandlerModifiable handler, int start, int end, boolean simulate) {
+    public static int tryPlaceItemInInventory(@Nonnull ItemStack stack, IItemHandlerModifiable handler, int start, int end, boolean simulate) {
         ItemStack toAdd = stack.copy();
-        if (!hasInventorySpace(toAdd, handler, start, end)) return false;
+        if (!hasInventorySpace(toAdd, handler, start, end)) {
+            return 0;
+        }
+        int insertedAmt = 0;
         int max = toAdd.getMaxStackSize();
 
         for (int i = start; i < end; i++) {
             ItemStack in = handler.getStackInSlot(i);
             if (in.isEmpty()) {
-                int added = Math.min(toAdd.getCount(), max);
-                stack.setCount(toAdd.getCount() - added);
+                int added = Math.min(stack.getCount(), max);
+                stack.setCount(stack.getCount() - added);
                 if(!simulate) {
                     handler.setStackInSlot(i, copyStackWithSize(toAdd, added));
                 }
-                return true;
+                insertedAmt += added;
+                if (stack.getCount() <= 0)
+                    return insertedAmt;
             } else {
                 if (stackEqualsNonNBT(toAdd, in) && matchTags(toAdd, in)) {
                     int space = max - in.getCount();
-                    int added = Math.min(toAdd.getCount(), space);
-                    stack.setCount(toAdd.getCount() - added);
+                    int added = Math.min(stack.getCount(), space);
+                    stack.setCount(stack.getCount() - added);
                     if(!simulate) {
                         handler.getStackInSlot(i).setCount(handler.getStackInSlot(i).getCount() + added);
                     }
                     if (stack.getCount() <= 0)
-                        return true;
+                        return insertedAmt;
                 }
             }
         }
-        return stack.getCount() <= 0;
+        return insertedAmt;
     }
 
     public static boolean hasInventorySpace(@Nonnull ItemStack stack, IItemHandler handler, int rangeMin, int rangeMax) {

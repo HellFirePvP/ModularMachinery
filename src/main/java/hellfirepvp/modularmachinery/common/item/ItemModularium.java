@@ -9,7 +9,9 @@
 package hellfirepvp.modularmachinery.common.item;
 
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.data.Config;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -18,11 +20,15 @@ import net.minecraft.item.Item;
  * Created by HellFirePvP
  * Date: 12.07.2017 / 15:37
  */
-public class ItemModularium extends Item {
+public class ItemModularium extends Item implements ItemDynamicColor {
 
     public ItemModularium() {
         setMaxStackSize(64);
         setCreativeTab(CommonProxy.creativeTabModularMachinery);
     }
 
+    @Override
+    public int getColorFromItemstack(ItemStack stack, int tintIndex) {
+        return Config.machineColor;
+    }
 }

@@ -263,7 +263,14 @@ public class BlockArrayRenderHelper {
         @Nullable
         @Override
         public TileEntity getTileEntity(BlockPos pos) {
-            return blockRenderData.containsKey(pos) ? blockRenderData.get(pos).getSampleState().renderData.tileEntity : null;
+            if(!isInBounds(pos)) {
+                return null;
+            }
+            SampleRenderState sample = getSample(pos);
+            if(sample == null || sample.renderData == null) {
+                return null;
+            }
+            return sample.renderData.tileEntity;
         }
 
         @Override
@@ -275,12 +282,28 @@ public class BlockArrayRenderHelper {
         @Nonnull
         @Override
         public IBlockState getBlockState(BlockPos pos) {
-            return isInBounds(pos) ? blockRenderData.get(pos).getSampleState().state : Blocks.AIR.getDefaultState();
+            if(!isInBounds(pos)) {
+                return Blocks.AIR.getDefaultState();
+            }
+            SampleRenderState sample = getSample(pos);
+            if(sample == null) {
+                return Blocks.AIR.getDefaultState();
+            }
+            return sample.state;
         }
 
         @Override
         public boolean isAirBlock(BlockPos pos) {
-            return !isInBounds(pos) || blockRenderData.get(pos).getSampleState().state.getBlock() == Blocks.AIR;
+            if (!isInBounds(pos)) {
+                return true;
+            }
+            SampleRenderState sample = getSample(pos);
+            return sample == null || sample.state == null || sample.state.getBlock() == Blocks.AIR;
+        }
+
+        @Nullable
+        private SampleRenderState getSample(BlockPos pos) {
+            return blockRenderData.get(pos).getSampleState();
         }
 
         @Nonnull

@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
+import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import mekanism.api.gas.GasStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -22,6 +23,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.items.IItemHandlerModifiable;
 
+import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -158,6 +160,8 @@ public abstract class ComponentRequirement {
         private HybridFluid requirementCheck;
         private boolean doesntConsumeInput;
 
+        private NBTTagCompound tagMatch = null, tagDisplay = null;
+
         public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
             super(MachineComponent.ComponentType.FLUID, ioType);
             this.required = new HybridFluid(fluid);
@@ -179,7 +183,33 @@ public abstract class ComponentRequirement {
         public ComponentRequirement deepCopy() {
             RequirementFluid fluid = new RequirementFluid(this.getActionType(), this.required);
             fluid.chance = this.chance;
+            fluid.tagMatch = this.tagMatch;
+            fluid.tagDisplay = this.tagDisplay;
             return fluid;
+        }
+
+        public void setMatchNBTTag(@Nullable NBTTagCompound tag) {
+            this.tagMatch = tag;
+        }
+
+        @Nullable
+        public NBTTagCompound getTagMatch() {
+            if(tagMatch == null) {
+                return null;
+            }
+            return tagMatch.copy();
+        }
+
+        public void setDisplayNBTTag(@Nullable NBTTagCompound tag) {
+            this.tagDisplay = tag;
+        }
+
+        @Nullable
+        public NBTTagCompound getTagDisplay() {
+            if(tagDisplay == null) {
+                return null;
+            }
+            return tagDisplay.copy();
         }
 
         public void setChance(float chance) {
@@ -214,6 +244,9 @@ public abstract class ComponentRequirement {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     FluidStack drained = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), false);
                     if(drained == null) {
+                        return false;
+                    }
+                    if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, drained.tag)) {
                         return false;
                     }
                     this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drained.amount, 0));
@@ -329,12 +362,18 @@ public abstract class ComponentRequirement {
                     if(drainedSimulated == null) {
                         return false;
                     }
+                    if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, drainedSimulated.tag)) {
+                        return false;
+                    }
                     if(this.doesntConsumeInput) {
                         this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drainedSimulated.amount, 0));
                         return this.requirementCheck.getAmount() <= 0;
                     }
                     FluidStack actualDrained = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), true);
                     if(actualDrained == null) {
+                        return false;
+                    }
+                    if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, actualDrained.tag)) {
                         return false;
                     }
                     this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - actualDrained.amount, 0));
@@ -374,12 +413,18 @@ public abstract class ComponentRequirement {
                 if(drainedSimulated == null) {
                     return false;
                 }
+                if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, drainedSimulated.tag)) {
+                    return false;
+                }
                 if(this.doesntConsumeInput) {
                     this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drainedSimulated.amount, 0));
                     return this.requirementCheck.getAmount() <= 0;
                 }
                 FluidStack actualDrained = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), true);
                 if(actualDrained == null) {
+                    return false;
+                }
+                if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, actualDrained.tag)) {
                     return false;
                 }
                 this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - actualDrained.amount, 0));
@@ -404,7 +449,11 @@ public abstract class ComponentRequirement {
                             if(chance.canProduce(this.chance)) {
                                 return fillableAmount >= outStack.amount;
                             }
-                            return fillableAmount >= outStack.amount && handler.fillInternal(outStack.copy(), true) >= outStack.amount;
+                            FluidStack copyOut = outStack.copy();
+                            if(this.tagDisplay != null ){
+                                copyOut.tag = this.tagDisplay.copy();
+                            }
+                            return fillableAmount >= outStack.amount && handler.fillInternal(copyOut.copy(), true) >= copyOut.amount;
                         }
                     }
             }
@@ -428,7 +477,11 @@ public abstract class ComponentRequirement {
                     if(chance.canProduce(this.chance)) {
                         return fillableAmount >= outStack.amount;
                     }
-                    return fillableAmount >= outStack.amount && handler.fillInternal(outStack.copy(), true) >= outStack.amount;
+                    FluidStack copyOut = outStack.copy();
+                    if(this.tagDisplay != null ){
+                        copyOut.tag = this.tagDisplay.copy();
+                    }
+                    return fillableAmount >= outStack.amount && handler.fillInternal(copyOut.copy(), true) >= copyOut.amount;
                 }
             }
             return false;
@@ -446,6 +499,8 @@ public abstract class ComponentRequirement {
         public final int oreDictItemAmount;
 
         public final int fuelBurntime;
+
+        public int countIOBuffer = 0;
 
         public NBTTagCompound tag = null;
         public NBTTagCompound previewDisplayTag = null;
@@ -507,10 +562,24 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public void startRequirementCheck(ResultChance contextChance) {}
+        public void startRequirementCheck(ResultChance contextChance) {
+            switch (this.requirementType) {
+                case ITEMSTACKS:
+                    this.countIOBuffer = this.required.getCount();
+                    break;
+                case OREDICT:
+                    this.countIOBuffer = this.oreDictItemAmount;
+                    break;
+                case FUEL:
+                    this.countIOBuffer = this.fuelBurntime;
+                    break;
+            }
+        }
 
         @Override
-        public void endRequirementCheck() {}
+        public void endRequirementCheck() {
+            this.countIOBuffer = 0;
+        }
 
         public void setChance(float chance) {
             this.chance = chance;
@@ -544,15 +613,16 @@ public abstract class ComponentRequirement {
                             }
                         }
                     }
-                    ItemStack stack = ItemUtils.copyStackWithSize(required, required.getCount());
+                    ItemStack stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
                     if(tag != null) {
                         stack.setTagCompound(tag.copy());
                     }
-                    boolean inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
-                    if(inserted) {
-                        context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(stack.copy(), component));
+                    int inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
+                    if(inserted > 0) {
+                        context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(ItemUtils.copyStackWithSize(stack, inserted), component));
                     }
-                    return inserted;
+                    this.countIOBuffer -= inserted;
+                    return this.countIOBuffer <= 0;
             }
             return false;
         }
@@ -602,16 +672,21 @@ public abstract class ComponentRequirement {
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case OUTPUT:
-                    ItemStack stack = ItemUtils.copyStackWithSize(required, required.getCount());
+                    ItemStack stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
                     if(tag != null) {
                         stack.setTagCompound(tag);
                     }
                     //If we don't produce the item, we only need to see if there would be space for it at all.
-                    boolean hasSpace = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
+                    int inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
                     if(chance.canProduce(this.chance)) {
-                        return hasSpace;
+                        return inserted > 0;
                     }
-                    return hasSpace && ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, false);
+                    if(inserted > 0) {
+                        int actual = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, false);
+                        this.countIOBuffer -= actual;
+                        return this.countIOBuffer <= 0;
+                    }
+                    return false;
             }
             return false;
         }
