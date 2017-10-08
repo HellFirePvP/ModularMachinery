@@ -166,8 +166,14 @@ public class BlockArrayRenderHelper {
                     continue;
                 }
             }
-            SampleRenderState state = data.getValue().getSampleState();
+            BakedBlockData renderData = data.getValue();
+            SampleRenderState state = renderData.getSampleState();
             if(state.state.getBlock() != Blocks.AIR) {
+                TileEntityRenderData terd = state.renderData;
+                if(terd != null && terd.tileEntity != null) {
+                    terd.tileEntity.setWorld(Minecraft.getMinecraft().world);
+                    terd.tileEntity.setPos(offset);
+                }
                 brd.renderBlock(state.state, offset, renderAccess, vb);
             }
         }
@@ -184,6 +190,7 @@ public class BlockArrayRenderHelper {
             TileEntityRenderData terd = state.renderData;
             if(terd != null && terd.tileEntity != null && terd.renderer != null) {
                 terd.tileEntity.setWorld(Minecraft.getMinecraft().world);
+                terd.tileEntity.setPos(offset);
                 terd.renderer.render(terd.tileEntity, offset.getX(), offset.getY(), offset.getZ(), pTicks, 0, 1F);
             }
         }
