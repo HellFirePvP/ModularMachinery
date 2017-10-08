@@ -178,7 +178,7 @@ public class ItemUtils {
                 if (stackEqualsNonNBT(toAdd, in) && matchTags(toAdd, in)) {
                     int space = max - in.getCount();
                     int added = Math.min(stack.getCount(), space);
-                    insertedAmt =+ added;
+                    insertedAmt += added;
                     stack.setCount(stack.getCount() - added);
                     if(!simulate) {
                         handler.getStackInSlot(i).setCount(handler.getStackInSlot(i).getCount() + added);
