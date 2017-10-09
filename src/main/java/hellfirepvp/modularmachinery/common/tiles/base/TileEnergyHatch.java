@@ -51,7 +51,7 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
         int insertable = this.energy + maxReceive > this.size.maxEnergy ? this.size.maxEnergy - this.energy : maxReceive;
         insertable = Math.min(insertable, size.transferLimit);
         if(!simulate) {
-            this.energy = MathHelper.clamp(this.energy + maxReceive, 0, this.size.maxEnergy);
+            this.energy = MathHelper.clamp(this.energy + insertable, 0, this.size.maxEnergy);
             markForUpdate();
         }
         return insertable;
