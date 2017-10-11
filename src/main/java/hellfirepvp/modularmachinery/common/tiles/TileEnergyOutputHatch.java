@@ -51,12 +51,16 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Override
     public void update() {
         if(this.needsOutputUpdate) {
-            int transferCap = this.size.transferLimit;
+            int transferCap = Math.min(this.size.transferLimit, this.energy);
             for (EnumFacing face : EnumFacing.VALUES) {
                 if(Loader.isModLoaded("redstoneflux")) {
-                    transferCap = attemptFERFTransfer(face, transferCap);
+                    int transferred = attemptFERFTransfer(face, transferCap);
+                    transferCap -= transferred;
+                    this.energy -= transferred;
                 } else {
-                    transferCap = attemptFETransfer(face, transferCap);
+                    int transferred = attemptFETransfer(face, transferCap);
+                    transferCap -= transferred;
+                    this.energy -= transferred;
                 }
                 if(transferCap <= 0) {
                     break;
@@ -84,7 +88,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
                 }
             }
         }
-        return maxTransferLeft - receivedEnergy;
+        return receivedEnergy;
     }
 
     @Optional.Method(modid = "redstoneflux")
@@ -108,7 +112,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
                 }
             }
         }
-        return maxTransferLeft - receivedEnergy;
+        return receivedEnergy;
     }
 
     @Override
