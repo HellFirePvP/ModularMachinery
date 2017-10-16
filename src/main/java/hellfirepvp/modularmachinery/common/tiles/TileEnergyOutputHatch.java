@@ -50,26 +50,19 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
 
     @Override
     public void update() {
-        if(this.needsOutputUpdate) {
-            int transferCap = Math.min(this.size.transferLimit, this.energy);
-            for (EnumFacing face : EnumFacing.VALUES) {
-                if(Loader.isModLoaded("redstoneflux")) {
-                    int transferred = attemptFERFTransfer(face, transferCap);
-                    transferCap -= transferred;
-                    this.energy -= transferred;
-                } else {
-                    int transferred = attemptFETransfer(face, transferCap);
-                    transferCap -= transferred;
-                    this.energy -= transferred;
-                }
-                if(transferCap <= 0) {
-                    break;
-                }
+        int transferCap = Math.min(this.size.transferLimit, this.energy);
+        for (EnumFacing face : EnumFacing.VALUES) {
+            if(Loader.isModLoaded("redstoneflux")) {
+                int transferred = attemptFERFTransfer(face, transferCap);
+                transferCap -= transferred;
+                this.energy -= transferred;
+            } else {
+                int transferred = attemptFETransfer(face, transferCap);
+                transferCap -= transferred;
+                this.energy -= transferred;
             }
-
-            //Means we transferred all energy. No need for further updates until we get updated again.
-            if(transferCap > 0) {
-                this.needsOutputUpdate = false;
+            if(transferCap <= 0) {
+                break;
             }
         }
     }
@@ -116,17 +109,10 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     }
 
     @Override
-    public void markForUpdate() {
-        super.markForUpdate();
-        this.needsOutputUpdate = true;
-    }
-
-    @Override
     @Optional.Method(modid = "ic2")
     public void onLoad() {
         super.onLoad();
         IntegrationIC2EventHandlerHelper.fireLoadEvent(world, this);
-        this.needsOutputUpdate = true;
     }
 
     @Override

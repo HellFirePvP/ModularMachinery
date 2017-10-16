@@ -35,7 +35,6 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
 
     protected int energy = 0;
     protected EnergyHatchSize size;
-    protected boolean needsOutputUpdate = false;
 
     public TileEnergyHatch() {}
 
