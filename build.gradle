@@ -71,7 +71,7 @@ processResources {
     from(sourceSets.main.resources.srcDirs) {
         include 'mcmod.info'
 
-        expand 'version':project.version, 'mcversion':project.minecraft.version
+        expand 'version':project.version, 'mcversion': "1.12"
     }
 
     from(sourceSets.main.resources.srcDirs) {
