@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.client;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.gui.*;
+import hellfirepvp.modularmachinery.client.util.BlockArrayPreviewRenderHelper;
 import hellfirepvp.modularmachinery.client.util.DebugOverlayHelper;
 import hellfirepvp.modularmachinery.client.util.SelectionBoxRenderHelper;
 import hellfirepvp.modularmachinery.common.CommonProxy;
@@ -45,6 +46,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -63,6 +65,7 @@ import java.util.List;
 public class ClientProxy extends CommonProxy {
 
     public static ClientScheduler clientScheduler = new ClientScheduler();
+    public static BlockArrayPreviewRenderHelper renderHelper = new BlockArrayPreviewRenderHelper();
 
     private List<Block> blockModelsToRegister = Lists.newLinkedList();
     private List<Item> itemModelsToRegister = Lists.newLinkedList();

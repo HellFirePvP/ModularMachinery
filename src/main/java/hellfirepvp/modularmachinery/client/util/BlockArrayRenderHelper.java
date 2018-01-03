@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -11,6 +11,8 @@ package hellfirepvp.modularmachinery.client.util;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
+import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
@@ -18,6 +20,7 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.BlockRendererDispatcher;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.block.model.IBakedModel;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.renderer.tileentity.TileEntityRendererDispatcher;
 import net.minecraft.client.renderer.tileentity.TileEntitySpecialRenderer;
@@ -25,24 +28,31 @@ import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.client.renderer.vertex.VertexFormat;
 import net.minecraft.init.Biomes;
 import net.minecraft.init.Blocks;
+import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.WorldType;
 import net.minecraft.world.biome.Biome;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -57,11 +67,16 @@ public class BlockArrayRenderHelper {
     private WorldBlockArrayRenderAccess renderAccess;
     private double rotX, rotY, rotZ;
     private double sliceTrX, sliceTrY, sliceTrZ;
+    long sampleSnap = -1;
 
     BlockArrayRenderHelper(BlockArray blocks) {
         this.blocks = blocks;
-        this.renderAccess = new WorldBlockArrayRenderAccess(blocks);
+        this.renderAccess = new WorldBlockArrayRenderAccess(this, blocks);
         resetRotation();
+    }
+
+    WorldBlockArrayRenderAccess getRenderAccess() {
+        return renderAccess;
     }
 
     void resetRotation() {
@@ -112,6 +127,11 @@ public class BlockArrayRenderHelper {
 
         GL11.glPushAttrib(GL11.GL_ALL_ATTRIB_BITS);
         GL11.glPushMatrix();
+
+        Vec3i max = blocks.getMax();
+        Vec3i min = blocks.getMin();
+        Vec3i move = new Vec3i(max.getX() - min.getX(), max.getY() - min.getY(), max.getZ() - min.getZ());
+
         Minecraft mc = Minecraft.getMinecraft();
         double sc = new ScaledResolution(mc).getScaleFactor();
         GL11.glTranslated(x + 16D / sc, y + 16D / sc, 512);
@@ -121,20 +141,19 @@ public class BlockArrayRenderHelper {
         double size = 2;
         double minSize = 0.5;
 
-        Vec3i max = blocks.getMax();
-        Vec3i min = blocks.getMin();
+        if(!slice.isPresent()) {
+            double maxLength = 0;
+            double pointDst = max.getX() - min.getX();
+            if(pointDst > maxLength) maxLength = pointDst;
+            pointDst = max.getY() - min.getY();
+            if(pointDst > maxLength) maxLength = pointDst;
+            pointDst = max.getZ() - min.getZ();
+            if(pointDst > maxLength) maxLength = pointDst;
+            maxLength -= 5;
 
-        double maxLength = 0;
-        double pointDst = max.getX() - min.getX();
-        if(pointDst > maxLength) maxLength = pointDst;
-        pointDst = max.getY() - min.getY();
-        if(pointDst > maxLength) maxLength = pointDst;
-        pointDst = max.getZ() - min.getZ();
-        if(pointDst > maxLength) maxLength = pointDst;
-        maxLength -= 5;
-
-        if(maxLength > 0) {
-            size = (size - minSize) * (1D - (maxLength / 20D));
+            if(maxLength > 0) {
+                size = (size - minSize) * (1D - (maxLength / 20D));
+            }
         }
 
         double dr = -5.75*size;
@@ -174,7 +193,11 @@ public class BlockArrayRenderHelper {
                     terd.tileEntity.setWorld(Minecraft.getMinecraft().world);
                     terd.tileEntity.setPos(offset);
                 }
-                brd.renderBlock(state.state, offset, renderAccess, vb);
+                IBlockState actRenderState = state.state;
+                actRenderState = actRenderState.getBlock().getActualState(actRenderState, renderAccess, offset);
+                //IBakedModel model = brd.getModelForState(actRenderState);
+                //brd.getBlockModelRenderer().renderModel(renderAccess, model, actRenderState, offset, vb, true);
+                brd.renderBlock(actRenderState, offset, renderAccess, vb);
             }
         }
         tes.draw();
@@ -202,50 +225,54 @@ public class BlockArrayRenderHelper {
         GL11.glPopAttrib();
     }
 
-    private static class BakedBlockData {
+    static class BakedBlockData {
 
+        private BlockArrayRenderHelper ref;
         private List<SampleRenderState> renderStates = Lists.newArrayList();
 
-        private BakedBlockData(List<BlockArray.IBlockStateDescriptor> states) {
+        private BakedBlockData(BlockArrayRenderHelper ref, List<BlockArray.IBlockStateDescriptor> states, @Nullable NBTTagCompound matchTag, BlockArray.TileInstantiateContext context) {
+            this.ref = ref;
             for (BlockArray.IBlockStateDescriptor desc : states) {
                 for (IBlockState state : desc.applicable) {
-                    renderStates.add(new SampleRenderState(state));
+                    renderStates.add(new SampleRenderState(state, matchTag, context));
                 }
             }
         }
 
-        private SampleRenderState getSampleState() {
+        SampleRenderState getSampleState() {
             int tickSpeed = BlockArray.BlockInformation.CYCLE_TICK_SPEED;
             if(renderStates.size() > 10) {
                 tickSpeed *= 0.6;
             }
-            int p = (int) (ClientScheduler.getClientTick() / tickSpeed);
+            int p = (int) ((ref.sampleSnap == -1 ? ClientScheduler.getClientTick() : ref.sampleSnap) / tickSpeed);
             int part = p % renderStates.size();
             return renderStates.get(part);
         }
 
     }
 
-    private static class SampleRenderState {
+    static class SampleRenderState {
 
-        private IBlockState state;
-        private TileEntityRenderData renderData;
+        IBlockState state;
+        TileEntityRenderData renderData;
 
-        private SampleRenderState(IBlockState state) {
-            this.state = state;
-            if(state.getBlock().hasTileEntity(state)) {
-                TileEntity te = state.getBlock().createTileEntity(Minecraft.getMinecraft().world, state);
+        private SampleRenderState(IBlockState state, @Nullable NBTTagCompound matchTag, BlockArray.TileInstantiateContext context) {
+            Tuple<IBlockState, TileEntity> tt = BlockCompatHelper.transformState(state, matchTag, context);
+            this.state = tt.getFirst();
+            TileEntity te = tt.getSecond();
+            if(te != null) {
                 renderData = new TileEntityRenderData(te);
             } else {
                 renderData = null;
             }
         }
+
     }
 
-    private static class TileEntityRenderData {
+    static class TileEntityRenderData {
 
-        private TileEntity tileEntity;
-        private TileEntitySpecialRenderer<TileEntity> renderer;
+        TileEntity tileEntity;
+        TileEntitySpecialRenderer<TileEntity> renderer;
 
         private TileEntityRenderData(TileEntity tileEntity) {
             this.tileEntity = tileEntity;
@@ -255,16 +282,24 @@ public class BlockArrayRenderHelper {
 
     public static class WorldBlockArrayRenderAccess implements IBlockAccess {
 
-        private Map<BlockPos, BakedBlockData> blockRenderData = new HashMap<>();
+        Map<BlockPos, BakedBlockData> blockRenderData = new HashMap<>();
         private int currentRenderSlice = 0;
         private boolean respectRenderSlice = false;
 
-        private WorldBlockArrayRenderAccess(BlockArray array) {
+        private final BlockArray originalArray;
+
+        private WorldBlockArrayRenderAccess(BlockArrayRenderHelper ref, BlockArray array) {
+            this.originalArray = array;
             for (Map.Entry<BlockPos, BlockArray.BlockInformation> entry : array.getPattern().entrySet()) {
                 BlockPos offset = entry.getKey();
                 BlockArray.BlockInformation info = entry.getValue();
-                blockRenderData.put(offset, new BakedBlockData(info.matchingStates));
+                BlockArray.TileInstantiateContext context = new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, offset);
+                blockRenderData.put(offset, new BakedBlockData(ref, info.matchingStates, info.matchingTag, context));
             }
+        }
+
+        WorldBlockArrayRenderAccess move(BlockArrayRenderHelper ref, Vec3i toOffset) {
+            return new WorldBlockArrayRenderAccess(ref, new BlockArray(this.originalArray, toOffset));
         }
 
         @Nullable

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -105,6 +105,7 @@ public class GuiMachineController extends GuiContainerBase<ContainerController> 
         String status = I18n.format("gui.controller.status");
         fr.drawString(status, offsetX, offsetY, 0xFFFFFF);
         String statusKey = "gui.controller.status." + controller.getCraftingStatus().name().toLowerCase();
+
         List<String> out = fr.listFormattedStringToWidth(I18n.format(statusKey), MathHelper.floor(135 * (1 / scale)));
         for (String draw : out) {
             offsetY += 10;

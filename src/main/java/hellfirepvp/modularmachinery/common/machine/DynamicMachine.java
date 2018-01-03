@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -53,6 +53,7 @@ public class DynamicMachine {
     private int definedColor = Config.machineColor;
 
     private boolean requiresBlueprint = false;
+    private boolean energyBased = false;
 
     public DynamicMachine(@Nonnull ResourceLocation registryName) {
         this.registryName = registryName;
@@ -80,6 +81,14 @@ public class DynamicMachine {
 
     public int getMachineColor() {
         return definedColor;
+    }
+
+    public void setEnergyBased() {
+        this.energyBased = true;
+    }
+
+    public boolean isEnergyBased() {
+        return energyBased;
     }
 
     @Nonnull
@@ -110,7 +119,10 @@ public class DynamicMachine {
             JsonObject root = json.getAsJsonObject();
             String registryName = JsonUtils.getString(root, "registryname", "");
             if(registryName.isEmpty()) {
-                throw new JsonParseException("Invalid/Missing 'registryname' !");
+                registryName = JsonUtils.getString(root, "registryName", "");
+                if(registryName.isEmpty()) {
+                    throw new JsonParseException("Invalid/Missing 'registryname' !");
+                }
             }
             String localized = JsonUtils.getString(root, "localizedname", "");
             if(localized.isEmpty()) {
@@ -175,7 +187,7 @@ public class DynamicMachine {
                     String strDesc = partElement.getAsString();
                     BlockArray.BlockInformation descr = MachineLoader.variableContext.get(strDesc);
                     if(descr == null) {
-                        descr = new BlockArray.BlockInformation(Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(partElement.getAsJsonPrimitive())));
+                        descr = new BlockArray.BlockInformation(Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(partElement.getAsString())));
                     } else {
                         descr = descr.copy(); //Avoid NBT-definitions bleed into variable context
                     }
@@ -191,7 +203,13 @@ public class DynamicMachine {
                         if(!p.isJsonPrimitive() || !p.getAsJsonPrimitive().isString()) {
                             throw new JsonParseException("Part elements of 'elements' have to be blockstate descriptions!");
                         }
-                        descriptors.add(BlockArray.BlockInformation.getDescriptor(p.getAsJsonPrimitive()));
+                        String prim = p.getAsString();
+                        BlockArray.BlockInformation descr = MachineLoader.variableContext.get(prim);
+                        if(descr != null) {
+                            descriptors.addAll(descr.copy().matchingStates);
+                        } else {
+                            descriptors.add(BlockArray.BlockInformation.getDescriptor(prim));
+                        }
                     }
                     if(descriptors.isEmpty()) {
                         throw new JsonParseException("'elements' array didn't contain any blockstate descriptors!");

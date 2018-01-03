@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -44,7 +44,7 @@ public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
     public static final String NAME = "Modular Machinery";
-    public static final String VERSION = "1.6.5";
+    public static final String VERSION = "1.8.1";
     public static final String CLIENT_PROXY = "hellfirepvp.modularmachinery.client.ClientProxy";
     public static final String COMMON_PROXY = "hellfirepvp.modularmachinery.common.CommonProxy";
 

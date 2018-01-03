@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -46,14 +46,14 @@ public class BlockInformationVariable {
                     for (int i = 0; i < elements.size(); i++) {
                         JsonElement p = elements.get(i);
                         if(!p.isJsonPrimitive() || !p.getAsJsonPrimitive().isString()) {
-                            throw new JsonParseException("Elements of a variable have to be Blockstate descriptions!");
+                            throw new JsonParseException("Elements of a variable have to be Blockstate descriptions! You cannot nest variables!");
                         }
-                        descriptors.add(BlockArray.BlockInformation.getDescriptor(p.getAsJsonPrimitive()));
+                        descriptors.add(BlockArray.BlockInformation.getDescriptor(p.getAsString()));
                     }
                     var.variables.put(entry.getKey(), new BlockArray.BlockInformation(descriptors));
                 } else if(variableElement.isJsonPrimitive() && variableElement.getAsJsonPrimitive().isString()) {
                     var.variables.put(entry.getKey(), new BlockArray.BlockInformation(
-                            Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(variableElement.getAsJsonPrimitive()))));
+                            Lists.newArrayList(BlockArray.BlockInformation.getDescriptor(variableElement.getAsString()))));
                 } else {
                     throw new JsonParseException("Variable '" + entry.getKey() + "' has as its value neither an array of BlockState definitions nor a single BlockState as String!");
                 }

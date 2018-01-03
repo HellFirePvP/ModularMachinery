@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -109,7 +109,7 @@ public class RenderingUtils {
 
 
     public static void renderBlueStackTooltip(int x, int y, List<Tuple<ItemStack, String>> tooltipData, FontRenderer fr, RenderItem ri) {
-        renderStackTooltip(x, y, tooltipData, new Color(0x000058), new Color(0x000000), Color.WHITE, fr, ri);
+        renderStackTooltip(x, y, tooltipData, new Color(0x000037), new Color(0x000000), Color.WHITE, fr, ri);
     }
 
     public static void renderStackTooltip(int x, int y, List<Tuple<ItemStack, String>> tooltipData, Color color, Color colorFade, Color strColor, FontRenderer fr, RenderItem ri) {
@@ -125,8 +125,6 @@ public class RenderingUtils {
             if(x + 15 + esWidth > sr.getScaledWidth()) {
                 x -= esWidth + 24;
             }
-            int pX = x + 12;
-            int pY = y - 12;
             int sumLineHeight = 8;
             int lastAdded = 0;
             if (tooltipData.size() > 1) {
@@ -138,6 +136,15 @@ public class RenderingUtils {
                 }
                 sumLineHeight -= lastAdded;
             }
+
+            if(y + sumLineHeight > sr.getScaledHeight()) {
+                y = (sr.getScaledHeight() - sumLineHeight);
+                y = Math.max(25, y);
+            }
+
+            int pX = x + 12;
+            int pY = y - 12;
+
             float z = 300F;
 
             GlStateManager.disableDepth();
@@ -182,7 +189,7 @@ public class RenderingUtils {
     }
 
     public static void renderBlueTooltip(int x, int y, List<String> tooltipData, FontRenderer fontRenderer) {
-        renderTooltip(x, y, tooltipData, new Color(0x000058), new Color(0x000000), Color.WHITE, fontRenderer);
+        renderTooltip(x, y, tooltipData, new Color(0x000037), new Color(0x000000), Color.WHITE, fontRenderer);
     }
 
     public static void renderTooltip(int x, int y, List<String> tooltipData, Color color, Color colorFade, Color strColor, FontRenderer fontRenderer) {
@@ -202,11 +209,20 @@ public class RenderingUtils {
             if(x + 15 + esWidth > sr.getScaledWidth()) {
                 x -= esWidth + 24;
             }
-            int pX = x + 12;
-            int pY = y - 12;
+
             int sumLineHeight = 8;
             if (tooltipData.size() > 1)
                 sumLineHeight += 2 + (tooltipData.size() - 1) * 10;
+
+
+            if(y + sumLineHeight > sr.getScaledHeight()) {
+                y = (sr.getScaledHeight() - sumLineHeight);
+                y = Math.max(25, y);
+            }
+
+            int pX = x + 12;
+            int pY = y - 12;
+
             float z = 300F;
 
             drawGradientRect(pX - 3,           pY - 4,                 z, pX + esWidth + 3, pY - 3,                 color, colorFade);

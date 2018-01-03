@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -229,6 +229,7 @@ public class ItemUtils {
         return ItemStack.areItemStackTagsEqual(stack, other);
     }
 
+    @Nonnull
     public static ItemStack copyStackWithSize(@Nonnull ItemStack stack, int amount) {
         if (stack.isEmpty() || amount <= 0) return ItemStack.EMPTY;
         ItemStack s = stack.copy();

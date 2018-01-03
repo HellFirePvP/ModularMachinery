@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterAccessor;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.data.DataLoadProfiler;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import net.minecraft.entity.player.EntityPlayer;
@@ -38,6 +39,8 @@ public class RecipeRegistry {
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
     private static Map<ResourceLocation, TreeMap<Integer, TreeSet<MachineRecipe>>> REGISTRY_RECIPE_BY_MACHINE;
     private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY;
+
+    private List<PreparedRecipe> earlyRecipes = new LinkedList<>();
 
     private RecipeRegistry() {}
 
@@ -76,7 +79,7 @@ public class RecipeRegistry {
 
         Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
         barRecipes.step("Loading Recipes");
-        List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes);
+        List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes, earlyRecipes);
         DataLoadProfiler.StatusLine sl = profiler.createLine("Load-Phase: ");
         DataLoadProfiler.Status success = sl.appendStatus("%s loaded");
         DataLoadProfiler.Status failed = sl.appendStatus("%s failed");
@@ -152,6 +155,10 @@ public class RecipeRegistry {
         MachineRecipe.freezeChanges();
     }
 
+    public void registerRecipeEarly(PreparedRecipe recipe) {
+        this.earlyRecipes.add(recipe);
+    }
+
     public void reloadAdapters() {
         boolean frozen = MachineRecipe.isFrozen();
         if(frozen) {
@@ -183,6 +190,10 @@ public class RecipeRegistry {
         if(frozen) {
             MachineRecipe.freezeChanges();
         }
+    }
+
+    public void clearLingeringRecipes() {
+        this.earlyRecipes.clear();
     }
 
 }

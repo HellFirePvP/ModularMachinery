@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
@@ -22,6 +23,7 @@ import net.minecraft.util.EnumFacing;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.items.IItemHandlerModifiable;
+import net.minecraftforge.oredict.OreDictionary;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -57,13 +59,35 @@ public abstract class ComponentRequirement {
     //True, if the requirement could be fulfilled by the given component
     public abstract boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
 
-    public abstract boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
+    public abstract CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
     public abstract ComponentRequirement deepCopy();
 
     public abstract void startRequirementCheck(ResultChance contextChance);
 
     public abstract void endRequirementCheck();
+
+    public static enum CraftCheck {
+
+        //requirement check succeeded.
+        SUCCESS,
+
+        //requirement check failed
+        FAILURE_MISSING_INPUT,
+
+        //requirement check for energy failed
+        FAILURE_MISSING_ENERGY,
+
+        //component is not suitable to be checked for given requirement-check (i.e. component type != requirement type)
+        INVALID_SKIP
+
+    }
+
+    public static interface ChancedRequirement {
+
+        public void setChance(float chance);
+
+    }
 
     public static class RequirementEnergy extends ComponentRequirement {
 
@@ -94,23 +118,25 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.ENERGY ||
                     !(component instanceof MachineComponent.EnergyHatch) ||
-                    component.getIOType() != getActionType()) return false;
+                    component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
             IEnergyHandler handler = context.getEnergyHandler(component);
             switch (getActionType()) {
                 case INPUT:
-                    return handler.getCurrentEnergy() >= this.requirementPerTick;
+                    if(handler.getCurrentEnergy() >= this.requirementPerTick) {
+                        return CraftCheck.SUCCESS;
+                    }
                 case OUTPUT:
-                    return true;
+                    return CraftCheck.SUCCESS;
             }
-            return false;
+            return CraftCheck.FAILURE_MISSING_ENERGY;
         }
 
         @Override
         public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-            return canStartCrafting(component, context, Lists.newArrayList());
+            return canStartCrafting(component, context, Lists.newArrayList()) == CraftCheck.SUCCESS;
         }
 
         @Override
@@ -152,7 +178,7 @@ public abstract class ComponentRequirement {
 
     }
 
-    public static class RequirementFluid extends ComponentRequirement {
+    public static class RequirementFluid extends ComponentRequirement implements ChancedRequirement {
 
         public final HybridFluid required;
         public float chance = 1F;
@@ -212,6 +238,7 @@ public abstract class ComponentRequirement {
             return tagDisplay.copy();
         }
 
+        @Override
         public void setChance(float chance) {
             this.chance = chance;
         }
@@ -229,10 +256,10 @@ public abstract class ComponentRequirement {
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.FLUID ||
                     !(component instanceof MachineComponent.FluidHatch) ||
-                    component.getIOType() != getActionType()) return false;
+                    component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
             HybridTank handler = context.getFluidHandler(component);
 
             if(ModularMachinery.isMekanismLoaded) {
@@ -244,13 +271,15 @@ public abstract class ComponentRequirement {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     FluidStack drained = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), false);
                     if(drained == null) {
-                        return false;
+                        return CraftCheck.FAILURE_MISSING_INPUT;
                     }
                     if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, drained.tag)) {
-                        return false;
+                        return CraftCheck.FAILURE_MISSING_INPUT;
                     }
                     this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drained.amount, 0));
-                    return this.requirementCheck.getAmount() <= 0;
+                    if(this.requirementCheck.getAmount() <= 0) {
+                        return CraftCheck.SUCCESS;
+                    }
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyTank(handler);
 
@@ -268,13 +297,15 @@ public abstract class ComponentRequirement {
                     if(didFill) {
                         context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
                     }
-                    return didFill;
+                    if(didFill) {
+                        return CraftCheck.SUCCESS;
+                    }
             }
-            return false;
+            return CraftCheck.FAILURE_MISSING_INPUT;
         }
 
         @Optional.Method(modid = "mekanism")
-        private boolean checkStartCraftingWithMekanism(MachineComponent component, RecipeCraftingContext context,
+        private CraftCheck checkStartCraftingWithMekanism(MachineComponent component, RecipeCraftingContext context,
                                                        HybridTank handler, List<ComponentOutputRestrictor> restrictions) {
             if(handler instanceof HybridGasTank) {
                 HybridGasTank gasTank = (HybridGasTank) handler;
@@ -283,13 +314,15 @@ public abstract class ComponentRequirement {
                         if(this.requirementCheck instanceof HybridFluidGas) {
                             GasStack drained = gasTank.drawGas(EnumFacing.UP, this.requirementCheck.getAmount(), false);
                             if(drained == null) {
-                                return false;
+                                return CraftCheck.FAILURE_MISSING_INPUT;
                             }
                             if(drained.getGas() != ((HybridFluidGas) this.requirementCheck).asGasStack().getGas()) {
-                                return false;
+                                return CraftCheck.FAILURE_MISSING_INPUT;
                             }
                             this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drained.amount, 0));
-                            return this.requirementCheck.getAmount() <= 0;
+                            if(this.requirementCheck.getAmount() <= 0) {
+                                return CraftCheck.SUCCESS;
+                            }
                         }
                         break;
                     case OUTPUT:
@@ -310,7 +343,9 @@ public abstract class ComponentRequirement {
                             if(didFill) {
                                 context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
                             }
-                            return didFill;
+                            if(didFill) {
+                                return CraftCheck.SUCCESS;
+                            }
                         }
                 }
             }
@@ -319,10 +354,15 @@ public abstract class ComponentRequirement {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     FluidStack drained = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), false);
                     if(drained == null) {
-                        return false;
+                        return CraftCheck.FAILURE_MISSING_INPUT;
+                    }
+                    if(!NBTMatchingHelper.matchNBTCompound(this.tagMatch, drained.tag)) {
+                        return CraftCheck.FAILURE_MISSING_INPUT;
                     }
                     this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - drained.amount, 0));
-                    return this.requirementCheck.getAmount() <= 0;
+                    if(this.requirementCheck.getAmount() <= 0) {
+                        return CraftCheck.SUCCESS;
+                    }
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyTank(handler);
 
@@ -340,9 +380,11 @@ public abstract class ComponentRequirement {
                     if(didFill) {
                         context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
                     }
-                    return didFill;
+                    if(didFill) {
+                        return CraftCheck.SUCCESS;
+                    }
             }
-            return false;
+            return CraftCheck.FAILURE_MISSING_INPUT;
         }
 
         @Override
@@ -489,7 +531,7 @@ public abstract class ComponentRequirement {
 
     }
 
-    public static class RequirementItem extends ComponentRequirement {
+    public static class RequirementItem extends ComponentRequirement implements ChancedRequirement {
 
         public final ItemRequirementType requirementType;
 
@@ -581,26 +623,37 @@ public abstract class ComponentRequirement {
             this.countIOBuffer = 0;
         }
 
+        @Override
         public void setChance(float chance) {
             this.chance = chance;
         }
 
         @Override
-        public boolean canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
             if(component.getComponentType() != MachineComponent.ComponentType.ITEM ||
                     !(component instanceof MachineComponent.ItemBus) ||
-                    component.getIOType() != getActionType()) return false;
+                    component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
             IOInventory handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case INPUT:
                     switch (this.requirementType) {
                         case ITEMSTACKS:
-                            return ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
+                            if(ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag)) {
+                                return CraftCheck.SUCCESS;
+                            }
+                            break;
                         case OREDICT:
-                            return ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
+                            if(ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag)) {
+                                return CraftCheck.SUCCESS;
+                            }
+                            break;
                         case FUEL:
-                            return ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0;
+                            if(ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0) {
+                                return CraftCheck.SUCCESS;
+                            }
+                            break;
                     }
+                    break;
                 case OUTPUT:
                     handler = CopyHandlerHelper.copyInventory(handler);
 
@@ -613,7 +666,19 @@ public abstract class ComponentRequirement {
                             }
                         }
                     }
-                    ItemStack stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
+
+                    ItemStack stack;
+                    if(oreDictName != null) {
+                        stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
+                        stack = ItemUtils.copyStackWithSize(stack, this.oreDictItemAmount);
+                    } else {
+                        stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
+                    }
+
+                    if(stack.isEmpty()) {
+                        return CraftCheck.FAILURE_MISSING_INPUT;
+                    }
+
                     if(tag != null) {
                         stack.setTagCompound(tag.copy());
                     }
@@ -622,9 +687,11 @@ public abstract class ComponentRequirement {
                         context.addRestriction(new ComponentOutputRestrictor.RestrictionInventory(ItemUtils.copyStackWithSize(stack, inserted), component));
                     }
                     this.countIOBuffer -= inserted;
-                    return this.countIOBuffer <= 0;
+                    if(this.countIOBuffer <= 0) {
+                        return CraftCheck.SUCCESS;
+                    }
             }
-            return false;
+            return CraftCheck.FAILURE_MISSING_INPUT;
         }
 
         @Override
@@ -666,13 +733,23 @@ public abstract class ComponentRequirement {
                     !(component instanceof MachineComponent.ItemBus) ||
                     component.getIOType() != getActionType()) return false;
 
-            if(oreDictName != null && required.isEmpty()) {
-                throw new IllegalStateException("Can't output item by oredict!");
+            if(fuelBurntime > 0 && oreDictName == null && required.isEmpty()) {
+                throw new IllegalStateException("Can't output fuel burntime...");
             }
             IItemHandlerModifiable handler = context.getItemHandler(component);
             switch (getActionType()) {
                 case OUTPUT:
-                    ItemStack stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
+                    ItemStack stack;
+                    if(oreDictName != null) {
+                        stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
+                        stack = ItemUtils.copyStackWithSize(stack, this.oreDictItemAmount);
+                    } else {
+                        stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
+                    }
+
+                    if(stack.isEmpty()) {
+                        return true;
+                    }
                     if(tag != null) {
                         stack.setTagCompound(tag);
                     }

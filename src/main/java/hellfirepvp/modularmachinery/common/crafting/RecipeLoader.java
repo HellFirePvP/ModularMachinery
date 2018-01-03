@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -63,7 +63,7 @@ public class RecipeLoader {
         return candidates;
     }
 
-    public static List<MachineRecipe> loadRecipes(Map<RecipeLoader.FileType, List<File>> candidates) {
+    public static List<MachineRecipe> loadRecipes(Map<RecipeLoader.FileType, List<File>> candidates, List<PreparedRecipe> preparedRecipes) {
         recipeAdapters.clear();
 
         List<MachineRecipe> loadedRecipes = Lists.newArrayList();
@@ -92,7 +92,18 @@ public class RecipeLoader {
                 failedAttempts.put(f.getPath(), exc);
             }
         }
+        for (PreparedRecipe recipe : preparedRecipes) {
+            loadedRecipes.add(convertPreparedRecipe(recipe));
+        }
         return loadedRecipes;
+    }
+
+    private static MachineRecipe convertPreparedRecipe(PreparedRecipe recipe) {
+        MachineRecipe mr = new MachineRecipe(recipe.getFilePath(),
+                recipe.getRecipeRegistryName(), recipe.getAssociatedMachineName(),
+                recipe.getTotalProcessingTickTime(), recipe.getPriority());
+        recipe.getComponents().forEach(mr::addRequirement);
+        return mr;
     }
 
     public static Map<String, Exception> captureFailedAttempts() {

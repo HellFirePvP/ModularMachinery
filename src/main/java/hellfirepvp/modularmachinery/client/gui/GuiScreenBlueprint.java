@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -9,12 +9,15 @@
 package hellfirepvp.modularmachinery.client.gui;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.client.ClientProxy;
 import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
 import hellfirepvp.modularmachinery.client.util.RenderingUtils;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
@@ -24,10 +27,12 @@ import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
@@ -36,6 +41,7 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.UniversalBucket;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
@@ -54,6 +60,7 @@ import java.util.List;
  */
 public class GuiScreenBlueprint extends GuiScreen {
 
+    private static final ResourceLocation ic2TileBlock = new ResourceLocation("ic2", "te");
     public static final ResourceLocation TEXTURE_BACKGROUND = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint.png");
 
     protected int guiLeft;
@@ -109,6 +116,14 @@ public class GuiScreenBlueprint extends GuiScreen {
             renderContext.zoomIn();
         }
 
+        if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak)) {
+            if(renderContext.getShiftSnap() == -1) {
+                renderContext.snapSamples();
+            }
+        } else {
+            renderContext.releaseSamples();
+        }
+
         ScaledResolution res = new ScaledResolution(mc);
         Rectangle scissorFrame = new Rectangle((guiLeft + 8) * res.getScaleFactor(), (guiTop + 43) * res.getScaleFactor(),
                 160 * res.getScaleFactor(), 94 * res.getScaleFactor());
@@ -149,13 +164,20 @@ public class GuiScreenBlueprint extends GuiScreen {
             int zMod = pos.getZ() + 1;
             Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
             if(rct.contains(mouseX, mouseY)) {
-                IBlockState state = slice.get(pos).getSampleState();
+                IBlockState state = slice.get(pos).getSampleState(renderContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(renderContext.getShiftSnap()));
+                Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, slice.get(pos).matchingTag,
+                        new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, pos));
+                state = recovered.getFirst();
                 Block type = state.getBlock();
                 int meta = type.getMetaFromState(state);
 
                 ItemStack s = ItemStack.EMPTY;
                 try {
-                    s = state.getBlock().getPickBlock(state, null, null, pos, null);
+                    if(ic2TileBlock.equals(type.getRegistryName())) {
+                        s = BlockCompatHelper.tryGetIC2MachineStack(state, recovered.getSecond());
+                    } else {
+                        s = state.getBlock().getPickBlock(state, null, null, pos, null);
+                    }
                 } catch (Exception exc) {}
 
                 if(s.isEmpty()) {
@@ -211,10 +233,13 @@ public class GuiScreenBlueprint extends GuiScreen {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         this.mc.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
 
+        boolean drawPopoutInfo = false, drawContents = false;
+
+        //3D view
         int add = 0;
         if(!renderContext.doesRenderIn3D()) {
             if(mouseX >= this.guiLeft + 132 && mouseX <= this.guiLeft + 132 + 16 &&
-                    mouseY >= this.guiTop + 106 && mouseY <= this.guiTop + 106 + 16) {
+                    mouseY >= this.guiTop + 106 && mouseY < this.guiTop + 106 + 16) {
                 add = 16;
             }
         } else {
@@ -222,7 +247,18 @@ public class GuiScreenBlueprint extends GuiScreen {
         }
         this.drawTexturedModalRect(guiLeft + 132, guiTop + 106, 176 + add, 16, 16, 16);
 
+        //Pop out
+        add = 0;
+        if(mouseX >= this.guiLeft + 116 && mouseX <= this.guiLeft + 116 + 16 &&
+                mouseY >= this.guiTop + 106 && mouseY < this.guiTop + 106 + 16) {
+            if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak)) {
+                add = 16;
+            }
+            drawPopoutInfo = true;
+        }
+        this.drawTexturedModalRect(guiLeft + 116, guiTop + 106, 176 + add, 48, 16, 16);
 
+        //2D view
         add = 0;
         if(renderContext.doesRenderIn3D()) {
             if(mouseX >= this.guiLeft + 132 && mouseX <= this.guiLeft + 132 + 16 &&
@@ -233,6 +269,15 @@ public class GuiScreenBlueprint extends GuiScreen {
             add = 32;
         }
         this.drawTexturedModalRect(guiLeft + 132, guiTop + 122, 176 + add, 32, 16, 16);
+
+        //Show amount
+        add = 0;
+        if(mouseX >= this.guiLeft + 116 && mouseX <= this.guiLeft + 116 + 16 &&
+                mouseY >= this.guiTop + 122 && mouseY <= this.guiTop + 122 + 16) {
+            add = 16;
+            drawContents = true;
+        }
+        this.drawTexturedModalRect(guiLeft + 116, guiTop + 122, 176 + add, 64, 16, 16);
 
         if(renderContext.doesRenderIn3D()) {
             GlStateManager.color(0.3F, 0.3F, 0.3F, 1.0F);
@@ -259,6 +304,30 @@ public class GuiScreenBlueprint extends GuiScreen {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         int width = fontRenderer.getStringWidth(String.valueOf(renderContext.getRenderSlice()));
         fontRenderer.drawString(String.valueOf(renderContext.getRenderSlice()), guiLeft + 159 - (width / 2), guiTop + 118, 0x222222);
+        if(drawPopoutInfo) {
+            ScaledResolution res = new ScaledResolution(Minecraft.getMinecraft());
+            List<String> out = fontRenderer.listFormattedStringToWidth(
+                    I18n.format("gui.blueprint.popout.info"),
+                    Math.min(res.getScaledWidth() - mouseX, 200));
+            RenderingUtils.renderBlueTooltip(mouseX, mouseY, out, fontRenderer);
+        }
+        if(drawContents) {
+            List<ItemStack> contents = this.renderContext.getDescriptiveStacks();
+            List<Tuple<ItemStack, String>> contentMap = Lists.newArrayList();
+            ItemStack ctrl = new ItemStack(BlocksMM.blockController);
+            contentMap.add(new Tuple<>(ctrl, ctrl.getCount() + "x " + I18n.format(ctrl.getUnlocalizedName() + ".name")));
+            for (ItemStack stack : contents) {
+                if(stack.getItem() instanceof UniversalBucket) {
+                    FluidStack f = ((UniversalBucket) stack.getItem()).getFluid(stack);
+                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name", f.getLocalizedName())));
+                } else {
+                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name")));
+                }
+            }
+            RenderingUtils.renderBlueStackTooltip(mouseX, mouseY,
+                    contentMap,
+                    fontRenderer, Minecraft.getMinecraft().getRenderItem());
+        }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
@@ -284,6 +353,13 @@ public class GuiScreenBlueprint extends GuiScreen {
                 if(mouseX >= this.guiLeft + 132 && mouseX <= this.guiLeft + 132 + 16 &&
                         mouseY >= this.guiTop + 122 && mouseY <= this.guiTop + 122 + 16) {
                     renderContext.setTo2D();
+                }
+            }
+            if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak) &&
+                    mouseX >= this.guiLeft + 116 && mouseX <= this.guiLeft + 116 + 16 &&
+                    mouseY >= this.guiTop + 106 && mouseY < this.guiTop + 106 + 16) {
+                if(ClientProxy.renderHelper.startPreview(this.renderContext)) {
+                    Minecraft.getMinecraft().displayGuiScreen(null);
                 }
             }
         } else if(mouseButton == 1) {

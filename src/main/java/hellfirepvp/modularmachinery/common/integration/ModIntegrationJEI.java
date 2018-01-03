@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -71,6 +71,17 @@ public class ModIntegrationJEI implements IModPlugin {
 
     public static CategoryDynamicRecipe getCategory(DynamicMachine machine) {
         return recipeCategories.get(machine);
+    }
+
+    @Override
+    public void registerItemSubtypes(ISubtypeRegistry subtypeRegistry) {
+        subtypeRegistry.registerSubtypeInterpreter(ItemsMM.blueprint, (s) -> {
+            DynamicMachine machine = ItemBlueprint.getAssociatedMachine(s);
+            if(machine == null) {
+                return ISubtypeRegistry.ISubtypeInterpreter.NONE;
+            }
+            return machine.getRegistryName().toString();
+        });
     }
 
     @Override

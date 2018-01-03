@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.client.util;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
@@ -45,6 +46,8 @@ public class DynamicMachineRenderContext {
     private int renderSlice = 0;
     private float scale = 1F;
 
+    private long shiftSnap = -1;
+
     private DynamicMachineRenderContext(DynamicMachine machine) {
         this.machine = machine;
         BlockArray copy = new BlockArray(machine.getPattern());
@@ -54,6 +57,22 @@ public class DynamicMachineRenderContext {
                                 new BlockArray.IBlockStateDescriptor(
                                         BlocksMM.blockController.getDefaultState()))));
         this.render = new BlockArrayRenderHelper(copy);
+    }
+
+    BlockArrayRenderHelper getRender() {
+        return render;
+    }
+
+    public long getShiftSnap() {
+        return shiftSnap;
+    }
+
+    public void snapSamples() {
+        this.shiftSnap = ClientScheduler.getClientTick();
+    }
+
+    public void releaseSamples() {
+        this.shiftSnap = -1;
     }
 
     public void resetRender() {
@@ -139,7 +158,7 @@ public class DynamicMachineRenderContext {
 
     @SideOnly(Side.CLIENT)
     public List<ItemStack> getDescriptiveStacks() {
-        return this.getDisplayedMachine().getPattern().getAsDescriptiveStacks();
+        return this.getDisplayedMachine().getPattern().getAsDescriptiveStacks(shiftSnap == -1 ? Optional.empty() : Optional.of(shiftSnap));
     }
 
     public static DynamicMachineRenderContext createContext(DynamicMachine machine) {
@@ -151,6 +170,7 @@ public class DynamicMachineRenderContext {
     }
 
     public void renderAt(int x, int z, float partialTicks) {
+        render.sampleSnap = shiftSnap;
         if(render3D) {
             render.render3DGUI(x, z, scale, partialTicks);
         } else {

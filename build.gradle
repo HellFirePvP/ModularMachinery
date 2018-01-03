@@ -9,7 +9,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.6.5"
+version = "1.8.1"
 group = "hellfirepvp.modularmachinery"
 archivesBaseName = "modularmachinery"
 
@@ -46,20 +46,20 @@ repositories {
 
 dependencies {
 
-    def mc_version = "1.12"
-    def jei_version = "4.7.0.67"
+    def mc_version = "1.12.2"
+    def jei_version = "4.8.0.114"
 
     ////JEI stuff
     deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
 
     def rf_version = "2.0.1.2"
 
-    deobfCompile "cofh:RedstoneFlux:${mc_version}-${rf_version}:universal"
+    deobfCompile "cofh:RedstoneFlux:1.12-${rf_version}:universal"
 
     def ct_mc_version = "MC1120"
-    def ct_version = "4.0.4.250"
+    def ct_version = "4.0.9.285"
 
-    deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:${mc_version}-${ct_version}"
+    deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:1.12-${ct_version}"
 
 }
 

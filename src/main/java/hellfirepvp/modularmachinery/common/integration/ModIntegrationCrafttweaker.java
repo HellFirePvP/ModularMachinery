@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -20,6 +20,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
  * Date: 18.08.2017 / 10:44
  */
 public class ModIntegrationCrafttweaker {
+
+    @SubscribeEvent
+    public void onScriptsReloading(ScriptRunEvent.Pre event) {
+        RecipeRegistry.getRegistry().clearLingeringRecipes();
+    }
 
     @SubscribeEvent
     public void onScriptsReloaded(ScriptRunEvent.Post event) {

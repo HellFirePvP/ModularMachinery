@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -10,7 +10,6 @@ package hellfirepvp.modularmachinery.common.registry;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
-import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.item.*;
 import net.minecraft.item.Item;
 import net.minecraftforge.registries.IForgeRegistry;

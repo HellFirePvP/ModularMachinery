@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -51,8 +51,8 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     private static int counter = 0;
     private static boolean frozen = false;
     private static final int PRIORITY_WEIGHT_ENERGY = 50_000_000;
-    private static final int PRIORITY_WEIGHT_FLUID  = 1_000_000;
-    private static final int PRIORITY_WEIGHT_ITEM   = 5_000_000;
+    private static final int PRIORITY_WEIGHT_FLUID  = 100;
+    private static final int PRIORITY_WEIGHT_ITEM   = 50_000;
 
     private final int sortId;
     private final String recipeFilePath;
@@ -92,6 +92,13 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             throw new IllegalStateException("Tried to add Requirement after recipes have been registered!");
         }
         this.recipeRequirements.add(requirement);
+        if(requirement.getActionType() == MachineComponent.IOType.INPUT &&
+                requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY) {
+            DynamicMachine machine = getOwningMachine();
+            if(machine != null) {
+                machine.setEnergyBased();
+            }
+        }
     }
 
     public int getRecipeTotalTickTime() {
@@ -177,7 +184,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             if(!root.has("machine")) {
                 throw new JsonParseException("No 'machine'-entry specified!");
             }
-            if(!root.has("registryName")) {
+            if(!root.has("registryName") && !root.has("registryname")) {
                 throw new JsonParseException("No 'registryName'-entry specified!");
             }
             if(!root.has("recipeTime")) {
@@ -207,6 +214,9 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 throw new JsonParseException("'machine' has to be either an array of strings or just a string! - Found " + elementMachine.toString() + " instead!");
             }
             JsonElement elementRegistryName = root.get("registryName");
+            if(elementRegistryName == null) {
+                elementRegistryName = root.get("registryname");
+            }
             if(!elementRegistryName.isJsonPrimitive() || !elementRegistryName.getAsJsonPrimitive().isString()) {
                 throw new JsonParseException("'registryName' has to have as value only a String that defines its unique registry name!");
             }
@@ -318,9 +328,6 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                         int burntime = requirement.getAsJsonPrimitive("time").getAsInt();
                         req = new ComponentRequirement.RequirementItem(machineIoType, burntime);
                     } else if(res.getResourceDomain().equalsIgnoreCase("ore")) {
-                        if(machineIoType == MachineComponent.IOType.OUTPUT) {
-                            throw new JsonParseException("You cannot define an oredict as item output! Offending oredict entry: " + res.toString());
-                        }
                         req = new ComponentRequirement.RequirementItem(machineIoType, itemDefinition.substring(4), amount);
                     } else {
                         Item item = ForgeRegistries.ITEMS.getValue(res);

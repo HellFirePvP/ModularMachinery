@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -34,8 +34,16 @@ public class NBTMatchingHelper {
 
     private static boolean matchBase(NBTBase matchBase, NBTBase matchStack) {
         if(matchBase instanceof NBTComparableNumber) {
-            if(matchStack instanceof NBTPrimitive) {
-                if(!((NBTComparableNumber) matchBase).test((NBTPrimitive) matchStack)) {
+            if (matchStack instanceof NBTPrimitive) {
+                if (!((NBTComparableNumber) matchBase).test((NBTPrimitive) matchStack)) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } else if(matchBase instanceof NBTPatternString) {
+            if(matchStack instanceof NBTTagString) {
+                if(!((NBTPatternString) matchBase).testString(((NBTTagString) matchStack).getString())) {
                     return false;
                 }
             } else {

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -19,6 +19,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
+import net.minecraft.client.Minecraft;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -27,8 +28,10 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Rotation;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
+import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
@@ -50,6 +53,7 @@ import java.util.*;
  */
 public class BlockArray {
 
+    private static final ResourceLocation ic2TileBlock = new ResourceLocation("ic2", "te");
     protected Map<BlockPos, BlockInformation> pattern = new HashMap<>();
     private Vec3i min = new Vec3i(0, 0, 0), max = new Vec3i(0, 0, 0), size = new Vec3i(0, 0, 0);
 
@@ -57,6 +61,15 @@ public class BlockArray {
 
     public BlockArray(BlockArray other) {
         this.pattern = new HashMap<>(other.pattern);
+        this.min = new Vec3i(other.min.getX(), other.min.getY(), other.min.getZ());
+        this.max = new Vec3i(other.max.getX(), other.max.getY(), other.max.getZ());
+        this.size = new Vec3i(other.size.getX(), other.size.getY(), other.size.getZ());
+    }
+
+    public BlockArray(BlockArray other, Vec3i offset) {
+        for (Map.Entry<BlockPos, BlockInformation> otherEntry : other.pattern.entrySet()) {
+            this.pattern.put(otherEntry.getKey().add(offset), otherEntry.getValue());
+        }
         this.min = new Vec3i(other.min.getX(), other.min.getY(), other.min.getZ());
         this.max = new Vec3i(other.max.getX(), other.max.getY(), other.max.getZ());
         this.size = new Vec3i(other.size.getX(), other.size.getY(), other.size.getZ());
@@ -129,15 +142,28 @@ public class BlockArray {
 
     @SideOnly(Side.CLIENT)
     public List<ItemStack> getAsDescriptiveStacks() {
+        return getAsDescriptiveStacks(Optional.empty());
+    }
+
+    @SideOnly(Side.CLIENT)
+    public List<ItemStack> getAsDescriptiveStacks(Optional<Long> snapSample) {
         List<ItemStack> out = new LinkedList<>();
         for (Map.Entry<BlockPos, BlockInformation> infoEntry : pattern.entrySet()) {
-            IBlockState state = infoEntry.getValue().getSampleState();
+            BlockArray.BlockInformation bi = infoEntry.getValue();
+            IBlockState state = bi.getSampleState(snapSample);
+            Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, bi.matchingTag,
+                    new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, infoEntry.getKey()));
+            state = recovered.getFirst();
             Block type = state.getBlock();
             int meta = type.getMetaFromState(state);
             ItemStack s = ItemStack.EMPTY;
 
             try {
-                s = state.getBlock().getPickBlock(state, null, null, infoEntry.getKey(), null);
+                if(ic2TileBlock.equals(type.getRegistryName())) {
+                    s = BlockCompatHelper.tryGetIC2MachineStack(state, recovered.getSecond());
+                } else {
+                    s = state.getBlock().getPickBlock(state, null, null, infoEntry.getKey(), null);
+                }
             } catch (Exception exc) {}
 
             if(s.isEmpty()) {
@@ -214,6 +240,41 @@ public class BlockArray {
         return true;
     }
 
+    public BlockPos getRelativeMismatchPosition(World world, BlockPos center) {
+        lblPattern:
+        for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
+            BlockInformation info = entry.getValue();
+            BlockPos at = center.add(entry.getKey());
+
+            if(info.matchingTag != null) {
+                TileEntity te = world.getTileEntity(at);
+                if(te != null && info.matchingTag.getSize() > 0) {
+                    NBTTagCompound cmp = new NBTTagCompound();
+                    te.writeToNBT(cmp);
+                    if(!NBTMatchingHelper.matchNBTCompound(info.matchingTag, cmp)) {
+                        return entry.getKey();
+                    }
+                }
+            }
+
+            IBlockState state = world.getBlockState(at);
+            Block atBlock = state.getBlock();
+            int atMeta = atBlock.getMetaFromState(state);
+
+            for (IBlockStateDescriptor descriptor : info.matchingStates) {
+                for (IBlockState applicable : descriptor.applicable) {
+                    Block type = applicable.getBlock();
+                    int meta = type.getMetaFromState(applicable);
+                    if(type.equals(state.getBlock()) && meta == atMeta) {
+                        continue lblPattern; //Matches
+                    }
+                }
+            }
+            return entry.getKey();
+        }
+        return null;
+    }
+
     public BlockArray rotateYCCW() {
         BlockArray out = new BlockArray();
 
@@ -278,7 +339,7 @@ public class BlockArray {
         public static final int CYCLE_TICK_SPEED = 30;
         public final List<IBlockStateDescriptor> matchingStates;
         private final List<IBlockState> samples = Lists.newLinkedList();
-        private NBTTagCompound matchingTag = null;
+        public NBTTagCompound matchingTag = null;
 
         public BlockInformation(List<IBlockStateDescriptor> matching) {
             this.matchingStates = ImmutableList.copyOf(matching);
@@ -292,17 +353,20 @@ public class BlockArray {
         }
 
         public IBlockState getSampleState() {
+            return getSampleState(Optional.empty());
+        }
+
+        public IBlockState getSampleState(Optional<Long> snapTick) {
             int tickSpeed = CYCLE_TICK_SPEED;
             if(samples.size() > 10) {
                 tickSpeed *= 0.6;
             }
-            int p = (int) (ClientScheduler.getClientTick() / tickSpeed);
+            int p = (int) (snapTick.orElse(ClientScheduler.getClientTick()) / tickSpeed);
             int part = p % samples.size();
             return samples.get(part);
         }
 
-        public static IBlockStateDescriptor getDescriptor(JsonPrimitive stringElement) throws JsonParseException {
-            String strElement = stringElement.getAsString();
+        public static IBlockStateDescriptor getDescriptor(String strElement) throws JsonParseException {
             int meta = -1;
             int indexMeta = strElement.indexOf('@');
             if(indexMeta != -1 && indexMeta != strElement.length() - 1) {
@@ -355,6 +419,38 @@ public class BlockArray {
             return bi;
         }
 
+        public boolean matches(World world, BlockPos at, boolean default_) {
+            if(!world.isBlockLoaded(at)) {
+                return default_;
+            }
+
+            if(matchingTag != null) {
+                TileEntity te = world.getTileEntity(at);
+                if(te != null && matchingTag.getSize() > 0) {
+                    NBTTagCompound cmp = new NBTTagCompound();
+                    te.writeToNBT(cmp);
+                    if(!NBTMatchingHelper.matchNBTCompound(matchingTag, cmp)) {
+                        return false; //No match at this position.
+                    }
+                }
+            }
+
+            IBlockState state = world.getBlockState(at);
+            Block atBlock = state.getBlock();
+            int atMeta = atBlock.getMetaFromState(state);
+
+            for (IBlockStateDescriptor descriptor : matchingStates) {
+                for (IBlockState applicable : descriptor.applicable) {
+                    Block type = applicable.getBlock();
+                    int meta = type.getMetaFromState(applicable);
+                    if(type.equals(state.getBlock()) && meta == atMeta) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
     }
 
     public static class IBlockStateDescriptor {
@@ -383,6 +479,32 @@ public class BlockArray {
             this.applicable.add(state);
         }
 
+    }
+
+    public static class TileInstantiateContext {
+
+        private final World world;
+        private final BlockPos pos;
+
+        public TileInstantiateContext(World world, BlockPos pos) {
+            this.world = world;
+            this.pos = pos;
+        }
+
+        public World getWorld() {
+            return world;
+        }
+
+        public BlockPos getPos() {
+            return pos;
+        }
+
+        public void apply(TileEntity te) {
+            if(te != null) {
+                te.setWorld(world);
+                te.setPos(pos);
+            }
+        }
     }
 
 }

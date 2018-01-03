@@ -14,8 +14,8 @@
             }
         },
         {
-            "from": [ -0.005, -0.005, -0.005 ],
-            "to": [ 16.005, 16.005, 16.005 ],
+            "from": [ 0, 0, 0 ],
+            "to": [ 16, 16, 16 ],
             "faces": {
                 "down":  { "texture": "#ov_down",  "cullface": "down" },
                 "up":    { "texture": "#ov_up",    "cullface": "up" },

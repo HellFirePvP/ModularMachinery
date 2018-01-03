@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -8,16 +8,28 @@
 
 package hellfirepvp.modularmachinery.client.util;
 
+import hellfirepvp.modularmachinery.client.ClientProxy;
 import hellfirepvp.modularmachinery.common.item.ItemConstructTool;
 import hellfirepvp.modularmachinery.common.selection.PlayerStructureSelectionHelper;
+import hellfirepvp.modularmachinery.common.util.BlockArray;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GLAllocation;
+import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.renderer.texture.TextureMap;
+import net.minecraft.entity.Entity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.EnumActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.client.event.RenderWorldLastEvent;
+import net.minecraftforge.event.entity.player.PlayerInteractEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
+import org.lwjgl.opengl.GL11;
 
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -46,11 +58,36 @@ public class SelectionBoxRenderHelper {
                 RenderingUtils.drawWhiteOutlineCubes(toRender, event.getPartialTicks());
             }
         }
+
+        ClientProxy.renderHelper.renderTranslucentBlocks();
+    }
+
+    @SubscribeEvent
+    public void onRightClick(PlayerInteractEvent event) {
+        if(event.getEntityPlayer().equals(Minecraft.getMinecraft().player) &&
+                (event instanceof PlayerInteractEvent.RightClickBlock ||
+                event instanceof PlayerInteractEvent.RightClickEmpty ||
+                event instanceof PlayerInteractEvent.RightClickItem)) {
+            if(ClientProxy.renderHelper.placePreview()) {
+                event.setCancellationResult(EnumActionResult.FAIL);
+                if(event.isCancelable()) {
+                    event.setCanceled(true);
+                }
+            }
+        }
     }
 
     @SubscribeEvent
     public void purgeDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         PlayerStructureSelectionHelper.clientSelection = null;
+        ClientProxy.renderHelper.unloadWorld();
+    }
+
+    @SubscribeEvent
+    public void onWorldChange(WorldEvent.Unload unload) {
+        if(unload.getWorld().isRemote) {
+            ClientProxy.renderHelper.unloadWorld();
+        }
     }
 
 }

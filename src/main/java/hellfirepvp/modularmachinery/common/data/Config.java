@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -45,7 +45,7 @@ public class Config {
         EnergyHatchSize.loadSizeFromConfig(lastReadConfig);
 
         String strColor = lastReadConfig.getString("general-casing-color", "general", "FF4900", "Defines the _default_ color for machine casings as items or blocks. (Hex color without alpha) Has to be defined both server and clientside!");
-        int col = 0xFF4900;
+        int col = 0xff921e; //TODO uh
         try {
             col = Integer.parseInt(strColor, 16);
         } catch (Exception exc) {

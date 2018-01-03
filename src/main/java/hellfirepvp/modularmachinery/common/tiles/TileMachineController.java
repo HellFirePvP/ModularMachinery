@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.block.BlockMachineComponent;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
@@ -110,17 +111,30 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         this.activeRecipe.complete(context);
                         this.activeRecipe.reset();
                         context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
-                        if(context.canStartCrafting()) {
-                            context.startCrafting();
-                            this.craftingStatus = CraftingStatus.CRAFTING;
-                        } else {
-                            this.activeRecipe = null;
-                            searchMatchingRecipe();
-                            if(this.activeRecipe == null) {
-                                this.craftingStatus = CraftingStatus.NO_RECIPE;
-                            } else {
+                        ComponentRequirement.CraftCheck result = context.canStartCrafting();
+                        switch (result) {
+                            case SUCCESS:
+                                context.startCrafting();
                                 this.craftingStatus = CraftingStatus.CRAFTING;
-                            }
+                                break;
+                            case FAILURE_MISSING_INPUT:
+                                this.activeRecipe = null;
+                                searchMatchingRecipe();
+                                if(this.activeRecipe == null) {
+                                    this.craftingStatus = CraftingStatus.NO_RECIPE;
+                                } else {
+                                    this.craftingStatus = CraftingStatus.CRAFTING;
+                                }
+                                break;
+                            case FAILURE_MISSING_ENERGY:
+                                this.activeRecipe = null;
+                                searchMatchingRecipe();
+                                if(this.activeRecipe == null) {
+                                    this.craftingStatus = CraftingStatus.NO_ENERGY;
+                                } else {
+                                    this.craftingStatus = CraftingStatus.CRAFTING;
+                                }
+                                break;
                         }
                     }
                     markForUpdate();
@@ -136,7 +150,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
         Iterable<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
         for (MachineRecipe recipe : availableRecipes) {
             RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents);
-            if(context.canStartCrafting()) {
+            if(context.canStartCrafting() == ComponentRequirement.CraftCheck.SUCCESS) {
                 this.activeRecipe = new ActiveMachineRecipe(recipe);
                 context.startCrafting(); //chew up start items
                 return;
@@ -224,7 +238,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     }
 
     @Nullable
-    private Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern) {
+    public Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern) {
         EnumFacing face = EnumFacing.NORTH;
         do {
             if(pattern.matches(getWorld(), getPos(), false)) {

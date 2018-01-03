@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -99,7 +99,7 @@ public class BlockCasing extends BlockMachineComponent implements BlockCustomNam
 
     @Override
     public boolean canRenderInLayer(IBlockState state, BlockRenderLayer layer) {
-        return layer == BlockRenderLayer.TRANSLUCENT;
+        return layer == BlockRenderLayer.CUTOUT;
     }
 
     //@Override

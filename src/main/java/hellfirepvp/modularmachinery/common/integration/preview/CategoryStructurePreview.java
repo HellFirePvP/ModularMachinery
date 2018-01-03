@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -12,6 +12,7 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import mezz.jei.api.IGuiHelper;
 import mezz.jei.api.gui.IDrawable;
+import mezz.jei.api.gui.IGuiItemStackGroup;
 import mezz.jei.api.gui.IRecipeLayout;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeCategory;
@@ -58,6 +59,11 @@ public class CategoryStructurePreview implements IRecipeCategory<StructurePrevie
     }
 
     @Override
-    public void setRecipe(IRecipeLayout recipeLayout, StructurePreviewWrapper recipeWrapper, IIngredients ingredients) {}
+    public void setRecipe(IRecipeLayout recipeLayout, StructurePreviewWrapper recipeWrapper, IIngredients ingredients) {
+        IGuiItemStackGroup group = recipeLayout.getItemStacks();
+        group.init(0, false, -999999, -999999);
+
+        group.set(ingredients);
+    }
 
 }

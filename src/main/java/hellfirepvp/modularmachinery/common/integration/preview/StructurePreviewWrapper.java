@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -11,12 +11,16 @@ package hellfirepvp.modularmachinery.common.integration.preview;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.ClientMouseJEIGuiEventHandler;
+import hellfirepvp.modularmachinery.client.ClientProxy;
 import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
 import hellfirepvp.modularmachinery.client.util.RenderingUtils;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
+import hellfirepvp.modularmachinery.common.lib.ItemsMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
 import mezz.jei.api.IGuiHelper;
 import mezz.jei.api.gui.IDrawable;
 import mezz.jei.api.ingredients.IIngredients;
@@ -31,10 +35,12 @@ import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.resources.I18n;
+import net.minecraft.client.settings.GameSettings;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
@@ -42,6 +48,7 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
+import net.minecraftforge.fluids.UniversalBucket;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
@@ -61,11 +68,14 @@ import java.util.*;
  */
 public class StructurePreviewWrapper implements IRecipeWrapper {
 
-    public static final ResourceLocation TEXTURE_BACKGROUND = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint.png");
+    private static final ResourceLocation ic2TileBlock = new ResourceLocation("ic2", "te");
+    public static final ResourceLocation TEXTURE_BACKGROUND = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint_jei.png");
 
     private final IDrawable drawableArrowDown, drawableArrowUp;
     private final IDrawable drawable3DDisabled, drawable3DHover, drawable3DActive;
     private final IDrawable drawable2DDisabled, drawable2DHover, drawable2DActive;
+    private final IDrawable drawablePopOutDisabled, drawablePopOutHover, drawablePopOutActive;
+    private final IDrawable drawableContentsDisabled, drawableContentsHover, drawableContentsActive;
 
     private final DynamicMachine machine;
     private final DynamicMachineRenderContext context;
@@ -88,6 +98,14 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         this.drawable2DDisabled = h.createDrawable(TEXTURE_BACKGROUND, 176, 32, 16, 16);
         this.drawable2DHover =    h.createDrawable(TEXTURE_BACKGROUND, 192, 32, 16, 16);
         this.drawable2DActive =   h.createDrawable(TEXTURE_BACKGROUND, 208, 32, 16, 16);
+
+        this.drawablePopOutDisabled = h.createDrawable(TEXTURE_BACKGROUND, 176, 48, 16, 16);
+        this.drawablePopOutHover =    h.createDrawable(TEXTURE_BACKGROUND, 192, 48, 16, 16);
+        this.drawablePopOutActive =   h.createDrawable(TEXTURE_BACKGROUND, 208, 48, 16, 16);
+
+        this.drawableContentsDisabled = h.createDrawable(TEXTURE_BACKGROUND, 176, 64, 16, 16);
+        this.drawableContentsHover =    h.createDrawable(TEXTURE_BACKGROUND, 192, 64, 16, 16);
+        this.drawableContentsActive =   h.createDrawable(TEXTURE_BACKGROUND, 208, 64, 16, 16);
     }
 
     @Override
@@ -112,6 +130,13 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                     context.setTo2D();
                 }
             }
+            if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak) &&
+                    mouseX >= 116 && mouseX <= 116 + 16 &&
+                    mouseY >= 106 && mouseY < 106 + 16) {
+                if(ClientProxy.renderHelper.startPreview(context)) {
+                    Minecraft.getMinecraft().displayGuiScreen(null);
+                }
+            }
         }
         return false;
     }
@@ -128,6 +153,14 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             lastPreviewedMachine = this.machine;
         }
         lastRenderMs = System.currentTimeMillis();
+
+        if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak)) {
+            if(context.getShiftSnap() == -1) {
+                context.snapSamples();
+            }
+        } else {
+            context.releaseSamples();
+        }
 
         if(context.doesRenderIn3D()) {
             if (Mouse.isButtonDown(0)) {
@@ -186,51 +219,69 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 int zMod = pos.getZ() + 1;
                 Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
                 if(rct.contains(mouseX, mouseY)) {
-                    IBlockState state = slice.get(pos).getSampleState();
+                    BlockArray.BlockInformation bi = slice.get(pos);
+                    IBlockState state = bi.getSampleState(context.getShiftSnap() == -1 ? Optional.empty() : Optional.of(context.getShiftSnap()));
+                    Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, bi.matchingTag,
+                            new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, pos));
+                    state = recovered.getFirst();
                     Block type = state.getBlock();
                     int meta = type.getMetaFromState(state);
-                    ItemStack s;
-                    if(type instanceof BlockFluidBase) {
-                        s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
-                    } else if(type instanceof BlockLiquid) {
-                        Material m = state.getMaterial();
-                        if(m == Material.WATER) {
-                            s = new ItemStack(Items.WATER_BUCKET);
-                        } else if(m == Material.LAVA) {
-                            s = new ItemStack(Items.LAVA_BUCKET);
+
+                    ItemStack s = ItemStack.EMPTY;
+                    try {
+                        if(ic2TileBlock.equals(type.getRegistryName())) {
+                            s = BlockCompatHelper.tryGetIC2MachineStack(state, recovered.getSecond());
                         } else {
-                            s = ItemStack.EMPTY;
+                            s = state.getBlock().getPickBlock(state, null, null, pos, null);
                         }
-                    } else {
-                        Item i = Item.getItemFromBlock(type);
-                        if(i == Items.AIR) continue;
-                        if(i.getHasSubtypes()) {
-                            s = new ItemStack(i, 1, meta);
+                    } catch (Exception exc) {}
+
+                    if(s.isEmpty()) {
+                        if(type instanceof BlockFluidBase) {
+                            s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
+                        } else if(type instanceof BlockLiquid) {
+                            Material m = state.getMaterial();
+                            if(m == Material.WATER) {
+                                s = new ItemStack(Items.WATER_BUCKET);
+                            } else if(m == Material.LAVA) {
+                                s = new ItemStack(Items.LAVA_BUCKET);
+                            } else {
+                                s = ItemStack.EMPTY;
+                            }
                         } else {
-                            s = new ItemStack(i);
-                        }
-                    }
-                    java.util.List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
-                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-                    java.util.List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
-                    boolean first = true;
-                    for (String str : tooltip) {
-                        if(first) {
-                            stacks.add(new Tuple<>(s, str));
-                            first = false;
-                        } else {
-                            stacks.add(new Tuple<>(ItemStack.EMPTY, str));
+                            Item i = Item.getItemFromBlock(type);
+                            if(i == Items.AIR) continue;
+                            if(i.getHasSubtypes()) {
+                                s = new ItemStack(i, 1, meta);
+                            } else {
+                                s = new ItemStack(i);
+                            }
                         }
                     }
 
-                    GlStateManager.pushMatrix();
-                    GlStateManager.translate(mouseX, mouseY, 0);
-                    GlStateManager.disableDepth();
-                    GlStateManager.disableBlend();
-                    RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
-                    GlStateManager.enableBlend();
-                    GlStateManager.enableDepth();
-                    GlStateManager.popMatrix();
+                    if(!s.isEmpty()) {
+                        java.util.List<String> tooltip = s.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                                ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                        java.util.List<Tuple<ItemStack, String>> stacks = new LinkedList<>();
+                        boolean first = true;
+                        for (String str : tooltip) {
+                            if(first) {
+                                stacks.add(new Tuple<>(s, str));
+                                first = false;
+                            } else {
+                                stacks.add(new Tuple<>(ItemStack.EMPTY, str));
+                            }
+                        }
+
+                        GlStateManager.pushMatrix();
+                        GlStateManager.translate(mouseX, mouseY, 0);
+                        GlStateManager.disableDepth();
+                        GlStateManager.disableBlend();
+                        RenderingUtils.renderBlueStackTooltip(0, 0, stacks, Minecraft.getMinecraft().fontRenderer, Minecraft.getMinecraft().getRenderItem());
+                        GlStateManager.enableBlend();
+                        GlStateManager.enableDepth();
+                        GlStateManager.popMatrix();
+                    }
                     break;
                 }
             }
@@ -242,10 +293,12 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         minecraft.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
 
+        boolean drawPopoutInfo = false, drawContents = false;
+
         IDrawable drawable = drawable3DDisabled;
         if(!context.doesRenderIn3D()) {
             if(mouseX >= guiLeft + 132 && mouseX <= guiLeft + 132 + 16 &&
-                    mouseY >= guiTop + 106 && mouseY <= guiTop + 106 + 16) {
+                    mouseY >= guiTop + 106 && mouseY < guiTop + 106 + 16) {
                 drawable = drawable3DHover;
             }
         } else {
@@ -253,6 +306,15 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
         drawable.draw(minecraft, guiLeft + 132, guiTop + 106);
 
+        drawable = drawablePopOutDisabled;
+        if(mouseX >= guiLeft + 116 && mouseX <= guiLeft + 116 + 16 &&
+                mouseY >= guiTop + 106 && mouseY < guiTop + 106 + 16) {
+            if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak)) {
+                drawable = drawablePopOutHover;
+            }
+            drawPopoutInfo = true;
+        }
+        drawable.draw(minecraft, guiLeft + 116, guiTop + 106);
 
         drawable = drawable2DDisabled;
         if(context.doesRenderIn3D()) {
@@ -264,6 +326,15 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             drawable = drawable2DActive;
         }
         drawable.draw(minecraft, guiLeft + 132, guiTop + 122);
+
+        //Show amount
+        drawable = drawableContentsDisabled;
+        if(mouseX >= guiLeft + 116 && mouseX <= guiLeft + 116 + 16 &&
+                mouseY >= guiTop + 122 && mouseY <= guiTop + 122 + 16) {
+            drawable = drawableContentsHover;
+            drawContents = true;
+        }
+        drawable.draw(minecraft, guiLeft + 116, guiTop + 122);
 
         if(context.doesRenderIn3D()) {
             GlStateManager.color(0.3F, 0.3F, 0.3F, 1.0F);
@@ -293,11 +364,40 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         GlStateManager.pushMatrix();
         GlStateManager.translate(0.5, 0, 0); //Don't ask.
         minecraft.fontRenderer.drawString(String.valueOf(context.getRenderSlice()), guiLeft + 158 - (width / 2), guiTop + 118, 0x222222);
+        if(drawPopoutInfo) {
+            ScaledResolution res = new ScaledResolution(Minecraft.getMinecraft());
+            java.util.List<String> out = minecraft.fontRenderer.listFormattedStringToWidth(
+                    I18n.format("gui.blueprint.popout.info"),
+                    Math.min(res.getScaledWidth() - mouseX, 200));
+            RenderingUtils.renderBlueTooltip(mouseX, mouseY, out, minecraft.fontRenderer);
+        }
+        if(drawContents) {
+            java.util.List<ItemStack> contents = context.getDescriptiveStacks();
+            java.util.List<Tuple<ItemStack, String>> contentMap = Lists.newArrayList();
+            ItemStack ctrl = new ItemStack(BlocksMM.blockController);
+            contentMap.add(new Tuple<>(ctrl, ctrl.getCount() + "x " + I18n.format(ctrl.getUnlocalizedName() + ".name")));
+            for (ItemStack stack : contents) {
+                if(stack.getItem() instanceof UniversalBucket) {
+                    FluidStack f = ((UniversalBucket) stack.getItem()).getFluid(stack);
+                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name", f.getLocalizedName())));
+                } else {
+                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name")));
+                }
+            }
+            RenderingUtils.renderBlueStackTooltip(mouseX, mouseY,
+                    contentMap,
+                    minecraft.fontRenderer,
+                    minecraft.getRenderItem());
+        }
         GlStateManager.popMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
     }
 
     @Override
-    public void getIngredients(IIngredients ingredients) {}
+    public void getIngredients(IIngredients ingredients) {
+        ItemStack bOut = new ItemStack(ItemsMM.blueprint);
+        ItemBlueprint.setAssociatedMachine(bOut, this.machine);
+        ingredients.setOutput(ItemStack.class, bOut);
+    }
 
 }

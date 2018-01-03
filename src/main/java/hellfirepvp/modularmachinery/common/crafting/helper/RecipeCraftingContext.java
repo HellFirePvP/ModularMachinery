@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -145,7 +145,7 @@ public class RecipeCraftingContext {
         }
     }
 
-    public boolean canStartCrafting() {
+    public ComponentRequirement.CraftCheck canStartCrafting() {
         currentRestrictions.clear();
 
         lblRequirements:
@@ -158,13 +158,14 @@ public class RecipeCraftingContext {
                         continue lblRequirements; //Check if it has at least 1 energy output.
                     }
                 }
-                return false;
+                return ComponentRequirement.CraftCheck.FAILURE_MISSING_INPUT;
             }
 
             requirement.startRequirementCheck(ResultChance.GUARANTEED);
 
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                if(requirement.canStartCrafting(component, this, this.currentRestrictions)) {
+                ComponentRequirement.CraftCheck check = requirement.canStartCrafting(component, this, this.currentRestrictions);
+                if(check == ComponentRequirement.CraftCheck.SUCCESS) {
                     requirement.endRequirementCheck();
                     continue lblRequirements;
                 }
@@ -172,10 +173,12 @@ public class RecipeCraftingContext {
 
             requirement.endRequirementCheck();
             currentRestrictions.clear();
-            return false;
+            return requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY ?
+                    ComponentRequirement.CraftCheck.FAILURE_MISSING_ENERGY :
+                    ComponentRequirement.CraftCheck.FAILURE_MISSING_INPUT;
         }
         currentRestrictions.clear();
-        return true;
+        return ComponentRequirement.CraftCheck.SUCCESS;
     }
 
     public void addComponent(MachineComponent component) {

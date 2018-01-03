@@ -1,5 +1,5 @@
 /*******************************************************************************
- * HellFirePvP / Modular Machinery 2017
+ * HellFirePvP / Modular Machinery 2018
  *
  * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
@@ -63,7 +63,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
             return true;
         }
         if(ModularMachinery.isMekanismLoaded) {
-            if(checkMekanismGasCapabilities(capability)) {
+            if(checkMekanismGasCapabilitiesPresence(capability, facing)) {
                 return true;
             }
         }
@@ -77,7 +77,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
             return (T) tank;
         }
         if(ModularMachinery.isMekanismLoaded) {
-            if(checkMekanismGasCapabilities(capability)) {
+            if(checkMekanismGasCapabilities(capability, facing)) {
                 return (T) this;
             }
         }
@@ -85,9 +85,17 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     }
 
     @Optional.Method(modid = "mekanism")
-    private boolean checkMekanismGasCapabilities(Capability<?> capability) {
-        Object defaultInstance = capability.getDefaultInstance();
-        return defaultInstance instanceof IGasHandler || defaultInstance instanceof ITubeConnection;
+    private boolean checkMekanismGasCapabilitiesPresence(Capability<?> capability, @Nullable EnumFacing facing) {
+        if(super.hasCapability(capability, facing)) {
+            return checkMekanismGasCapabilities(capability, facing);
+        }
+        return false;
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private boolean checkMekanismGasCapabilities(Capability<?> capability, @Nullable EnumFacing facing) {
+        Object defaultInstance = super.getCapability(capability, facing);
+        return defaultInstance != null && (defaultInstance instanceof IGasHandler || defaultInstance instanceof ITubeConnection);
     }
 
     @Override
