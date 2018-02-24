@@ -94,7 +94,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     public MachineComponent provideComponent() {
         return new MachineComponent.EnergyHatch(MachineComponent.IOType.INPUT) {
             @Override
-            public IEnergyHandler getEnergyBuffer() {
+            public IEnergyHandler getContainerProvider() {
                 return TileEnergyInputHatch.this;
             }
         };

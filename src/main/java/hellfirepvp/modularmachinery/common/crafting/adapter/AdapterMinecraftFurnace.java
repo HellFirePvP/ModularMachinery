@@ -10,6 +10,8 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import net.minecraft.item.ItemStack;
@@ -46,11 +48,11 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
                     new ResourceLocation("minecraft", "smelting_recipe_" + incId),
                     owningMachineName,
                     120, 0);
-            recipe.addRequirement(new ComponentRequirement.RequirementItem(MachineComponent.IOType.INPUT,
+            recipe.addRequirement(new RequirementItem(MachineComponent.IOType.INPUT,
                     ItemUtils.copyStackWithSize(smelting.getKey(), smelting.getKey().getCount())));
-            recipe.addRequirement(new ComponentRequirement.RequirementItem(MachineComponent.IOType.OUTPUT,
+            recipe.addRequirement(new RequirementItem(MachineComponent.IOType.OUTPUT,
                     ItemUtils.copyStackWithSize(smelting.getValue(), smelting.getValue().getCount())));
-            recipe.addRequirement(new ComponentRequirement.RequirementEnergy(MachineComponent.IOType.INPUT,
+            recipe.addRequirement(new RequirementEnergy(MachineComponent.IOType.INPUT,
                     20));
             smeltingRecipes.add(recipe);
             incId++;

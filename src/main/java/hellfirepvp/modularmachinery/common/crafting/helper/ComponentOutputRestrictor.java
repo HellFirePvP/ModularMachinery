@@ -19,26 +19,26 @@ import net.minecraft.item.ItemStack;
  * Created by HellFirePvP
  * Date: 12.07.2017 / 21:19
  */
-abstract class ComponentOutputRestrictor {
+public abstract class ComponentOutputRestrictor {
 
-    static class RestrictionTank extends ComponentOutputRestrictor {
+    public static class RestrictionTank extends ComponentOutputRestrictor {
 
-        final HybridFluid inserted;
-        final MachineComponent exactComponent;
+        public final HybridFluid inserted;
+        public final MachineComponent exactComponent;
 
-        RestrictionTank(HybridFluid inserted, MachineComponent exactComponent) {
+        public RestrictionTank(HybridFluid inserted, MachineComponent exactComponent) {
             this.inserted = inserted;
             this.exactComponent = exactComponent;
         }
 
     }
 
-    static class RestrictionInventory extends ComponentOutputRestrictor {
+    public static class RestrictionInventory extends ComponentOutputRestrictor {
 
-        final ItemStack inserted;
-        final MachineComponent exactComponent;
+        public final ItemStack inserted;
+        public final MachineComponent exactComponent;
 
-        RestrictionInventory(ItemStack inserted, MachineComponent exactComponent) {
+        public RestrictionInventory(ItemStack inserted, MachineComponent exactComponent) {
             this.inserted = inserted;
             this.exactComponent = exactComponent;
         }

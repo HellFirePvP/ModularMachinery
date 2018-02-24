@@ -53,7 +53,6 @@ public class DynamicMachine {
     private int definedColor = Config.machineColor;
 
     private boolean requiresBlueprint = false;
-    private boolean energyBased = false;
 
     public DynamicMachine(@Nonnull ResourceLocation registryName) {
         this.registryName = registryName;
@@ -81,14 +80,6 @@ public class DynamicMachine {
 
     public int getMachineColor() {
         return definedColor;
-    }
-
-    public void setEnergyBased() {
-        this.energyBased = true;
-    }
-
-    public boolean isEnergyBased() {
-        return energyBased;
     }
 
     @Nonnull

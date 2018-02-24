@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.machine;
 
+import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.util.HybridTank;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
@@ -25,7 +26,7 @@ import javax.annotation.Nullable;
  * Created by HellFirePvP
  * Date: 28.06.2017 / 10:16
  */
-public abstract class MachineComponent {
+public abstract class MachineComponent<T> {
 
     private final IOType ioType;
 
@@ -38,6 +39,8 @@ public abstract class MachineComponent {
     }
 
     public abstract ComponentType getComponentType();
+
+    public abstract T getContainerProvider();
 
     public static enum IOType {
 
@@ -53,78 +56,43 @@ public abstract class MachineComponent {
             }
             return null;
         }
-
     }
 
-    public static enum ComponentType {
-
-        ITEM,
-        FLUID,
-        ENERGY,
-
-        GAS("mekanism");
-
-        private String modidRequired = null;
-
-        ComponentType() {}
-
-        ComponentType(String modidRequired) {
-            this.modidRequired = modidRequired;
-        }
-
-        @Nullable
-        public static ComponentType getByString(String name) {
-            for (ComponentType val : values()) {
-                if(val.name().equalsIgnoreCase(name) && (val.modidRequired == null || Loader.isModLoaded(val.modidRequired))) {
-                    return val;
-                }
-            }
-            return null;
-        }
-
-    }
-
-    public static abstract class ItemBus extends MachineComponent {
+    public static abstract class ItemBus extends MachineComponent<IOInventory> {
 
         public ItemBus(IOType ioType) {
             super(ioType);
         }
 
-        public abstract IOInventory getInventory();
-
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.ITEM;
+            return ComponentType.Registry.getComponent("item");
         }
 
     }
 
-    public static abstract class FluidHatch extends MachineComponent {
+    public static abstract class FluidHatch extends MachineComponent<HybridTank> {
 
         public FluidHatch(IOType ioType) {
             super(ioType);
         }
 
-        public abstract HybridTank getTank();
-
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.FLUID;
+            return ComponentType.Registry.getComponent("fluid");
         }
 
     }
 
-    public static abstract class EnergyHatch extends MachineComponent {
+    public static abstract class EnergyHatch extends MachineComponent<IEnergyHandler> {
 
         public EnergyHatch(IOType ioType) {
             super(ioType);
         }
 
-        public abstract IEnergyHandler getEnergyBuffer();
-
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.ENERGY;
+            return ComponentType.Registry.getComponent("energy");
         }
 
     }

@@ -86,16 +86,14 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
 
     @Optional.Method(modid = "mekanism")
     private boolean checkMekanismGasCapabilitiesPresence(Capability<?> capability, @Nullable EnumFacing facing) {
-        if(super.hasCapability(capability, facing)) {
-            return checkMekanismGasCapabilities(capability, facing);
-        }
-        return false;
+        return checkMekanismGasCapabilities(capability, facing);
     }
 
     @Optional.Method(modid = "mekanism")
     private boolean checkMekanismGasCapabilities(Capability<?> capability, @Nullable EnumFacing facing) {
-        Object defaultInstance = super.getCapability(capability, facing);
-        return defaultInstance != null && (defaultInstance instanceof IGasHandler || defaultInstance instanceof ITubeConnection);
+        String gasType = IGasHandler.class.getName().intern();
+        String tubeConnectionName = ITubeConnection.class.getName().intern();
+        return capability != null && (capability.getName().equals(gasType) || capability.getName().equals(tubeConnectionName));
     }
 
     @Override
@@ -132,7 +130,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     public MachineComponent provideComponent() {
         return new MachineComponent.FluidHatch(ioType) {
             @Override
-            public HybridTank getTank() {
+            public HybridTank getContainerProvider() {
                 return TileFluidTank.this.tank;
             }
         };

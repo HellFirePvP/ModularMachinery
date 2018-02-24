@@ -193,11 +193,18 @@ public class BlockArrayRenderHelper {
                     terd.tileEntity.setWorld(Minecraft.getMinecraft().world);
                     terd.tileEntity.setPos(offset);
                 }
-                IBlockState actRenderState = state.state;
-                actRenderState = actRenderState.getBlock().getActualState(actRenderState, renderAccess, offset);
-                //IBakedModel model = brd.getModelForState(actRenderState);
-                //brd.getBlockModelRenderer().renderModel(renderAccess, model, actRenderState, offset, vb, true);
-                brd.renderBlock(actRenderState, offset, renderAccess, vb);
+                try {
+                    IBlockState actRenderState = state.state;
+                    actRenderState = actRenderState.getBlock().getActualState(actRenderState, renderAccess, offset);
+                    brd.renderBlock(actRenderState, offset, renderAccess, vb);
+                } catch (Exception exc) {
+                    brd.getBlockModelRenderer().renderModel(
+                            renderAccess,
+                            brd.getBlockModelShapes().getModelManager().getMissingModel(),
+                            state.state,
+                            offset,
+                            vb, true);
+                }
             }
         }
         tes.draw();
@@ -214,7 +221,9 @@ public class BlockArrayRenderHelper {
             if(terd != null && terd.tileEntity != null && terd.renderer != null) {
                 terd.tileEntity.setWorld(Minecraft.getMinecraft().world);
                 terd.tileEntity.setPos(offset);
-                terd.renderer.render(terd.tileEntity, offset.getX(), offset.getY(), offset.getZ(), pTicks, 0, 1F);
+                try {
+                    terd.renderer.render(terd.tileEntity, offset.getX(), offset.getY(), offset.getZ(), pTicks, 0, 1F);
+                } catch (Exception ignored) {}
             }
         }
 

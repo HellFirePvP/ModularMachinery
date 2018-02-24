@@ -21,30 +21,43 @@ import java.awt.*;
  */
 public abstract class RecipeLayoutPart {
 
-    public abstract Rectangle getSize();
+    private final Point offset;
+
+    protected RecipeLayoutPart(Point offset) {
+        this.offset = offset;
+    }
+
+    public abstract int getComponentWidth();
+
+    public abstract int getComponentHeight();
+
+    public final Point getOffset() {
+        return offset;
+    }
+
+    public abstract boolean canBeScaled();
 
     public abstract void drawBackground(Minecraft mc);
 
     public static class Tank extends RecipeLayoutPart {
 
-        private final Rectangle size;
-        private boolean gasTank = false;
-
         public Tank(Point offset) {
-            this.size = new Rectangle(offset.x, offset.y, 22, 63);
-        }
-
-        public void setGasTank(boolean gasTank) {
-            this.gasTank = gasTank;
-        }
-
-        public boolean isGasTank() {
-            return gasTank;
+            super(offset);
         }
 
         @Override
-        public Rectangle getSize() {
-            return size;
+        public int getComponentHeight() {
+            return 63;
+        }
+
+        @Override
+        public int getComponentWidth() {
+            return 22;
+        }
+
+        @Override
+        public boolean canBeScaled() {
+            return true;
         }
 
         @Override
@@ -54,40 +67,56 @@ public abstract class RecipeLayoutPart {
 
     public static class Energy extends RecipeLayoutPart {
 
-        private final Rectangle size;
-
         public Energy(Point offset) {
-            this.size = new Rectangle(offset.x, offset.y, 22, 63);
+            super(offset);
         }
 
         @Override
-        public Rectangle getSize() {
-            return size;
+        public int getComponentWidth() {
+            return 22;
+        }
+
+        @Override
+        public int getComponentHeight() {
+            return 63;
+        }
+
+        @Override
+        public boolean canBeScaled() {
+            return true;
         }
 
         @Override
         public void drawBackground(Minecraft mc) {
-            RecipeLayoutHelper.PART_ENERGY_BACKGROUND.drawable.draw(mc, size.x, size.y);
+            RecipeLayoutHelper.PART_ENERGY_BACKGROUND.drawable.draw(mc, getOffset().x, getOffset().y);
         }
 
     }
 
     public static class Item extends RecipeLayoutPart {
 
-        private final Rectangle size;
-
         public Item(Point offset) {
-            this.size = new Rectangle(offset.x, offset.y, 18, 18);
+            super(offset);
         }
 
         @Override
-        public Rectangle getSize() {
-            return size;
+        public int getComponentHeight() {
+            return 18;
+        }
+
+        @Override
+        public int getComponentWidth() {
+            return 18;
+        }
+
+        @Override
+        public boolean canBeScaled() {
+            return false;
         }
 
         @Override
         public void drawBackground(Minecraft mc) {
-            RecipeLayoutHelper.PART_INVENTORY_CELL.drawable.draw(mc, size.x, size.y);
+            RecipeLayoutHelper.PART_INVENTORY_CELL.drawable.draw(mc, getOffset().x, getOffset().y);
         }
 
     }

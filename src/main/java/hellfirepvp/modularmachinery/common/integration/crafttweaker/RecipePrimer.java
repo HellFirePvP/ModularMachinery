@@ -14,9 +14,13 @@ import crafttweaker.api.item.IItemStack;
 import crafttweaker.api.liquid.ILiquidStack;
 import crafttweaker.api.minecraft.CraftTweakerMC;
 import crafttweaker.api.oredict.IOreDictEntry;
+import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.PreparedRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
@@ -142,7 +146,7 @@ public class RecipePrimer implements PreparedRecipe {
     // Internals
     //----------------------------------------------------------------------------------------------
     private void requireEnergy(MachineComponent.IOType ioType, int perTick) {
-        appendComponent(new ComponentRequirement.RequirementEnergy(ioType, perTick));
+        appendComponent(new RequirementEnergy(ioType, perTick));
     }
 
     private void requireFluid(MachineComponent.IOType ioType, ILiquidStack stack) {
@@ -154,12 +158,12 @@ public class RecipePrimer implements PreparedRecipe {
         if(stack.getTag() != null) {
             mcFluid.tag = CraftTweakerMC.getNBTCompound(stack.getTag());
         }
-        ComponentRequirement.RequirementFluid rf = new ComponentRequirement.RequirementFluid(ioType, mcFluid);
+        RequirementFluid rf = new RequirementFluid(ComponentType.Registry.getComponent("fluid"), ioType, mcFluid);
         appendComponent(rf);
     }
 
     private void requireItem(MachineComponent.IOType ioType, int requiredTotalBurnTime) {
-        appendComponent(new ComponentRequirement.RequirementItem(ioType, requiredTotalBurnTime));
+        appendComponent(new RequirementItem(ioType, requiredTotalBurnTime));
     }
 
     private void requireItem(MachineComponent.IOType ioType, IItemStack stack) {
@@ -168,7 +172,7 @@ public class RecipePrimer implements PreparedRecipe {
             CraftTweakerAPI.logError("Itemstack not found/unknown item: " + stack.toString());
             return;
         }
-        ComponentRequirement.RequirementItem ri = new ComponentRequirement.RequirementItem(ioType, mcStack);
+        RequirementItem ri = new RequirementItem(ioType, mcStack);
         if(stack.getTag().length() > 0) {
             ri.tag = CraftTweakerMC.getNBTCompound(stack.getTag());
             ri.previewDisplayTag = CraftTweakerMC.getNBTCompound(stack.getTag());
@@ -177,7 +181,7 @@ public class RecipePrimer implements PreparedRecipe {
     }
 
     private void requireItem(MachineComponent.IOType ioType, String oreDictName, int amount) {
-        appendComponent(new ComponentRequirement.RequirementItem(ioType, oreDictName, amount));
+        appendComponent(new RequirementItem(ioType, oreDictName, amount));
     }
 
     private void appendComponent(ComponentRequirement component) {

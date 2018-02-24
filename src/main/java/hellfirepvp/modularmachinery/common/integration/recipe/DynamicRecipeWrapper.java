@@ -13,6 +13,9 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -34,6 +37,8 @@ import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem.ItemRequirementType.ITEMSTACKS;
+
 /**
  * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
@@ -44,10 +49,10 @@ import java.util.stream.Collectors;
 public class DynamicRecipeWrapper implements IRecipeWrapper {
 
     private final MachineRecipe recipe;
-    public final List<ComponentRequirement.RequirementFluid> immulatbleOrderedInputFluids;
-    public final List<ComponentRequirement.RequirementFluid> immulatbleOrderedOutputFluids;
-    public final List<ComponentRequirement.RequirementItem> immulatbleOrderedInputItems;
-    public final List<ComponentRequirement.RequirementItem> immulatbleOrderedOutputItems;
+    public final List<RequirementFluid> immulatbleOrderedInputFluids;
+    public final List<RequirementFluid> immulatbleOrderedOutputFluids;
+    public final List<RequirementItem> immulatbleOrderedInputItems;
+    public final List<RequirementItem> immulatbleOrderedOutputItems;
 
     public DynamicRecipeWrapper(MachineRecipe recipe) {
         this.recipe = recipe;
@@ -55,35 +60,35 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         List<ComponentRequirement> requirements = this.recipe.getCraftingRequirements();
 
         List<ComponentRequirement> components = requirements.stream()
-                .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                .filter(c -> c instanceof RequirementFluid)
                 .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                 .collect(Collectors.toList());
-        List<ComponentRequirement.RequirementFluid> fluidsInCopy = Lists.newLinkedList();
-        components.forEach(r -> fluidsInCopy.add((ComponentRequirement.RequirementFluid) r));
+        List<RequirementFluid> fluidsInCopy = Lists.newLinkedList();
+        components.forEach(r -> fluidsInCopy.add((RequirementFluid) r));
         this.immulatbleOrderedInputFluids = ImmutableList.copyOf(fluidsInCopy);
 
         components = requirements.stream()
-                .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                .filter(c -> c instanceof RequirementFluid)
                 .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
                 .collect(Collectors.toList());
-        List<ComponentRequirement.RequirementFluid> fluidsOutCopy = Lists.newLinkedList();
-        components.forEach(r -> fluidsOutCopy.add((ComponentRequirement.RequirementFluid) r));
+        List<RequirementFluid> fluidsOutCopy = Lists.newLinkedList();
+        components.forEach(r -> fluidsOutCopy.add((RequirementFluid) r));
         this.immulatbleOrderedOutputFluids = ImmutableList.copyOf(fluidsOutCopy);
 
         components = requirements.stream()
-                .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                .filter(c -> c instanceof RequirementItem)
                 .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                 .collect(Collectors.toList());
-        List<ComponentRequirement.RequirementItem> itemsInCopy = Lists.newLinkedList();
-        components.forEach(r -> itemsInCopy.add((ComponentRequirement.RequirementItem) r));
+        List<RequirementItem> itemsInCopy = Lists.newLinkedList();
+        components.forEach(r -> itemsInCopy.add((RequirementItem) r));
         this.immulatbleOrderedInputItems = ImmutableList.copyOf(itemsInCopy);
 
         components = requirements.stream()
-                .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                .filter(c -> c instanceof RequirementItem)
                 .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
                 .collect(Collectors.toList());
-        List<ComponentRequirement.RequirementItem> itemsOutCopy = Lists.newLinkedList();
-        components.forEach(r -> itemsOutCopy.add((ComponentRequirement.RequirementItem) r));
+        List<RequirementItem> itemsOutCopy = Lists.newLinkedList();
+        components.forEach(r -> itemsOutCopy.add((RequirementItem) r));
         this.immulatbleOrderedOutputItems = ImmutableList.copyOf(itemsOutCopy);
     }
 
@@ -114,19 +119,19 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int totalEnergyIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                        .filter(r -> r instanceof ComponentRequirement.RequirementEnergy)
+                        .filter(r -> r instanceof RequirementEnergy)
                         .filter(r -> r.getActionType() == MachineComponent.IOType.INPUT).collect(Collectors.toList())) {
-            totalEnergyIn += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
+            totalEnergyIn += ((RequirementEnergy) req).getRequiredEnergyPerTick();
         }
         if(totalEnergyIn > 0) {
             offsetY -= 36;
         }
 
-        int totalEnergyOut = 0;
+        long totalEnergyOut = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                .filter(r -> r instanceof ComponentRequirement.RequirementEnergy)
+                .filter(r -> r instanceof RequirementEnergy)
                 .filter(r -> r.getActionType() == MachineComponent.IOType.OUTPUT).collect(Collectors.toList())) {
-            totalEnergyOut += ((ComponentRequirement.RequirementEnergy) req).getRequiredEnergyPerTick();
+            totalEnergyOut += ((RequirementEnergy) req).getRequiredEnergyPerTick();
         }
         if(totalEnergyOut > 0) {
             offsetY -= 36;
@@ -134,11 +139,11 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int totalFuelIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                .filter(c -> c instanceof RequirementItem)
                 .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
-                .filter(c -> ((ComponentRequirement.RequirementItem) c).requirementType == ComponentRequirement.ItemRequirementType.FUEL)
+                .filter(c -> ((RequirementItem) c).requirementType == RequirementItem.ItemRequirementType.FUEL)
                 .collect(Collectors.toList())) {
-            totalFuelIn += ((ComponentRequirement.RequirementItem) req).fuelBurntime;
+            totalFuelIn += ((RequirementItem) req).fuelBurntime;
         }
         if(totalFuelIn > 0) {
             offsetY -= 26;
@@ -148,7 +153,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.inputComponents.stream()
                     .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
-                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getSize().x, r.getSize().y));
+                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getOffset().x, r.getOffset().y));
 
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in"), 8,  offsetY + 10, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", totalEnergyIn), 8,  offsetY + 20, 0x222222);
@@ -169,7 +174,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             GlStateManager.color(1F, 1F, 1F, 1F);
             recipeCategory.outputComponents.stream()
                     .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
-                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getSize().x, r.getSize().y));
+                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getOffset().x, r.getOffset().y));
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out"), 8,  offsetY + 10, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergyOut), 8,  offsetY + 20, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergyOut * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
@@ -184,13 +189,13 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         List<List<ItemStack>> applicableStacksIn = Lists.newLinkedList();
 
 
-        for (ComponentRequirement.RequirementItem itemIn : this.immulatbleOrderedInputItems) {
+        for (RequirementItem itemIn : this.immulatbleOrderedInputItems) {
             applicableStacksIn.add(getIIngredientComponents(itemIn));
         }
         ingredients.setInputLists(ItemStack.class, applicableStacksIn);
 
         List<HybridFluid> applicableFluidsIn = Lists.newLinkedList();
-        for (ComponentRequirement.RequirementFluid fluidIn : this.immulatbleOrderedInputFluids) {
+        for (RequirementFluid fluidIn : this.immulatbleOrderedInputFluids) {
             applicableFluidsIn.add(fluidIn.required);
         }
         ingredients.setInputs(HybridFluid.class, applicableFluidsIn);
@@ -198,19 +203,19 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
 
         List<List<ItemStack>> applicableStacksOut = Lists.newLinkedList();
-        for (ComponentRequirement.RequirementItem itemOut : this.immulatbleOrderedOutputItems) {
+        for (RequirementItem itemOut : this.immulatbleOrderedOutputItems) {
             applicableStacksOut.add(getIIngredientComponents(itemOut));
         }
         ingredients.setOutputLists(ItemStack.class, applicableStacksOut);
 
         List<HybridFluid> applicableFluidsOut = Lists.newLinkedList();
-        for (ComponentRequirement.RequirementFluid fluidIn : this.immulatbleOrderedOutputFluids) {
+        for (RequirementFluid fluidIn : this.immulatbleOrderedOutputFluids) {
             applicableFluidsOut.add(fluidIn.required);
         }
         ingredients.setOutputs(HybridFluid.class, applicableFluidsOut);
     }
 
-    private List<ItemStack> getIIngredientComponents(ComponentRequirement.RequirementItem itemRequirement) {
+    private List<ItemStack> getIIngredientComponents(RequirementItem itemRequirement) {
         switch (itemRequirement.requirementType) {
             case ITEMSTACKS:
                 ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());

@@ -92,13 +92,6 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             throw new IllegalStateException("Tried to add Requirement after recipes have been registered!");
         }
         this.recipeRequirements.add(requirement);
-        if(requirement.getActionType() == MachineComponent.IOType.INPUT &&
-                requirement.getRequiredComponentType() == MachineComponent.ComponentType.ENERGY) {
-            DynamicMachine machine = getOwningMachine();
-            if(machine != null) {
-                machine.setEnergyBased();
-            }
-        }
     }
 
     public int getRecipeTotalTickTime() {
@@ -135,14 +128,14 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         int weightOut = sortId;
         for (ComponentRequirement req : this.recipeRequirements) {
             if(req.getActionType() == MachineComponent.IOType.OUTPUT) continue;
-            switch (req.getRequiredComponentType()) {
-                case ITEM:
+            switch (req.getRequiredComponentType().getRegistryName().toLowerCase()) {
+                case "item":
                     weightOut -= PRIORITY_WEIGHT_ITEM;
                     break;
-                case FLUID:
+                case "fluid":
                     weightOut -= PRIORITY_WEIGHT_FLUID;
                     break;
-                case ENERGY:
+                case "energy":
                     weightOut -= PRIORITY_WEIGHT_ENERGY;
                     break;
             }
@@ -282,201 +275,15 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             }
             String ioType = requirement.getAsJsonPrimitive("io-type").getAsString();
 
-            MachineComponent.ComponentType machineComponentType = MachineComponent.ComponentType.getByString(type);
-            if(machineComponentType == null) {
-                throw new JsonParseException("'type' is not a valid ComponentType!");
+            ComponentType<?> componentType = ComponentType.Registry.getComponent(type);
+            if(componentType == null) {
+                throw new JsonParseException("'" + type + "' is not a valid ComponentType!");
             }
             MachineComponent.IOType machineIoType = MachineComponent.IOType.getByString(ioType);
             if(machineIoType == null) {
-                throw new JsonParseException("'io-type' is not a valid IOType!");
+                throw new JsonParseException("'" + ioType + "' is not a valid IOType!");
             }
-            ComponentRequirement req;
-            switch (machineComponentType) {
-                case ITEM:
-                    if(!requirement.has("item") || !requirement.get("item").isJsonPrimitive() ||
-                            !requirement.get("item").getAsJsonPrimitive().isString()) {
-                        throw new JsonParseException("The ComponentType 'item' expects an 'item'-entry that defines the item!");
-                    }
-                    String itemDefinition = requirement.getAsJsonPrimitive("item").getAsString();
-                    int meta = 0;
-                    int indexMeta = itemDefinition.indexOf('@');
-                    if(indexMeta != -1 && indexMeta != itemDefinition.length() - 1) {
-                        try {
-                            meta = Integer.parseInt(itemDefinition.substring(indexMeta + 1));
-                        } catch (NumberFormatException exc) {
-                            throw new JsonParseException("Expected a metadata number, got " + itemDefinition.substring(indexMeta + 1), exc);
-                        }
-                        itemDefinition = itemDefinition.substring(0, indexMeta);
-                    }
-                    int amount = 1;
-                    if(requirement.has("amount")) {
-                        if(!requirement.get("amount").isJsonPrimitive() || !requirement.getAsJsonPrimitive("amount").isNumber()) {
-                            throw new JsonParseException("'amount', if defined, needs to be a amount-number!");
-                        }
-                        amount = MathHelper.clamp(requirement.getAsJsonPrimitive("amount").getAsInt(), 1, 64);
-                    }
-
-                    ResourceLocation res = new ResourceLocation(itemDefinition);
-                    if(res.getResourceDomain().equalsIgnoreCase("any") && res.getResourcePath().equalsIgnoreCase("fuel")) {
-                        if(machineIoType == MachineComponent.IOType.OUTPUT) {
-                            throw new JsonParseException("You cannot define 'fuel' as item output! Offending item-output entry: " + res.toString());
-                        }
-                        if(!requirement.has("time") || !requirement.get("time").isJsonPrimitive() ||
-                                !requirement.get("time").getAsJsonPrimitive().isNumber()) {
-                            throw new JsonParseException("If you define any:fuel as item input, you have to define the burntime required in total in the 'time' entry alongside the 'item' entry!");
-                        }
-                        int burntime = requirement.getAsJsonPrimitive("time").getAsInt();
-                        req = new ComponentRequirement.RequirementItem(machineIoType, burntime);
-                    } else if(res.getResourceDomain().equalsIgnoreCase("ore")) {
-                        req = new ComponentRequirement.RequirementItem(machineIoType, itemDefinition.substring(4), amount);
-                    } else {
-                        Item item = ForgeRegistries.ITEMS.getValue(res);
-                        if(item == null || item == Items.AIR) {
-                            throw new JsonParseException("Couldn't find item with registryName '" + res.toString() + "' !");
-                        }
-                        ItemStack result;
-                        if(meta > 0) {
-                            result = new ItemStack(item, amount, meta);
-                        } else {
-                            result = new ItemStack(item, amount);
-                        }
-                        req = new ComponentRequirement.RequirementItem(machineIoType, result);
-                    }
-                    if(requirement.has("chance")) {
-                        if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
-                            throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
-                        }
-                        float chance = requirement.getAsJsonPrimitive("chance").getAsFloat();
-                        if(chance >= 0 && chance <= 1) {
-                            ((ComponentRequirement.RequirementItem) req).setChance(chance);
-                        }
-                    }
-                    if (requirement.has("nbt")) {
-                        if(!requirement.has("nbt") || !requirement.get("nbt").isJsonObject()) {
-                            throw new JsonParseException("The ComponentType 'nbt' expects a json compound that defines the NBT tag!");
-                        }
-                        String nbtString = requirement.getAsJsonObject("nbt").toString();
-                        try {
-                            ((ComponentRequirement.RequirementItem) req).tag = NBTJsonDeserializer.deserialize(nbtString);
-                        } catch (NBTException exc) {
-                            throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
-                        }
-
-                        if (requirement.has("nbt-display")) {
-                            if(!requirement.has("nbt-display") || !requirement.get("nbt-display").isJsonObject()) {
-                                throw new JsonParseException("The ComponentType 'nbt-display' expects a json compound that defines the NBT tag meant to be used for displaying!");
-                            }
-                            String nbtDisplayString = requirement.getAsJsonObject("nbt-display").toString();
-                            try {
-                                ((ComponentRequirement.RequirementItem) req).previewDisplayTag = NBTJsonDeserializer.deserialize(nbtDisplayString);
-                            } catch (NBTException exc) {
-                                throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
-                            }
-                        } else {
-                            ((ComponentRequirement.RequirementItem) req).previewDisplayTag = ((ComponentRequirement.RequirementItem) req).tag.copy();
-                        }
-                    }
-                    return req;
-                case FLUID:
-                    if(!requirement.has("fluid") || !requirement.get("fluid").isJsonPrimitive() ||
-                            !requirement.get("fluid").getAsJsonPrimitive().isString()) {
-                        throw new JsonParseException("The ComponentType 'fluid' expects an 'fluid'-entry that defines the type of fluid!");
-                    }
-                    if(!requirement.has("amount") || !requirement.get("amount").isJsonPrimitive() ||
-                            !requirement.get("amount").getAsJsonPrimitive().isNumber()) {
-                        throw new JsonParseException("The ComponentType 'fluid' expects an 'amount'-entry that defines the type of fluid!");
-                    }
-                    String fluidName = requirement.getAsJsonPrimitive("fluid").getAsString();
-                    int mbAmount = requirement.getAsJsonPrimitive("amount").getAsInt();
-                    Fluid f = FluidRegistry.getFluid(fluidName);
-                    if(f == null) {
-                        throw new JsonParseException("The fluid specified in the 'fluid'-entry (" + fluidName + ") doesn't exist!");
-                    }
-                    mbAmount = Math.max(0, mbAmount);
-                    FluidStack fluidStack = new FluidStack(f, mbAmount);
-                    req = new ComponentRequirement.RequirementFluid(machineIoType, fluidStack);
-
-                    if(requirement.has("chance")) {
-                        if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
-                            throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
-                        }
-                        float chance = requirement.getAsJsonPrimitive("chance").getAsFloat();
-                        if(chance >= 0 && chance <= 1) {
-                            ((ComponentRequirement.RequirementFluid) req).setChance(chance);
-                        }
-                    }
-                    if (requirement.has("nbt")) {
-                        if (!requirement.has("nbt") || !requirement.get("nbt").isJsonObject()) {
-                            throw new JsonParseException("The ComponentType 'nbt' expects a json compound that defines the NBT tag!");
-                        }
-                        String nbtString = requirement.getAsJsonObject("nbt").toString();
-                        try {
-                            ((ComponentRequirement.RequirementFluid) req).setMatchNBTTag(NBTJsonDeserializer.deserialize(nbtString));
-                        } catch (NBTException exc) {
-                            throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
-                        }
-                        if (requirement.has("nbt-display")) {
-                            if(!requirement.has("nbt-display") || !requirement.get("nbt-display").isJsonObject()) {
-                                throw new JsonParseException("The ComponentType 'nbt-display' expects a json compound that defines the NBT tag meant to be used for displaying!");
-                            }
-                            String nbtDisplayString = requirement.getAsJsonObject("nbt-display").toString();
-                            try {
-                                ((ComponentRequirement.RequirementFluid) req).setDisplayNBTTag(NBTJsonDeserializer.deserialize(nbtDisplayString));
-                            } catch (NBTException exc) {
-                                throw new JsonParseException("Error trying to parse NBTTag! Rethrowing exception...", exc);
-                            }
-                        } else {
-                            ((ComponentRequirement.RequirementFluid) req).setDisplayNBTTag(((ComponentRequirement.RequirementFluid) req).getTagMatch());
-                        }
-                    }
-                    return req;
-                case GAS:
-                    if(ModularMachinery.isMekanismLoaded) {
-                        return deserializeMekanismGasRequirement(machineIoType, requirement);
-                    }
-                    throw new IllegalStateException("Inconsistent state: FML says Mekanism is loaded now, but didn't state that before! This is a mod-loading issue apparently! Report this!");
-                case ENERGY:
-                    if(!requirement.has("energyPerTick") || !requirement.get("energyPerTick").isJsonPrimitive() ||
-                            !requirement.get("energyPerTick").getAsJsonPrimitive().isNumber()) {
-                        throw new JsonParseException("The ComponentType 'energy' expects an 'energyPerTick'-entry that defines the amount of energy per tick!");
-                    }
-                    int energyPerTick = requirement.getAsJsonPrimitive("energyPerTick").getAsInt();
-                    req = new ComponentRequirement.RequirementEnergy(machineIoType, energyPerTick);
-                    return req;
-            }
-            throw new JsonParseException("Unknown machine component type: " + type);
-        }
-
-        @Optional.Method(modid = "mekanism")
-        private ComponentRequirement deserializeMekanismGasRequirement(MachineComponent.IOType machineIoType, JsonObject requirement) throws JsonParseException {
-            if(!requirement.has("gas") || !requirement.get("gas").isJsonPrimitive() ||
-                    !requirement.get("gas").getAsJsonPrimitive().isString()) {
-                throw new JsonParseException("The ComponentType 'gas' expects an 'gas'-entry that defines the type of gas!");
-            }
-            if(!requirement.has("amount") || !requirement.get("amount").isJsonPrimitive() ||
-                    !requirement.get("amount").getAsJsonPrimitive().isNumber()) {
-                throw new JsonParseException("The ComponentType 'gas' expects an 'amount'-entry that defines the type of gas!");
-            }
-            String gasName = requirement.getAsJsonPrimitive("gas").getAsString();
-            int mbAmount = requirement.getAsJsonPrimitive("amount").getAsInt();
-            Gas gas = GasRegistry.getGas(gasName);
-            if(gas == null) {
-                throw new JsonParseException("The gas specified in the 'gas'-entry (" + gasName + ") doesn't exist!");
-            }
-            mbAmount = Math.max(0, mbAmount);
-            GasStack gasStack = new GasStack(gas, mbAmount);
-            ComponentRequirement.RequirementFluid req = ComponentRequirement.RequirementFluid.createMekanismGasRequirement(machineIoType, gasStack);
-
-            if(requirement.has("chance")) {
-                if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
-                    throw new JsonParseException("'chance', if defined, needs to be a chance-number between 0 and 1!");
-                }
-                float chance = requirement.getAsJsonPrimitive("chance").getAsFloat();
-                if(chance >= 0 && chance <= 1) {
-                    req.setChance(chance);
-                }
-            }
-            return req;
+            return componentType.provideComponent(machineIoType, requirement);
         }
 
     }

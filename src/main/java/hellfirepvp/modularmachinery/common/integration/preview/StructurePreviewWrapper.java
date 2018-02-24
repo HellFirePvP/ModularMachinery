@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.integration.preview;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.ClientMouseJEIGuiEventHandler;
@@ -375,14 +376,11 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             java.util.List<ItemStack> contents = context.getDescriptiveStacks();
             java.util.List<Tuple<ItemStack, String>> contentMap = Lists.newArrayList();
             ItemStack ctrl = new ItemStack(BlocksMM.blockController);
-            contentMap.add(new Tuple<>(ctrl, ctrl.getCount() + "x " + I18n.format(ctrl.getUnlocalizedName() + ".name")));
+            contentMap.add(new Tuple<>(ctrl, "1x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
+                    Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             for (ItemStack stack : contents) {
-                if(stack.getItem() instanceof UniversalBucket) {
-                    FluidStack f = ((UniversalBucket) stack.getItem()).getFluid(stack);
-                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name", f.getLocalizedName())));
-                } else {
-                    contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + I18n.format(stack.getUnlocalizedName() + ".name")));
-                }
+                contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
+                        Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             }
             RenderingUtils.renderBlueStackTooltip(mouseX, mouseY,
                     contentMap,

@@ -13,6 +13,9 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
@@ -83,19 +86,19 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
         for (MachineRecipe recipe : recipes) {
             List<ComponentRequirement> energyInput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementEnergy)
+                    .filter(c -> c instanceof RequirementEnergy)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                     .collect(Collectors.toList());
             List<ComponentRequirement> fluidInput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                    .filter(c -> c instanceof RequirementFluid)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                     .collect(Collectors.toList());
             List<ComponentRequirement> itemInput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                    .filter(c -> c instanceof RequirementItem)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
                     .collect(Collectors.toList());
             List<ComponentRequirement> itemFuelInput = new ArrayList<>(itemInput).stream()
-                    .filter(c -> ((ComponentRequirement.RequirementItem) c).requirementType == ComponentRequirement.ItemRequirementType.FUEL)
+                    .filter(c -> ((RequirementItem) c).requirementType == RequirementItem.ItemRequirementType.FUEL)
                     .collect(Collectors.toList());
             if(energyInput.size() > energyIn) {
                 energyIn = energyInput.size();
@@ -111,15 +114,15 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             }
 
             List<ComponentRequirement> energyOutput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementEnergy)
+                    .filter(c -> c instanceof RequirementEnergy)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
                     .collect(Collectors.toList());
             List<ComponentRequirement> fluidOutput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                    .filter(c -> c instanceof RequirementFluid)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
                     .collect(Collectors.toList());
             List<ComponentRequirement> itemOutput = recipe.getCraftingRequirements().stream()
-                    .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                    .filter(c -> c instanceof RequirementItem)
                     .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
                     .collect(Collectors.toList());
             if(energyOutput.size() > energyOut) {
@@ -249,6 +252,188 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         return new Point(offsetX, highestY);
     }
 
+    /*
+    private Point calculateRecipeComponents(double scale) {
+        Iterable<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(this.machine);
+        int offsetX = 8;
+        int offsetY = 0;
+        int highestY = 0;
+
+        int energyIn = 0, energyOut = 0;
+        int fluidIn  = 0, fluidOut  = 0;
+        int itemIn   = 0, itemOut   = 0;
+
+        boolean fuelItemIn = false;
+
+        for (MachineRecipe recipe : recipes) {
+            List<ComponentRequirement> energyInput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementEnergy)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
+                    .collect(Collectors.toList());
+            List<ComponentRequirement> fluidInput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
+                    .collect(Collectors.toList());
+            List<ComponentRequirement> itemInput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
+                    .collect(Collectors.toList());
+            List<ComponentRequirement> itemFuelInput = new ArrayList<>(itemInput).stream()
+                    .filter(c -> ((ComponentRequirement.RequirementItem) c).requirementType == ComponentRequirement.ItemRequirementType.FUEL)
+                    .collect(Collectors.toList());
+            if(energyInput.size() > energyIn) {
+                energyIn = energyInput.size();
+            }
+            if(fluidInput.size() > fluidIn) {
+                fluidIn = fluidInput.size();
+            }
+            if(itemInput.size() > itemIn) {
+                itemIn = itemInput.size();
+            }
+            if(!itemFuelInput.isEmpty()) {
+                fuelItemIn = true;
+            }
+
+            List<ComponentRequirement> energyOutput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementEnergy)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
+                    .collect(Collectors.toList());
+            List<ComponentRequirement> fluidOutput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementFluid)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
+                    .collect(Collectors.toList());
+            List<ComponentRequirement> itemOutput = recipe.getCraftingRequirements().stream()
+                    .filter(c -> c instanceof ComponentRequirement.RequirementItem)
+                    .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
+                    .collect(Collectors.toList());
+            if(energyOutput.size() > energyOut) {
+                energyOut = energyOutput.size();
+            }
+            if(fluidOutput.size() > fluidOut) {
+                fluidOut = fluidOutput.size();
+            }
+            if(itemOutput.size() > itemOut) {
+                itemOut = itemOutput.size();
+            }
+        }
+
+        if(energyIn > 0) {
+            inputComponents.addLast(new RecipeLayoutPart.Energy(new Point(offsetX, offsetY)));
+            offsetX += MathHelper.floor((22 + 4) * scale);
+            if(offsetY + 63 > highestY) {
+                highestY = offsetY + 63;
+            }
+        }
+
+        int partOffsetX = offsetX;
+        int originalOffsetX = offsetX;
+        int partOffsetY = offsetY;
+        for (int i = 0; i < fluidIn; i++) {
+            if(i > 0 && i % 2 == 0) {
+                partOffsetY += 63 + 4;
+                partOffsetX = originalOffsetX;
+            }
+            inputComponents.add(new RecipeLayoutPart.Tank(new Point(partOffsetX, partOffsetY)));
+            partOffsetX += 22 + 4;
+            if(partOffsetX > offsetX) {
+                offsetX = partOffsetX;
+            }
+            if(partOffsetY + 63 > highestY) {
+                highestY = partOffsetY + 63;
+            }
+        }
+
+        partOffsetX = offsetX;
+        originalOffsetX = offsetX;
+        partOffsetY = offsetY;
+        for (int i = 0; i < itemIn; i++) {
+            if(i > 0 && i % 3 == 0) {
+                partOffsetY += 18;
+                partOffsetX = originalOffsetX;
+            }
+            inputComponents.add(new RecipeLayoutPart.Item(new Point(partOffsetX, partOffsetY)));
+            partOffsetX += 18;
+            if(partOffsetX > offsetX) {
+                offsetX = partOffsetX;
+            }
+            if(partOffsetY + 18 > highestY) {
+                highestY = partOffsetY + 18;
+            }
+        }
+
+        offsetX += 4;
+        int tempArrowOffsetX = offsetX;
+        offsetX += RecipeLayoutHelper.PART_PROCESS_ARROW.xSize;
+        offsetX += 4;
+
+        partOffsetX = offsetX;
+        originalOffsetX = offsetX;
+        partOffsetY = offsetY;
+        for (int i = 0; i < itemOut; i++) {
+            if(i > 0 && i % 3 == 0) {
+                partOffsetY += 18;
+                partOffsetX = originalOffsetX;
+            }
+            outputComponents.add(new RecipeLayoutPart.Item(new Point(partOffsetX, partOffsetY)));
+            partOffsetX += 18;
+            if(partOffsetX > offsetX) {
+                offsetX = partOffsetX;
+            }
+            if(partOffsetY + 18 > highestY) {
+                highestY = partOffsetY + 18;
+            }
+        }
+        if(itemOut > 0) {
+            offsetX += 4;
+        }
+
+        partOffsetX = offsetX;
+        originalOffsetX = offsetX;
+        partOffsetY = offsetY;
+        for (int i = 0; i < fluidOut; i++) {
+            if(i > 0 && i % 2 == 0) {
+                partOffsetY += 63 + 4;
+                partOffsetX = originalOffsetX;
+            }
+            outputComponents.add(new RecipeLayoutPart.Tank(new Point(partOffsetX, partOffsetY)));
+            partOffsetX += 22 + 4;
+            if(partOffsetX > offsetX) {
+                offsetX = partOffsetX;
+            }
+            if(partOffsetY + 63 > highestY) {
+                highestY = partOffsetY + 63;
+            }
+        }
+
+        if(energyOut > 0) {
+            outputComponents.add(new RecipeLayoutPart.Energy(new Point(offsetX, offsetY)));
+            offsetX += 22 + 4;
+            if(offsetY + 63 > highestY) {
+                highestY = offsetY + 63;
+            }
+        }
+
+
+        int halfY = highestY / 2;
+        offsetProcessArrow = new Point(tempArrowOffsetX, halfY / 2);
+        rectangleProcessArrow = new Rectangle(offsetProcessArrow.x, offsetProcessArrow.y,
+                RecipeLayoutHelper.PART_PROCESS_ARROW.xSize, RecipeLayoutHelper.PART_PROCESS_ARROW.zSize);
+
+        //Texts for input consumed/produced
+        if(energyIn > 0) {
+            highestY += 36;
+        }
+        if(energyOut > 0) {
+            highestY += 36;
+        }
+        if(fuelItemIn) {
+            highestY += 26;
+        }
+
+        return new Point(offsetX, highestY);
+    }
+    */
+
     @Override
     public String getUid() {
         return this.category;
@@ -294,14 +479,12 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
         int itemSlotIndex = 0;
         for (RecipeLayoutPart slot : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Item).collect(Collectors.toList())) {
-            Rectangle partSize = slot.getSize();
-            itemStacks.init(itemSlotIndex, true, partSize.x, partSize.y);
+            itemStacks.init(itemSlotIndex, true, slot.getOffset().x, slot.getOffset().y);
             itemSlotIndex++;
             amtItemInputs++;
         }
         for (RecipeLayoutPart slot : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Item).collect(Collectors.toList())) {
-            Rectangle partSize = slot.getSize();
-            itemStacks.init(itemSlotIndex, false, partSize.x, partSize.y);
+            itemStacks.init(itemSlotIndex, false, slot.getOffset().x, slot.getOffset().y);
             itemSlotIndex++;
         }
 
@@ -312,8 +495,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputItems.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementItem itemReq = recipeWrapper.immulatbleOrderedInputItems.get(slotIndex);
-                if(itemReq.requirementType == ComponentRequirement.ItemRequirementType.FUEL) {
+                RequirementItem itemReq = recipeWrapper.immulatbleOrderedInputItems.get(slotIndex);
+                if(itemReq.requirementType == RequirementItem.ItemRequirementType.FUEL) {
                     int burn = TileEntityFurnace.getItemBurnTime(ingredient);
                     if(burn > 0) {
                         tooltip.add(TextFormatting.GRAY.toString() + I18n.format("tooltip.machinery.fuel.item", burn));
@@ -337,7 +520,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputItems.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementItem itemReq = recipeWrapper.immulatbleOrderedOutputItems.get(slotIndex);
+                RequirementItem itemReq = recipeWrapper.immulatbleOrderedOutputItems.get(slotIndex);
                 if(itemReq.chance < 1F && itemReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(itemReq.chance * 100F));
                     if(itemReq.chance == 0F) {
@@ -364,22 +547,20 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         int amtFluidInputs = 0;
         int fluidIndex = 0;
         for (RecipeLayoutPart fluidTank : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
             HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
-                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+                    copyPrepareFluidRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
             copy = copy.
-                    copyPrepareGasRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidGroup.init(fluidIndex, true, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+                    copyPrepareGasRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, true, copy, fluidTank.getOffset().x, fluidTank.getOffset().y, fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 0, 0);
             fluidIndex++;
             amtFluidInputs++;
         }
         for (RecipeLayoutPart fluidTank : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
             HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
-                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+                    copyPrepareFluidRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
             copy = copy.
-                    copyPrepareGasRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidGroup.init(fluidIndex, false, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+                    copyPrepareGasRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, false, copy, fluidTank.getOffset().x, fluidTank.getOffset().y, fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 0, 0);
             fluidIndex++;
         }
 
@@ -391,7 +572,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputFluids.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
+                RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
                 if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
                     if(fluidReq.chance == 0F) {
@@ -409,7 +590,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputFluids.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
+                RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
                 if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
                     if(fluidReq.chance == 0F) {
@@ -433,18 +614,16 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         int amtFluidInputs = 0;
         int fluidIndex = 0;
         for (RecipeLayoutPart fluidTank : this.inputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
             HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
-                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidGroup.init(fluidIndex, true, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+                    copyPrepareFluidRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, true, copy, fluidTank.getOffset().x, fluidTank.getOffset().y, fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 0, 0);
             fluidIndex++;
             amtFluidInputs++;
         }
         for (RecipeLayoutPart fluidTank : this.outputComponents.stream().filter(c -> c instanceof RecipeLayoutPart.Tank).collect(Collectors.toList())) {
-            Rectangle partSize = fluidTank.getSize();
             HybridFluidRenderer<HybridFluid> copy = hybridFluidRenderer.
-                    copyPrepareFluidRender(partSize.width, partSize.height, 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            fluidGroup.init(fluidIndex, false, copy, partSize.x, partSize.y, partSize.width, partSize.height, 0, 0);
+                    copyPrepareFluidRender(fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 1000, false, RecipeLayoutHelper.PART_TANK_SHELL.drawable);
+            fluidGroup.init(fluidIndex, false, copy, fluidTank.getOffset().x, fluidTank.getOffset().y, fluidTank.getComponentWidth(), fluidTank.getComponentHeight(), 0, 0);
             fluidIndex++;
         }
 
@@ -455,7 +634,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedInputFluids.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
+                RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedInputFluids.get(slotIndex);
                 if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
                     if(fluidReq.chance == 0F) {
@@ -473,7 +652,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(slotIndex < 0 || slotIndex >= recipeWrapper.immulatbleOrderedOutputFluids.size()) {
                     return;
                 }
-                ComponentRequirement.RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
+                RequirementFluid fluidReq = recipeWrapper.immulatbleOrderedOutputFluids.get(slotIndex);
                 if(fluidReq.chance < 1F && fluidReq.chance >= 0F) {
                     String chanceStr = String.valueOf(MathHelper.floor(fluidReq.chance * 100F));
                     if(fluidReq.chance == 0F) {

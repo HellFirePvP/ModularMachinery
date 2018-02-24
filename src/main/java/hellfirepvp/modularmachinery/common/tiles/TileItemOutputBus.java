@@ -47,7 +47,7 @@ public class TileItemOutputBus extends TileItemBus implements MachineComponentTi
     public MachineComponent provideComponent() {
         return new MachineComponent.ItemBus(MachineComponent.IOType.OUTPUT) {
             @Override
-            public IOInventory getInventory() {
+            public IOInventory getContainerProvider() {
                 return TileItemOutputBus.this.inventory;
             }
         };

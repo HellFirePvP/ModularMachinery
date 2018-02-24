@@ -154,7 +154,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     public MachineComponent provideComponent() {
         return new MachineComponent.EnergyHatch(MachineComponent.IOType.OUTPUT) {
             @Override
-            public IEnergyHandler getEnergyBuffer() {
+            public IEnergyHandler getContainerProvider() {
                 return TileEnergyOutputHatch.this;
             }
         };

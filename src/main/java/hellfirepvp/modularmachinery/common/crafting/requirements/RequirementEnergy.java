@@ -1,0 +1,125 @@
+/*******************************************************************************
+ * HellFirePvP / Modular Machinery 2018
+ *
+ * This project is licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ * The source code is available on github: https://github.com/HellFirePvP/ModularMachinery
+ * For further details, see the License file there.
+ ******************************************************************************/
+
+package hellfirepvp.modularmachinery.common.crafting.requirements;
+
+import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.crafting.types.ComponentEnergy;
+import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.util.HybridTank;
+import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.ResultChance;
+
+import java.awt.*;
+import java.util.List;
+
+/**
+ * This class is part of the Modular Machinery Mod
+ * The complete source code for this mod can be found on github.
+ * Class: RequirementEnergy
+ * Created by HellFirePvP
+ * Date: 24.02.2018 / 12:26
+ */
+public class RequirementEnergy extends ComponentRequirement {
+
+    private int requirementPerTick;
+    private int activeIO;
+
+    public RequirementEnergy(MachineComponent.IOType ioType, int requirementPerTick) {
+        super(ComponentType.Registry.getComponent("energy"), ioType);
+        this.requirementPerTick = requirementPerTick;
+        this.activeIO = this.requirementPerTick;
+    }
+
+    @Override
+    public ComponentRequirement deepCopy() {
+        RequirementEnergy energy = new RequirementEnergy(this.getActionType(), this.requirementPerTick);
+        energy.activeIO = this.activeIO;
+        return energy;
+    }
+
+    @Override
+    public void startRequirementCheck(ResultChance contextChance) {}
+
+    @Override
+    public void endRequirementCheck() {}
+
+    public int getRequiredEnergyPerTick() {
+        return requirementPerTick;
+    }
+
+    @Override
+    public RecipeLayoutPart provideRenderableLayoutPart(Point componentOffset) {
+        return new RecipeLayoutPart.Energy(componentOffset);
+    }
+
+    @Override
+    public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
+                !(component instanceof MachineComponent.EnergyHatch) ||
+                component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
+        IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
+        switch (getActionType()) {
+            case INPUT:
+                if(handler.getCurrentEnergy() >= this.requirementPerTick) {
+                    return CraftCheck.SUCCESS;
+                }
+            case OUTPUT:
+                return CraftCheck.SUCCESS;
+        }
+        return CraftCheck.FAILURE_MISSING_ENERGY;
+    }
+
+    @Override
+    public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+        return canStartCrafting(component, context, Lists.newArrayList()) == CraftCheck.SUCCESS;
+    }
+
+    @Override
+    public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+        return true;
+    }
+
+    public void resetEnergyIO() {
+        this.activeIO = this.requirementPerTick;
+    }
+
+    //returns remaining energy needing to be consumed/distributed
+    public int handleEnergyIO(MachineComponent component, RecipeCraftingContext context) {
+        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
+                !(component instanceof MachineComponent.EnergyHatch) ||
+                component.getIOType() != getActionType()) return this.activeIO;
+        IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
+        switch (getActionType()) {
+            case INPUT:
+                if(handler.getCurrentEnergy() >= this.activeIO) {
+                    handler.setCurrentEnergy(handler.getCurrentEnergy() - this.activeIO);
+                    this.activeIO = 0;
+                    return activeIO;
+                }
+                return this.activeIO;
+            case OUTPUT:
+                int remaining = handler.getRemainingCapacity();
+                if(remaining - this.activeIO < 0) {
+                    handler.setCurrentEnergy(handler.getMaxEnergy());
+                    this.activeIO -= remaining;
+                    return this.activeIO;
+                }
+                handler.setCurrentEnergy(Math.min(handler.getCurrentEnergy() + this.activeIO, handler.getMaxEnergy()));
+                this.activeIO = 0;
+                return activeIO;
+        }
+        return this.activeIO;
+    }
+
+}
