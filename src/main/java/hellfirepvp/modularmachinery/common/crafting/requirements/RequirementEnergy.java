@@ -49,7 +49,7 @@ public class RequirementEnergy extends ComponentRequirement {
     }
 
     @Override
-    public void startRequirementCheck(ResultChance contextChance) {}
+    public void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context) {}
 
     @Override
     public void endRequirementCheck() {}
@@ -71,7 +71,7 @@ public class RequirementEnergy extends ComponentRequirement {
         IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
-                if(handler.getCurrentEnergy() >= this.requirementPerTick) {
+                if(handler.getCurrentEnergy() >= context.applyModifiers(this, getActionType(), this.requirementPerTick, false)) {
                     return CraftCheck.SUCCESS;
                 }
             case OUTPUT:
@@ -92,6 +92,10 @@ public class RequirementEnergy extends ComponentRequirement {
 
     public void resetEnergyIO() {
         this.activeIO = this.requirementPerTick;
+    }
+
+    public void startEnergyIO(RecipeCraftingContext context) {
+        this.activeIO = Math.round(context.applyModifiers(this, getActionType(), this.activeIO , false));
     }
 
     //returns remaining energy needing to be consumed/distributed
@@ -121,5 +125,4 @@ public class RequirementEnergy extends ComponentRequirement {
         }
         return this.activeIO;
     }
-
 }

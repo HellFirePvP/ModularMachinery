@@ -26,6 +26,8 @@ import mezz.jei.api.IGuiHelper;
 import mezz.jei.api.gui.IDrawable;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
+import mezz.jei.gui.recipes.RecipeLayout;
+import mezz.jei.gui.recipes.RecipesGui;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
@@ -55,10 +57,10 @@ import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
 
 import java.awt.*;
-import java.awt.List;
 import java.awt.geom.Rectangle2D;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -68,6 +70,8 @@ import java.util.*;
  * Date: 11.07.2017 / 12:38
  */
 public class StructurePreviewWrapper implements IRecipeWrapper {
+
+    private static final Field layouts;
 
     private static final ResourceLocation ic2TileBlock = new ResourceLocation("ic2", "te");
     public static final ResourceLocation TEXTURE_BACKGROUND = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint_jei.png");
@@ -193,7 +197,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         context.renderAt(x,  z);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
-        drawButtons(minecraft, mouseX, mouseY, 0, 0);
+        drawButtons(minecraft, mouseX, mouseY, 0, 0, recipeWidth, recipeHeight);
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         minecraft.fontRenderer.drawString(machine.getLocalizedName(),
@@ -289,7 +293,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
     }
 
-    private void drawButtons(Minecraft minecraft, int mouseX, int mouseY, int guiLeft, int guiTop) {
+    private void drawButtons(Minecraft minecraft, int mouseX, int mouseY, int guiLeft, int guiTop, int recipeWidth, int recipeHeight) {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         minecraft.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
@@ -379,13 +383,37 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             contentMap.add(new Tuple<>(ctrl, "1x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
                     Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             for (ItemStack stack : contents) {
-                contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
+                contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + Iterables.getFirst(stack.getTooltip(Minecraft.getMinecraft().player,
                         Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             }
-            RenderingUtils.renderBlueStackTooltip(mouseX, mouseY,
-                    contentMap,
-                    minecraft.fontRenderer,
-                    minecraft.getRenderItem());
+
+            ScaledResolution scaledresolution = new ScaledResolution(Minecraft.getMinecraft());
+            int srWidth = scaledresolution.getScaledWidth();
+            int srHeight = scaledresolution.getScaledHeight();
+            int rMouseX = Mouse.getX() * srWidth / Minecraft.getMinecraft().displayWidth;
+            int rMouseY = srHeight - Mouse.getY() * srHeight / Minecraft.getMinecraft().displayHeight - 1;
+
+            RecipesGui current = (RecipesGui) Minecraft.getMinecraft().currentScreen;
+            RecipeLayout currentLayout = null;
+            try {
+                List<RecipeLayout> layoutList = (List<RecipeLayout>) layouts.get(current);
+                for (RecipeLayout layout : layoutList) {
+                    if (layout.isMouseOver(rMouseX, rMouseY)) {
+                        currentLayout = layout;
+                        break;
+                    }
+                }
+            } catch (IllegalAccessException ignored) {}
+
+            if(currentLayout != null) {
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(-currentLayout.getPosX(), -currentLayout.getPosY(), 0);
+                RenderingUtils.renderBlueStackTooltip(currentLayout.getPosX() + mouseX, currentLayout.getPosY() + mouseY,
+                        contentMap,
+                        minecraft.fontRenderer,
+                        minecraft.getRenderItem());
+                GlStateManager.popMatrix();
+            }
         }
         GlStateManager.popMatrix();
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
@@ -396,6 +424,18 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         ItemStack bOut = new ItemStack(ItemsMM.blueprint);
         ItemBlueprint.setAssociatedMachine(bOut, this.machine);
         ingredients.setOutput(ItemStack.class, bOut);
+    }
+
+    //I blame mezz for this, making stuff not accessible and badly organizing the original values so it's horrible to draw custom stuff onto the GUI frame.
+    static {
+        Field f;
+        try {
+            f = RecipesGui.class.getDeclaredField("recipeLayouts");
+            f.setAccessible(true);
+        } catch (Exception exc) {
+            f = null;
+        }
+        layouts = f;
     }
 
 }

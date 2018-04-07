@@ -23,6 +23,7 @@ import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
@@ -31,6 +32,8 @@ import hellfirepvp.modularmachinery.common.util.IOInventory;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.nbt.NBTTagList;
+import net.minecraft.nbt.NBTUtil;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ResourceLocation;
@@ -39,10 +42,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.items.CapabilityItemHandler;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -66,6 +72,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private ActiveMachineRecipe activeRecipe = null;
 
     private List<MachineComponent> foundComponents = Lists.newArrayList();
+    private Map<BlockPos, ModifierReplacement> foundModifiers = new HashMap<>();
 
     public TileMachineController() {
         this.inventory = buildInventory();
@@ -105,12 +112,12 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         markForUpdate();
                     }
                 } else {
-                    RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
+                    RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, this.foundModifiers.values());
                     this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
                     if(this.activeRecipe.isCompleted(this)) {
                         this.activeRecipe.complete(context);
                         this.activeRecipe.reset();
-                        context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents);
+                        context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, this.foundModifiers.values());
                         ComponentRequirement.CraftCheck result = context.canStartCrafting();
                         switch (result) {
                             case SUCCESS:
@@ -149,7 +156,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private void searchMatchingRecipe() {
         Iterable<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
         for (MachineRecipe recipe : availableRecipes) {
-            RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents);
+            RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents, this.foundModifiers.values());
             if(context.canStartCrafting() == ComponentRequirement.CraftCheck.SUCCESS) {
                 this.activeRecipe = new ActiveMachineRecipe(recipe);
                 context.startCrafting(); //chew up start items
@@ -168,7 +175,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     this.patternRotation = null;
                     craftingStatus = CraftingStatus.MISSING_STRUCTURE;
                     markForUpdate();
-                } else if(!foundPattern.matches(getWorld(), getPos(), true)) {
+                } else if(!foundPattern.matches(getWorld(), getPos(), true, foundMachine.getModifiersAsMatchingReplacements())) {
                     this.activeRecipe = null;
                     this.foundMachine = null;
                     this.foundPattern = null;
@@ -184,7 +191,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
                 DynamicMachine blueprint = getBlueprintMachine();
                 if(blueprint != null) {
-                    Tuple<EnumFacing, BlockArray> res = matchesRotation(blueprint.getPattern());
+                    Tuple<EnumFacing, BlockArray> res = matchesRotation(blueprint.getPattern(), blueprint);
                     if(res != null) {
                         this.foundMachine = blueprint;
                         this.foundPattern = res.getSecond();
@@ -199,7 +206,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 } else {
                     for (DynamicMachine machine : MachineRegistry.getRegistry()) {
                         if (machine.requiresBlueprint()) continue;
-                        Tuple<EnumFacing, BlockArray> res = matchesRotation(machine.getPattern());
+                        Tuple<EnumFacing, BlockArray> res = matchesRotation(machine.getPattern(), machine);
                         if (res != null) {
                             this.foundMachine = machine;
                             this.foundPattern = res.getSecond();
@@ -238,10 +245,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
     }
 
     @Nullable
-    public Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern) {
+    public Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern, DynamicMachine machine) {
         EnumFacing face = EnumFacing.NORTH;
         do {
-            if(pattern.matches(getWorld(), getPos(), false)) {
+            if(pattern.matches(getWorld(), getPos(), false, machine.getModifiersAsMatchingReplacements())) {
                 return new Tuple<>(face, pattern);
             }
             face = face.rotateYCCW();
@@ -253,6 +260,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private void updateComponents() {
         if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null) {
             this.foundComponents.clear();
+            this.foundModifiers.clear();
             this.foundMachine = null;
             this.foundPattern = null;
             this.patternRotation = null;
@@ -270,12 +278,20 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     }
                 }
             }
+
+            this.foundModifiers = new HashMap<>();
+            for (Map.Entry<BlockPos, ModifierReplacement> offsetModifiers : this.foundMachine.getModifiers().entrySet()) {
+                BlockPos realAt = this.getPos().add(offsetModifiers.getKey());
+                if(offsetModifiers.getValue().getBlockInformation().matches(this.world, realAt, false)) {
+                    this.foundModifiers.put(offsetModifiers.getKey(), offsetModifiers.getValue());
+                }
+            }
         }
     }
 
-    public float getCurrentActiveRecipeProgress(float patial) {
+    public float getCurrentActiveRecipeProgress(float partial) {
         if(activeRecipe == null) return 0F;
-        float tick = activeRecipe.getTick() + patial;
+        float tick = activeRecipe.getTick() + partial;
         float maxTick = activeRecipe.getRecipe().getRecipeTotalTickTime();
         return MathHelper.clamp(tick / maxTick, 0F, 1F);
     }
@@ -343,6 +359,18 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 this.patternRotation = rot;
                 this.foundPattern = pattern;
                 this.foundMachine = machine;
+
+                if(compound.hasKey("modifierOffsets")) {
+                    NBTTagList list = compound.getTagList("modifierOffsets", Constants.NBT.TAG_COMPOUND);
+                    for (int i = 0; i < list.tagCount(); i++) {
+                        NBTTagCompound posTag = list.getCompoundTagAt(i);
+                        BlockPos modOffset = NBTUtil.getPosFromTag(posTag);
+                        ModifierReplacement mod = this.foundMachine.getModifiers().get(modOffset);
+                        if(mod != null) {
+                            this.foundModifiers.put(modOffset, mod);
+                        }
+                    }
+                }
             }
         } else {
             this.foundMachine = null;
@@ -372,6 +400,12 @@ public class TileMachineController extends TileEntityRestrictedTick {
         if(this.foundMachine != null && this.patternRotation != null) {
             compound.setString("machine", this.foundMachine.getRegistryName().toString());
             compound.setInteger("rotation", this.patternRotation.getHorizontalIndex());
+
+            NBTTagList listModifierOffsets = new NBTTagList();
+            for (BlockPos offset : this.foundModifiers.keySet()) {
+                listModifierOffsets.appendTag(NBTUtil.createPosTag(offset));
+            }
+            compound.setTag("modifierOffsets", listModifierOffsets);
         }
         if(this.activeRecipe != null) {
             compound.setTag("activeRecipe", this.activeRecipe.serialize());

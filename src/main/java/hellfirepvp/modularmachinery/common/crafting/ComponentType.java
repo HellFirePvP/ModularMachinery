@@ -39,7 +39,8 @@ public abstract class ComponentType<R extends ComponentRequirement> {
     @Nonnull
     public abstract String getRegistryName();
 
-    //Should return the mod's modid if this component is dependant on some other mod
+    //Should return the mod's modid if this component is dependent on some other mod
+    //Return null if no other mod/only vanilla is required.
     @Nullable
     public abstract String requiresModid();
 

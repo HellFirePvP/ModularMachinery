@@ -105,9 +105,10 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
     }
 
     @Override
-    public void startRequirementCheck(ResultChance contextChance) {
+    public void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context) {
         this.requirementCheck = this.required.copy();
-        this.doesntConsumeInput = contextChance.canProduce(this.chance);
+        this.requirementCheck.setAmount(Math.round(context.applyModifiers(this, getActionType(), this.requirementCheck.getAmount(), false)));
+        this.doesntConsumeInput = contextChance.canProduce(context.applyModifiers(this, getActionType(), this.chance, true));
     }
 
     @Override
@@ -158,10 +159,10 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
                         }
                     }
                 }
-                int filled = handler.fillInternal(this.required.copy().asFluidStack(), false); //True or false doesn't really matter tbh
-                boolean didFill = filled >= this.required.getAmount();
+                int filled = handler.fillInternal(this.requirementCheck.copy().asFluidStack(), false); //True or false doesn't really matter tbh
+                boolean didFill = filled >= this.requirementCheck.getAmount();
                 if(didFill) {
-                    context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
+                    context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.requirementCheck.copy(), component));
                 }
                 if(didFill) {
                     return CraftCheck.SUCCESS;
@@ -192,7 +193,7 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
                     }
                     break;
                 case OUTPUT:
-                    if(this.required instanceof HybridFluidGas) {
+                    if(this.requirementCheck instanceof HybridFluidGas) {
                         gasTank = (HybridGasTank) CopyHandlerHelper.copyTank(gasTank);
 
                         for (ComponentOutputRestrictor restrictor : restrictions) {
@@ -200,14 +201,14 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
                                 ComponentOutputRestrictor.RestrictionTank tank = (ComponentOutputRestrictor.RestrictionTank) restrictor;
 
                                 if(tank.exactComponent.equals(component) && tank.inserted instanceof HybridFluidGas) {
-                                    gasTank.receiveGas(EnumFacing.UP, ((HybridFluidGas) this.required).asGasStack(), true);
+                                    gasTank.receiveGas(EnumFacing.UP, ((HybridFluidGas) this.requirementCheck).asGasStack(), true);
                                 }
                             }
                         }
-                        int gasFilled = gasTank.receiveGas(EnumFacing.UP, ((HybridFluidGas) this.required).asGasStack(), false);
-                        boolean didFill = gasFilled >= this.required.getAmount();
+                        int gasFilled = gasTank.receiveGas(EnumFacing.UP, ((HybridFluidGas) this.requirementCheck).asGasStack(), false);
+                        boolean didFill = gasFilled >= this.requirementCheck.getAmount();
                         if(didFill) {
-                            context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
+                            context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.requirementCheck.copy(), component));
                         }
                         if(didFill) {
                             return CraftCheck.SUCCESS;
@@ -241,10 +242,10 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
                         }
                     }
                 }
-                int filled = handler.fillInternal(this.required.copy().asFluidStack(), false); //True or false doesn't really matter tbh
-                boolean didFill = filled >= this.required.getAmount();
+                int filled = handler.fillInternal(this.requirementCheck.copy().asFluidStack(), false); //True or false doesn't really matter tbh
+                boolean didFill = filled >= this.requirementCheck.getAmount();
                 if(didFill) {
-                    context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.required.copy(), component));
+                    context.addRestriction(new ComponentOutputRestrictor.RestrictionTank(this.requirementCheck.copy(), component));
                 }
                 if(didFill) {
                     return CraftCheck.SUCCESS;
@@ -351,7 +352,7 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
                 if(ModularMachinery.isMekanismLoaded) {
                     return finishWithMekanismHandling(handler, chance);
                 } else {
-                    FluidStack outStack = this.required.asFluidStack();
+                    FluidStack outStack = this.requirementCheck.asFluidStack();
                     if(outStack != null) {
                         int fillableAmount = handler.fillInternal(outStack.copy(), false);
                         if(chance.canProduce(this.chance)) {
@@ -370,8 +371,8 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
 
     @Optional.Method(modid = "mekanism")
     private boolean finishWithMekanismHandling(HybridTank handler, ResultChance chance) {
-        if(this.required instanceof HybridFluidGas && handler instanceof HybridGasTank) {
-            GasStack gasOut = ((HybridFluidGas) this.required).asGasStack();
+        if(this.requirementCheck instanceof HybridFluidGas && handler instanceof HybridGasTank) {
+            GasStack gasOut = ((HybridFluidGas) this.requirementCheck).asGasStack();
             HybridGasTank gasTankHandler = (HybridGasTank) handler;
             int fillableGas = gasTankHandler.receiveGas(EnumFacing.UP, gasOut, false);
             if(chance.canProduce(this.chance)) {
@@ -379,7 +380,7 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
             }
             return fillableGas >= gasOut.amount && gasTankHandler.receiveGas(EnumFacing.UP, gasOut, true) >= gasOut.amount;
         } else {
-            FluidStack outStack = this.required.asFluidStack();
+            FluidStack outStack = this.requirementCheck.asFluidStack();
             if(outStack != null) {
                 int fillableAmount = handler.fillInternal(outStack.copy(), false);
                 if(chance.canProduce(this.chance)) {

@@ -106,7 +106,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
     }
 
     @Override
-    public void startRequirementCheck(ResultChance contextChance) {
+    public void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context) {
         switch (this.requirementType) {
             case ITEMSTACKS:
                 this.countIOBuffer = this.required.getCount();
@@ -118,6 +118,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
                 this.countIOBuffer = this.fuelBurntime;
                 break;
         }
+        this.countIOBuffer = Math.round(context.applyModifiers(this, getActionType(), this.countIOBuffer, false));
     }
 
     @Override
@@ -145,17 +146,22 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
             case INPUT:
                 switch (this.requirementType) {
                     case ITEMSTACKS:
-                        if(ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag)) {
+                        ItemStack inReq = this.required.copy();
+                        int amt = Math.round(context.applyModifiers(this, getActionType(), inReq.getCount(), false));
+                        inReq.setCount(amt);
+                        if(ItemUtils.consumeFromInventory(handler, inReq, true, this.tag)) {
                             return CraftCheck.SUCCESS;
                         }
                         break;
                     case OREDICT:
-                        if(ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag)) {
+                        int inOreAmt = Math.round(context.applyModifiers(this, getActionType(), this.oreDictItemAmount, false));
+                        if(ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, inOreAmt, true, this.tag)) {
                             return CraftCheck.SUCCESS;
                         }
                         break;
                     case FUEL:
-                        if(ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0) {
+                        int inFuel = Math.round(context.applyModifiers(this, getActionType(), this.fuelBurntime, false));
+                        if(ItemUtils.consumeFromInventoryFuel(handler, inFuel, true, this.tag) <= 0) {
                             return CraftCheck.SUCCESS;
                         }
                         break;
@@ -177,7 +183,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
                 ItemStack stack;
                 if(oreDictName != null) {
                     stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
-                    stack = ItemUtils.copyStackWithSize(stack, this.oreDictItemAmount);
+                    stack = ItemUtils.copyStackWithSize(stack, this.countIOBuffer);
                 } else {
                     stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
                 }
@@ -207,28 +213,34 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
                 !(component instanceof MachineComponent.ItemBus) ||
                 component.getIOType() != getActionType()) return false;
         IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
+        float productionChance = context.applyModifiers(this, getActionType(), this.chance, true);
         switch (getActionType()) {
             case INPUT:
                 switch (this.requirementType) {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     case ITEMSTACKS:
-                        boolean can = ItemUtils.consumeFromInventory(handler, this.required.copy(), true, this.tag);
-                        if(chance.canProduce(this.chance)) {
+                        ItemStack stackRequired = this.required.copy();
+                        int amt = Math.round(context.applyModifiers(this, getActionType(), stackRequired.getCount(), false));
+                        stackRequired.setCount(amt);
+                        boolean can = ItemUtils.consumeFromInventory(handler, stackRequired, true, this.tag);
+                        if(chance.canProduce(productionChance)) {
                             return can;
                         }
-                        return can && ItemUtils.consumeFromInventory(handler, this.required.copy(), false, this.tag);
+                        return can && ItemUtils.consumeFromInventory(handler, stackRequired, false, this.tag);
                     case OREDICT:
-                        can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, true, this.tag);
-                        if(chance.canProduce(this.chance)) {
+                        int requiredOredict = Math.round(context.applyModifiers(this, getActionType(), this.oreDictItemAmount, false));
+                        can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, requiredOredict, true, this.tag);
+                        if(chance.canProduce(productionChance)) {
                             return can;
                         }
-                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, this.oreDictItemAmount, false, this.tag);
+                        return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, requiredOredict, false, this.tag);
                     case FUEL:
-                        can = ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, true, this.tag) <= 0;
-                        if(chance.canProduce(this.chance)) {
+                        int requiredBurnTime = Math.round(context.applyModifiers(this, getActionType(), this.fuelBurntime, false));
+                        can = ItemUtils.consumeFromInventoryFuel(handler, requiredBurnTime, true, this.tag) <= 0;
+                        if(chance.canProduce(productionChance)) {
                             return can;
                         }
-                        return can && ItemUtils.consumeFromInventoryFuel(handler, this.fuelBurntime, false, this.tag) <= 0;
+                        return can && ItemUtils.consumeFromInventoryFuel(handler, requiredBurnTime, false, this.tag) <= 0;
                 }
         }
         return false;
@@ -249,7 +261,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
                 ItemStack stack;
                 if(oreDictName != null) {
                     stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
-                    stack = ItemUtils.copyStackWithSize(stack, this.oreDictItemAmount);
+                    stack = ItemUtils.copyStackWithSize(stack, this.countIOBuffer);
                 } else {
                     stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
                 }
@@ -262,7 +274,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
                 }
                 //If we don't produce the item, we only need to see if there would be space for it at all.
                 int inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
-                if(chance.canProduce(this.chance)) {
+                if(chance.canProduce(context.applyModifiers(this, getActionType(), this.chance, true))) {
                     return inserted > 0;
                 }
                 if(inserted > 0) {
@@ -275,7 +287,7 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
         return false;
     }
 
-    public static enum ItemRequirementType {
+    public enum ItemRequirementType {
 
         ITEMSTACKS,
         OREDICT,

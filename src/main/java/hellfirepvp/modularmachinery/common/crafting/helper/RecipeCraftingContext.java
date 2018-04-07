@@ -13,16 +13,14 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.util.HybridTank;
-import hellfirepvp.modularmachinery.common.util.IOInventory;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
-import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandlerModifiable;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -38,6 +36,7 @@ public class RecipeCraftingContext {
     private final MachineRecipe recipe;
     private int currentCraftingTick = 0;
     private Map<String, Map<MachineComponent, Object>> typeComponents = new HashMap<>();
+    private Map<String, List<RecipeModifier>> modifiers = new HashMap<>();
 
     private List<ComponentOutputRestrictor> currentRestrictions = Lists.newArrayList();
 
@@ -57,6 +56,32 @@ public class RecipeCraftingContext {
         return currentCraftingTick;
     }
 
+    @Nonnull
+    public List<RecipeModifier> getModifiers(String target) {
+        return modifiers.computeIfAbsent(target, t -> new LinkedList<>());
+    }
+
+    public float applyModifiers(ComponentRequirement reqTarget, MachineComponent.IOType ioType, float value, boolean isChance) {
+        return applyModifiers(reqTarget.getRequiredComponentType().getRegistryName(), ioType, value, isChance);
+    }
+
+    public float applyModifiers(String target, MachineComponent.IOType ioType, float value, boolean isChance) {
+        List<RecipeModifier> applicable = getModifiers(target);
+        applicable = applicable.stream().filter(mod -> mod.getIOTarget() == ioType && mod.affectsChance() == isChance).collect(Collectors.toList());
+        float add = 0F;
+        float mul = 1F;
+        for (RecipeModifier mod : applicable) {
+            if(mod.getOperation() == 0) {
+                add += mod.getModifier();
+            } else if(mod.getOperation() == 1) {
+                mul *= mod.getModifier();
+            } else {
+                throw new RuntimeException("Unknown modifier operation: " + mod.getOperation() + " at recipe " + recipe.getRegistryName());
+            }
+        }
+        return (value + add) * mul;
+    }
+
     public void addRestriction(ComponentOutputRestrictor restrictor) {
         this.currentRestrictions.add(restrictor);
     }
@@ -72,6 +97,7 @@ public class RecipeCraftingContext {
             RequirementEnergy energyRequirement = (RequirementEnergy) requirement;
 
             energyRequirement.resetEnergyIO();
+            energyRequirement.startEnergyIO(this);
             boolean enough = false;
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(energyRequirement.handleEnergyIO(component, this) <= 0) {
@@ -90,6 +116,7 @@ public class RecipeCraftingContext {
             RequirementEnergy energyRequirement = (RequirementEnergy) requirement;
 
             energyRequirement.resetEnergyIO();
+            energyRequirement.startEnergyIO(this);
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 energyRequirement.handleEnergyIO(component, this);
             }
@@ -107,7 +134,7 @@ public class RecipeCraftingContext {
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
             if(requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
 
-            requirement.startRequirementCheck(chance);
+            requirement.startRequirementCheck(chance, this);
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.startCrafting(component, this, chance)) {
                     requirement.endRequirementCheck();
@@ -127,7 +154,7 @@ public class RecipeCraftingContext {
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
             if(requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
 
-            requirement.startRequirementCheck(chance);
+            requirement.startRequirementCheck(chance, this);
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 if(requirement.finishCrafting(component, this, chance)) {
                     requirement.endRequirementCheck();
@@ -154,7 +181,7 @@ public class RecipeCraftingContext {
                 return ComponentRequirement.CraftCheck.FAILURE_MISSING_INPUT;
             }
 
-            requirement.startRequirementCheck(ResultChance.GUARANTEED);
+            requirement.startRequirementCheck(ResultChance.GUARANTEED, this);
 
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
                 ComponentRequirement.CraftCheck check = requirement.canStartCrafting(component, this, this.currentRestrictions);
@@ -177,6 +204,11 @@ public class RecipeCraftingContext {
     public void addComponent(MachineComponent<?> component) {
         Map<MachineComponent, Object> components = this.typeComponents.computeIfAbsent(component.getComponentType().getRegistryName(), (s) -> new HashMap<>());
         components.put(component, component.getContainerProvider());
+    }
+
+    public void addModifier(ModifierReplacement modifier) {
+        RecipeModifier mod = modifier.getModifier();
+        this.modifiers.computeIfAbsent(mod.getTarget(), target -> new LinkedList<>()).add(mod);
     }
 
     @Nullable

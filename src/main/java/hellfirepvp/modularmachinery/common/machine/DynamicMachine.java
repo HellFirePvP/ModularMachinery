@@ -15,8 +15,11 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
@@ -26,6 +29,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -33,9 +37,8 @@ import net.minecraftforge.registries.IForgeRegistryEntry;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -51,6 +54,7 @@ public class DynamicMachine {
     private String localizedName = null;
     private BlockArray pattern = new BlockArray();
     private int definedColor = Config.machineColor;
+    private Map<BlockPos, ModifierReplacement> modifiers = new HashMap<>();
 
     private boolean requiresBlueprint = false;
 
@@ -68,6 +72,14 @@ public class DynamicMachine {
 
     public BlockArray getPattern() {
         return pattern;
+    }
+
+    public Map<BlockPos, ModifierReplacement> getModifiers() {
+        return modifiers;
+    }
+
+    public Map<BlockPos, BlockArray.BlockInformation> getModifiersAsMatchingReplacements() {
+        return MiscUtils.remap(this.modifiers, ModifierReplacement::getBlockInformation);
     }
 
     public void setLocalizedName(String localizedName) {
@@ -92,14 +104,13 @@ public class DynamicMachine {
         return RecipeRegistry.getRegistry().getRecipesFor(this);
     }
 
-    public RecipeCraftingContext createContext(MachineRecipe recipe, List<MachineComponent> components) {
+    public RecipeCraftingContext createContext(MachineRecipe recipe, Collection<MachineComponent> components, Collection<ModifierReplacement> modifiers) {
         if(!recipe.getOwningMachineIdentifier().equals(getRegistryName())) {
             throw new IllegalArgumentException("Tried to create context for a recipe that doesn't belong to the referenced machine!");
         }
         RecipeCraftingContext context = new RecipeCraftingContext(recipe);
-        for (MachineComponent component : components) {
-            context.addComponent(component);
-        }
+        components.forEach(context::addComponent);
+        modifiers.forEach(context::addModifier);
         return context;
     }
 
@@ -214,7 +225,38 @@ public class DynamicMachine {
                     throw new JsonParseException("'elements' has to either be a blockstate description, variable or array of blockstate descriptions!");
                 }
             }
+
+            if(root.has("modifiers")) {
+                JsonElement partModifiers = root.get("modifiers");
+                if(!partModifiers.isJsonArray()) {
+                    throw new JsonParseException("'modifiers' has to be an array of modifiers!");
+                }
+                JsonArray modifiersArray = partModifiers.getAsJsonArray();
+                for (int j = 0; j < modifiersArray.size(); j++) {
+                    JsonElement modifier = modifiersArray.get(j);
+                    if(!modifier.isJsonObject()) {
+                        throw new JsonParseException("Elements of 'modifiers' have to be objects!");
+                    }
+                    addModifierWithPattern(machine, context.deserialize(modifier.getAsJsonObject(), ModifierReplacement.class), modifier.getAsJsonObject());
+                }
+            }
             return machine;
+        }
+
+        private void addModifierWithPattern(DynamicMachine machine, ModifierReplacement mod, JsonObject part) throws JsonParseException {
+            List<Integer> avX = new ArrayList<>();
+            List<Integer> avY = new ArrayList<>();
+            List<Integer> avZ = new ArrayList<>();
+            addCoordinates("x", part, avX);
+            addCoordinates("y", part, avY);
+            addCoordinates("z", part, avZ);
+
+            for (BlockPos permutation : buildPermutations(avX, avY, avZ)) {
+                if(permutation.getX() == 0 && permutation.getY() == 0 && permutation.getZ() == 0) {
+                    continue; //We're not going to overwrite the controller.
+                }
+                machine.modifiers.put(permutation, mod);
+            }
         }
 
         private void addDescriptorWithPattern(BlockArray pattern, BlockArray.BlockInformation information, JsonObject part) throws JsonParseException {

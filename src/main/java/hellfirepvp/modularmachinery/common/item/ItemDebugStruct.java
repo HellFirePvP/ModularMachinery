@@ -53,7 +53,7 @@ public class ItemDebugStruct extends Item {
                     player.sendMessage(new TextComponentString("Structure is facing: " + worldIn.getBlockState(pos).getValue(BlockController.FACING).name()));
                     do {
                         if(face == worldIn.getBlockState(pos).getValue(BlockController.FACING)) {
-                            BlockPos mismatch = pattern.getRelativeMismatchPosition(worldIn, pos);
+                            BlockPos mismatch = pattern.getRelativeMismatchPosition(worldIn, pos, dm.getModifiersAsMatchingReplacements());
                             if(mismatch != null) {
                                 player.sendMessage(new TextComponentString("Failed at relative position: " + mismatch.toString()));
                             }

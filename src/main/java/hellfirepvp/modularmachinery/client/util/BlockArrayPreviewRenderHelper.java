@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.client.util;
 
+import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -41,6 +42,7 @@ public class BlockArrayPreviewRenderHelper {
 
     private BlockArrayRenderHelper renderHelper = null;
     private BlockPos attachedPosition = null;
+    private DynamicMachine machine = null;
 
     private static int hash = -1;
     private static int batchDList = -1;
@@ -49,6 +51,7 @@ public class BlockArrayPreviewRenderHelper {
         if(currentContext.getShiftSnap() != -1) {
             this.renderHelper = currentContext.getRender();
             this.renderHelper.sampleSnap = currentContext.getShiftSnap(); //Just for good measure
+            this.machine = currentContext.getDisplayedMachine();
             this.attachedPosition = null;
             if(Minecraft.getMinecraft().player != null) {
                 Minecraft.getMinecraft().player.sendMessage(new TextComponentTranslation("gui.blueprint.popout.place"));
@@ -79,7 +82,7 @@ public class BlockArrayPreviewRenderHelper {
             }
             if(Minecraft.getMinecraft().world != null &&
                     renderHelper != null &&
-                    renderHelper.getBlocks().matches(Minecraft.getMinecraft().world, this.attachedPosition, true)) {
+                    renderHelper.getBlocks().matches(Minecraft.getMinecraft().world, this.attachedPosition, true, this.machine.getModifiersAsMatchingReplacements())) {
                 clearSelection();
             }
         }
@@ -226,6 +229,7 @@ public class BlockArrayPreviewRenderHelper {
     private void clearSelection() {
         this.renderHelper = null;
         this.attachedPosition = null;
+        this.machine = null;
     }
 
     public void unloadWorld() {

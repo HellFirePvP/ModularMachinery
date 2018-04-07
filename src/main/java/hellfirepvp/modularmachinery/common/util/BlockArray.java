@@ -202,75 +202,34 @@ public class BlockArray {
         return out;
     }
 
-    public boolean matches(World world, BlockPos center, boolean oldState) {
-        lblPattern:
+    public boolean matches(World world, BlockPos center, boolean oldState, @Nullable Map<BlockPos, BlockInformation> modifierReplacementPattern) {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
-            BlockInformation info = entry.getValue();
             BlockPos at = center.add(entry.getKey());
-            if(!world.isBlockLoaded(at)) { //We can't say if it's actually properly formed, but it didn't get changed from the last check so....
-                return oldState;
-            }
-
-            if(info.matchingTag != null) {
-                TileEntity te = world.getTileEntity(at);
-                if(te != null && info.matchingTag.getSize() > 0) {
-                    NBTTagCompound cmp = new NBTTagCompound();
-                    te.writeToNBT(cmp);
-                    if(!NBTMatchingHelper.matchNBTCompound(info.matchingTag, cmp)) {
-                        return false; //No match at this position.
+            if(!entry.getValue().matches(world, at, oldState)) {
+                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(at)) {
+                    BlockInformation value = modifierReplacementPattern.get(at);
+                    if(value.matches(world, at, oldState)) {
+                        continue;
                     }
                 }
+                return false;
             }
-
-            IBlockState state = world.getBlockState(at);
-            Block atBlock = state.getBlock();
-            int atMeta = atBlock.getMetaFromState(state);
-
-            for (IBlockStateDescriptor descriptor : info.matchingStates) {
-                for (IBlockState applicable : descriptor.applicable) {
-                    Block type = applicable.getBlock();
-                    int meta = type.getMetaFromState(applicable);
-                    if(type.equals(state.getBlock()) && meta == atMeta) {
-                        continue lblPattern; //Matches
-                    }
-                }
-            }
-            return false;
         }
         return true;
     }
 
-    public BlockPos getRelativeMismatchPosition(World world, BlockPos center) {
-        lblPattern:
+    public BlockPos getRelativeMismatchPosition(World world, BlockPos center, @Nullable Map<BlockPos, BlockInformation> modifierReplacementPattern) {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
-            BlockInformation info = entry.getValue();
             BlockPos at = center.add(entry.getKey());
-
-            if(info.matchingTag != null) {
-                TileEntity te = world.getTileEntity(at);
-                if(te != null && info.matchingTag.getSize() > 0) {
-                    NBTTagCompound cmp = new NBTTagCompound();
-                    te.writeToNBT(cmp);
-                    if(!NBTMatchingHelper.matchNBTCompound(info.matchingTag, cmp)) {
-                        return entry.getKey();
+            if(!entry.getValue().matches(world, at, false)) {
+                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(at)) {
+                    BlockInformation value = modifierReplacementPattern.get(at);
+                    if(value.matches(world, at, false)) {
+                        continue;
                     }
                 }
+                return entry.getKey();
             }
-
-            IBlockState state = world.getBlockState(at);
-            Block atBlock = state.getBlock();
-            int atMeta = atBlock.getMetaFromState(state);
-
-            for (IBlockStateDescriptor descriptor : info.matchingStates) {
-                for (IBlockState applicable : descriptor.applicable) {
-                    Block type = applicable.getBlock();
-                    int meta = type.getMetaFromState(applicable);
-                    if(type.equals(state.getBlock()) && meta == atMeta) {
-                        continue lblPattern; //Matches
-                    }
-                }
-            }
-            return entry.getKey();
         }
         return null;
     }
@@ -337,12 +296,12 @@ public class BlockArray {
     public static class BlockInformation {
 
         public static final int CYCLE_TICK_SPEED = 30;
-        public final List<IBlockStateDescriptor> matchingStates;
-        private final List<IBlockState> samples = Lists.newLinkedList();
+        public List<IBlockStateDescriptor> matchingStates;
+        private List<IBlockState> samples = Lists.newLinkedList();
         public NBTTagCompound matchingTag = null;
 
         public BlockInformation(List<IBlockStateDescriptor> matching) {
-            this.matchingStates = ImmutableList.copyOf(matching);
+            this.matchingStates = Lists.newLinkedList(matching);
             for (IBlockStateDescriptor desc : matchingStates) {
                 samples.addAll(desc.applicable);
             }

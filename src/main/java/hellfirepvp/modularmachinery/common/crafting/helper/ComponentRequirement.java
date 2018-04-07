@@ -8,26 +8,11 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
-import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
-import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
-import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
-import mekanism.api.gas.GasStack;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumFacing;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.items.IItemHandlerModifiable;
-import net.minecraftforge.oredict.OreDictionary;
 
-import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.List;
 
@@ -66,7 +51,7 @@ public abstract class ComponentRequirement {
 
     public abstract ComponentRequirement deepCopy();
 
-    public abstract void startRequirementCheck(ResultChance contextChance);
+    public abstract void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context);
 
     public abstract void endRequirementCheck();
 

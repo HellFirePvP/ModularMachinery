@@ -319,7 +319,7 @@ public class GuiScreenBlueprint extends GuiScreen {
             contentMap.add(new Tuple<>(ctrl, "1x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
                     Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             for (ItemStack stack : contents) {
-                contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,
+                contentMap.add(new Tuple<>(stack, stack.getCount() + "x " + Iterables.getFirst(stack.getTooltip(Minecraft.getMinecraft().player,
                         Minecraft.getMinecraft().gameSettings.advancedItemTooltips ? ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL), "")));
             }
             RenderingUtils.renderBlueStackTooltip(mouseX, mouseY,

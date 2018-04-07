@@ -11,6 +11,8 @@ package hellfirepvp.modularmachinery.common.machine;
 import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.BlockInformationVariable;
 import net.minecraft.util.JsonUtils;
@@ -35,6 +37,8 @@ public class MachineLoader {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeHierarchyAdapter(DynamicMachine.class, new DynamicMachine.MachineDeserializer())
             .registerTypeHierarchyAdapter(BlockInformationVariable.class, new BlockInformationVariable.Deserializer())
+            .registerTypeHierarchyAdapter(ModifierReplacement.class, new ModifierReplacement.Deserializer())
+            .registerTypeHierarchyAdapter(RecipeModifier.class, new RecipeModifier.Deserializer())
             .create();
 
     private static Map<String, Exception> failedAttempts = new HashMap<>();
