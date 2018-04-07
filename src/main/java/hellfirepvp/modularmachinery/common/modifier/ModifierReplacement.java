@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.common.machine.MachineLoader;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
@@ -31,10 +32,12 @@ public class ModifierReplacement {
 
     private final BlockArray.BlockInformation info;
     private final RecipeModifier modifier;
+    private final List<String> description;
 
-    public ModifierReplacement(BlockArray.BlockInformation info, RecipeModifier modifier) {
+    public ModifierReplacement(BlockArray.BlockInformation info, RecipeModifier modifier, String description) {
         this.info = info;
         this.modifier = modifier;
+        this.description = MiscUtils.splitStringBy(description, "\n");
     }
 
     public BlockArray.BlockInformation getBlockInformation() {
@@ -43,6 +46,10 @@ public class ModifierReplacement {
 
     public RecipeModifier getModifier() {
         return modifier;
+    }
+
+    public List<String> getDescriptionLines() {
+        return description;
     }
 
     public static class Deserializer implements JsonDeserializer<ModifierReplacement> {
@@ -109,7 +116,11 @@ public class ModifierReplacement {
             if(!part.has("modifier") || !part.get("modifier").isJsonObject()) {
                 throw new JsonParseException("'modifier' tag not found or not a json-object!");
             }
-            return new ModifierReplacement(blockInfo, context.deserialize(part.get("modifier"), RecipeModifier.class));
+            if(!part.has("description") || !part.get("description").isJsonPrimitive() || !part.getAsJsonPrimitive("description").isString()) {
+                throw new JsonParseException("'description' tag not found or not a string!");
+            }
+            String description = part.getAsJsonPrimitive("description").getAsString();
+            return new ModifierReplacement(blockInfo, context.deserialize(part.get("modifier"), RecipeModifier.class), description);
         }
 
     }

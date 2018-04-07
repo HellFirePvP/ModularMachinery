@@ -114,7 +114,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 } else {
                     RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, this.foundModifiers.values());
                     this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
-                    if(this.activeRecipe.isCompleted(this)) {
+                    if(this.activeRecipe.isCompleted(this, context)) {
                         this.activeRecipe.complete(context);
                         this.activeRecipe.reset();
                         context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, this.foundModifiers.values());

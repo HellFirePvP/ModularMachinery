@@ -20,6 +20,7 @@ import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.lib.ItemsMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
 import mezz.jei.api.IGuiHelper;
@@ -81,6 +82,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     private final IDrawable drawable2DDisabled, drawable2DHover, drawable2DActive;
     private final IDrawable drawablePopOutDisabled, drawablePopOutHover, drawablePopOutActive;
     private final IDrawable drawableContentsDisabled, drawableContentsHover, drawableContentsActive;
+    private final IDrawable drawableUpgradesHover;
 
     private final DynamicMachine machine;
     private final DynamicMachineRenderContext context;
@@ -111,6 +113,8 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         this.drawableContentsDisabled = h.createDrawable(TEXTURE_BACKGROUND, 176, 64, 16, 16);
         this.drawableContentsHover =    h.createDrawable(TEXTURE_BACKGROUND, 192, 64, 16, 16);
         this.drawableContentsActive =   h.createDrawable(TEXTURE_BACKGROUND, 208, 64, 16, 16);
+
+        this.drawableUpgradesHover = h.createDrawable(TEXTURE_BACKGROUND, 0, 145, 100, 14);
     }
 
     @Override
@@ -200,6 +204,40 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         drawButtons(minecraft, mouseX, mouseY, 0, 0, recipeWidth, recipeHeight);
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
+
+        if(!machine.getModifiers().isEmpty()) {
+            minecraft.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
+            this.drawableUpgradesHover.draw(minecraft,  5, 124);
+
+            GlStateManager.disableDepth();
+            String reqBlueprint = I18n.format("tooltip.machinery.blueprint.upgrades");
+            minecraft.fontRenderer.drawString(reqBlueprint, 10, 127, 0x444444);
+            GlStateManager.enableDepth();
+
+            if(mouseX >= 5 && mouseX <= 105 &&
+                    mouseY >= 124 && mouseY <= 139) {
+                List<Tuple<ItemStack, String>> descriptionList = new LinkedList<>();
+                boolean first = true;
+                for (ModifierReplacement mod : machine.getModifiers().values()) {
+                    if(!first) {
+                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
+                    }
+                    first = false;
+                    ItemStack stack = mod.getBlockInformation().getDescriptiveStack(context.getShiftSnap() == -1 ? Optional.empty() : Optional.of(context.getShiftSnap()));
+                    List<String> tooltip = stack.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                    descriptionList.add(new Tuple<>(
+                            stack,
+                            Iterables.getFirst(tooltip, "")));
+                    for (String str : mod.getDescriptionLines()) {
+                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, str));
+                    }
+                }
+
+                RenderingUtils.renderBlueStackTooltip(mouseX, mouseY, descriptionList, minecraft.fontRenderer, Minecraft.getMinecraft().getRenderItem());
+            }
+        }
+
         minecraft.fontRenderer.drawString(machine.getLocalizedName(),
                 4, -7,
                 0x222222);

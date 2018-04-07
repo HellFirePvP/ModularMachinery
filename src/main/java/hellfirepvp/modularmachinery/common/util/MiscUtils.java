@@ -8,8 +8,11 @@
 
 package hellfirepvp.modularmachinery.common.util;
 
+import com.google.common.collect.Lists;
 import net.minecraft.util.Tuple;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -28,4 +31,9 @@ public class MiscUtils {
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, (e) -> remapFct.apply(e.getValue())));
     }
+
+    public static List<String> splitStringBy(String str, String spl) {
+        return Lists.newArrayList(str.split(spl));
+    }
+
 }

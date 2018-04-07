@@ -171,6 +171,8 @@ public class RenderingUtils {
                     ri.renderItemAndEffectIntoGUI(stackDesc.getFirst(), pX - 1, pY - 5);
                     GlStateManager.popMatrix();
                     pY += 17;
+                } else if(stackDesc.getSecond().isEmpty()) {
+                    pY += 6;
                 } else {
                     fr.drawString(stackDesc.getSecond(), pX, pY, strColor.getRGB());
                     GlStateManager.color(1F, 1F, 1F, 1F);

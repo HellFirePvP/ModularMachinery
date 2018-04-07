@@ -150,40 +150,7 @@ public class BlockArray {
         List<ItemStack> out = new LinkedList<>();
         for (Map.Entry<BlockPos, BlockInformation> infoEntry : pattern.entrySet()) {
             BlockArray.BlockInformation bi = infoEntry.getValue();
-            IBlockState state = bi.getSampleState(snapSample);
-            Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, bi.matchingTag,
-                    new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, infoEntry.getKey()));
-            state = recovered.getFirst();
-            Block type = state.getBlock();
-            int meta = type.getMetaFromState(state);
-            ItemStack s = ItemStack.EMPTY;
-
-            try {
-                if(ic2TileBlock.equals(type.getRegistryName())) {
-                    s = BlockCompatHelper.tryGetIC2MachineStack(state, recovered.getSecond());
-                } else {
-                    s = state.getBlock().getPickBlock(state, null, null, infoEntry.getKey(), null);
-                }
-            } catch (Exception exc) {}
-
-            if(s.isEmpty()) {
-                if(type instanceof BlockFluidBase) {
-                    s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
-                } else if(type instanceof BlockLiquid) {
-                    Material m = state.getMaterial();
-                    if(m == Material.LAVA) {
-                        s = new ItemStack(Items.LAVA_BUCKET);
-                    } else if(m == Material.WATER) {
-                        s = new ItemStack(Items.WATER_BUCKET);
-                    } else {
-                        s = ItemStack.EMPTY;
-                    }
-                } else {
-                    Item i = Item.getItemFromBlock(type);
-                    if(i == Items.AIR) continue;
-                    s = new ItemStack(i, 1, meta);
-                }
-            }
+            ItemStack s = bi.getDescriptiveStack(snapSample);
 
             if(!s.isEmpty()) {
                 boolean found = false;
@@ -206,8 +173,8 @@ public class BlockArray {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockPos at = center.add(entry.getKey());
             if(!entry.getValue().matches(world, at, oldState)) {
-                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(at)) {
-                    BlockInformation value = modifierReplacementPattern.get(at);
+                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(entry.getKey())) {
+                    BlockInformation value = modifierReplacementPattern.get(entry.getKey());
                     if(value.matches(world, at, oldState)) {
                         continue;
                     }
@@ -222,8 +189,8 @@ public class BlockArray {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockPos at = center.add(entry.getKey());
             if(!entry.getValue().matches(world, at, false)) {
-                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(at)) {
-                    BlockInformation value = modifierReplacementPattern.get(at);
+                if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(entry.getKey())) {
+                    BlockInformation value = modifierReplacementPattern.get(entry.getKey());
                     if(value.matches(world, at, false)) {
                         continue;
                     }
@@ -323,6 +290,47 @@ public class BlockArray {
             int p = (int) (snapTick.orElse(ClientScheduler.getClientTick()) / tickSpeed);
             int part = p % samples.size();
             return samples.get(part);
+        }
+
+        @SideOnly(Side.CLIENT)
+        public ItemStack getDescriptiveStack(Optional<Long> snapTick) {
+            IBlockState state = getSampleState(snapTick);
+
+            Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, this.matchingTag,
+                    new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, BlockPos.ORIGIN));
+            state = recovered.getFirst();
+            Block type = state.getBlock();
+            int meta = type.getMetaFromState(state);
+            ItemStack s = ItemStack.EMPTY;
+
+            try {
+                if(ic2TileBlock.equals(type.getRegistryName())) {
+                    s = BlockCompatHelper.tryGetIC2MachineStack(state, recovered.getSecond());
+                } else {
+                    s = state.getBlock().getPickBlock(state, null, null, BlockPos.ORIGIN, null);
+                }
+            } catch (Exception exc) {}
+
+            if(s.isEmpty()) {
+                if(type instanceof BlockFluidBase) {
+                    s = FluidUtil.getFilledBucket(new FluidStack(((BlockFluidBase) type).getFluid(), 1000));
+                } else if(type instanceof BlockLiquid) {
+                    Material m = state.getMaterial();
+                    if(m == Material.LAVA) {
+                        s = new ItemStack(Items.LAVA_BUCKET);
+                    } else if(m == Material.WATER) {
+                        s = new ItemStack(Items.WATER_BUCKET);
+                    } else {
+                        s = ItemStack.EMPTY;
+                    }
+                } else {
+                    Item i = Item.getItemFromBlock(type);
+                    if(i != Items.AIR) {
+                        s = new ItemStack(i, 1, meta);
+                    }
+                }
+            }
+            return s;
         }
 
         public static IBlockStateDescriptor getDescriptor(String strElement) throws JsonParseException {

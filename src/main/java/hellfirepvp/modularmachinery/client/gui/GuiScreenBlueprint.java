@@ -17,6 +17,7 @@ import hellfirepvp.modularmachinery.client.util.DynamicMachineRenderContext;
 import hellfirepvp.modularmachinery.client.util.RenderingUtils;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
 import net.minecraft.block.Block;
@@ -136,6 +137,39 @@ public class GuiScreenBlueprint extends GuiScreen {
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
         drawButtons(mouseX, mouseY);
+
+        if(!machine.getModifiers().isEmpty()) {
+            this.mc.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
+            this.drawTexturedModalRect(guiLeft + 5, guiTop + 124, 0, 145, 100, 15);
+
+            GlStateManager.disableDepth();
+            String reqBlueprint = I18n.format("tooltip.machinery.blueprint.upgrades");
+            fontRenderer.drawString(reqBlueprint, this.guiLeft + 10, this.guiTop + 127, 0x444444);
+            GlStateManager.enableDepth();
+
+            if(mouseX >= guiLeft + 5 && mouseX <= guiLeft + 105 &&
+                    mouseY >= guiTop + 124 && mouseY <= guiTop + 139) {
+                List<Tuple<ItemStack, String>> descriptionList = new LinkedList<>();
+                boolean first = true;
+                for (ModifierReplacement mod : machine.getModifiers().values()) {
+                    if(!first) {
+                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
+                    }
+                    first = false;
+                    ItemStack stack = mod.getBlockInformation().getDescriptiveStack(renderContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(renderContext.getShiftSnap()));
+                    List<String> tooltip = stack.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                    descriptionList.add(new Tuple<>(
+                            stack,
+                            Iterables.getFirst(tooltip, "")));
+                    for (String str : mod.getDescriptionLines()) {
+                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, str));
+                    }
+                }
+
+                RenderingUtils.renderBlueStackTooltip(mouseX, mouseY, descriptionList, fontRenderer, Minecraft.getMinecraft().getRenderItem());
+            }
+        }
 
         GlStateManager.disableDepth();
         fontRenderer.drawStringWithShadow(machine.getLocalizedName(), this.guiLeft + 10, this.guiTop + 11, 0xFFFFFFFF);

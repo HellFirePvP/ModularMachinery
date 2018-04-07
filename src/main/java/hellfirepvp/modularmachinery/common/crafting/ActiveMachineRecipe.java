@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.crafting;
 
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -59,8 +60,12 @@ public class ActiveMachineRecipe {
         return tick;
     }
 
-    public boolean isCompleted(TileMachineController controller) {
-        return this.tick >= this.recipe.getRecipeTotalTickTime();
+    public boolean isCompleted(TileMachineController controller, RecipeCraftingContext context) {
+        int time = this.recipe.getRecipeTotalTickTime();
+        //Not sure which a user will use... let's try both.
+        time = Math.round(context.applyModifiers("duration", MachineComponent.IOType.INPUT, time, false));
+        time = Math.round(context.applyModifiers("duration", MachineComponent.IOType.OUTPUT, time, false));
+        return this.tick >= time;
     }
 
     public void complete(RecipeCraftingContext completionContext) {
