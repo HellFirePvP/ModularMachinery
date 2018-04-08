@@ -9,7 +9,7 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "1.9"
+version = "1.9.1"
 group = "hellfirepvp.modularmachinery"
 archivesBaseName = "modularmachinery"
 

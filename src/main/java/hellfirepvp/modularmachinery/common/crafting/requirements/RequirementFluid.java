@@ -125,11 +125,6 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @Override
-    public RecipeLayoutPart provideRenderableLayoutPart(Point componentOffset) {
-        return new RecipeLayoutPart.Tank(componentOffset);
-    }
-
-    @Override
     public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
         if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
                 !(component instanceof MachineComponent.FluidHatch) ||
@@ -154,6 +149,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
                 if(this.requirementCheck.getAmount() <= 0) {
                     return CraftCheck.SUCCESS;
                 }
+                break;
             case OUTPUT:
                 handler = CopyHandlerHelper.copyTank(handler);
 
@@ -174,6 +170,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
                 if(didFill) {
                     return CraftCheck.SUCCESS;
                 }
+                break;
         }
         return CraftCheck.FAILURE_MISSING_INPUT;
     }
@@ -237,6 +234,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
                 if(this.requirementCheck.getAmount() <= 0) {
                     return CraftCheck.SUCCESS;
                 }
+                break;
             case OUTPUT:
                 handler = CopyHandlerHelper.copyTank(handler);
 
@@ -323,7 +321,6 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
             }
             this.requirementCheck.setAmount(Math.max(this.requirementCheck.getAmount() - actualDrain.amount, 0));
             return this.requirementCheck.getAmount() <= 0;
-
         } else {
             FluidStack drainedSimulated = handler.drainInternal(this.requirementCheck.copy().asFluidStack(), false);
             if(drainedSimulated == null) {

@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.List;
 
@@ -62,8 +63,6 @@ public abstract class ComponentRequirement<T> {
     //Also, be sure that this generic T is the *only one* with that type otherwise internally stuff might break...
     public abstract JEIComponent<T> provideJEIComponent();
 
-    public abstract RecipeLayoutPart provideRenderableLayoutPart(Point componentOffset);
-
     public static abstract class JEIComponent<T> {
 
         public abstract Class<T> getJEIRequirementClass();
@@ -78,16 +77,34 @@ public abstract class ComponentRequirement<T> {
 
     }
 
+    public static abstract class PerTick<T> extends ComponentRequirement<T> {
+
+        public PerTick(ComponentType componentType, MachineComponent.IOType actionType) {
+            super(componentType, actionType);
+        }
+
+        //Multiplier is passed into this to adjust 'production' or 'consumption' accordingly if the recipe has a longer or shorter duration
+        public abstract void startIOTick(RecipeCraftingContext context, float durationMultiplier);
+
+        public abstract void resetIOTick(RecipeCraftingContext context);
+
+        @Nonnull
+        public abstract CraftCheck doIOTick(MachineComponent component, RecipeCraftingContext context);
+
+    }
+
     public static enum CraftCheck {
 
         //requirement check succeeded.
         SUCCESS,
 
+        //Meaning this has successfully done something, however other components might need to be checked to see
+        //if this is an actual success or if just some parts are successful
+        //NOTE: Only to be used in PerTick-subclasses for per-tick operations!
+        PARTIAL_SUCCESS,
+
         //requirement check failed
         FAILURE_MISSING_INPUT,
-
-        //requirement check for energy failed
-        FAILURE_MISSING_ENERGY,
 
         //component is not suitable to be checked for given requirement-check (i.e. component type != requirement type)
         INVALID_SKIP

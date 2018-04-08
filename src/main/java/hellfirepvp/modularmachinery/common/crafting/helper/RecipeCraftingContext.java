@@ -67,7 +67,7 @@ public class RecipeCraftingContext {
 
     public float applyModifiers(String target, MachineComponent.IOType ioType, float value, boolean isChance) {
         List<RecipeModifier> applicable = getModifiers(target);
-        applicable = applicable.stream().filter(mod -> mod.getIOTarget() == ioType && mod.affectsChance() == isChance).collect(Collectors.toList());
+        applicable = applicable.stream().filter(mod -> (ioType == null || mod.getIOTarget() == ioType) && mod.affectsChance() == isChance).collect(Collectors.toList());
         float add = 0F;
         float mul = 1F;
         for (RecipeModifier mod : applicable) {
@@ -82,6 +82,12 @@ public class RecipeCraftingContext {
         return (value + add) * mul;
     }
 
+    public float getDurationMultiplier() {
+        float dur = this.recipe.getRecipeTotalTickTime();
+        float result = applyModifiers("duration", null, dur, false);
+        return dur / result;
+    }
+
     public void addRestriction(ComponentOutputRestrictor restrictor) {
         this.currentRestrictions.add(restrictor);
     }
@@ -91,36 +97,53 @@ public class RecipeCraftingContext {
     }
 
     public boolean energyTick() {
+        float durMultiplier = this.getDurationMultiplier();
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
-            if(!requirement.getRequiredComponentType().equals(ComponentType.Registry.getComponent("energy")) ||
+            if(!(requirement instanceof ComponentRequirement.PerTick) ||
                     requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
-            RequirementEnergy energyRequirement = (RequirementEnergy) requirement;
+            ComponentRequirement.PerTick perTickRequirement = (ComponentRequirement.PerTick) requirement;
 
-            energyRequirement.resetEnergyIO();
-            energyRequirement.startEnergyIO(this);
+            perTickRequirement.resetIOTick(this);
+            perTickRequirement.startIOTick(this, durMultiplier);
             boolean enough = false;
+            lblComps:
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                if(energyRequirement.handleEnergyIO(component, this) <= 0) {
-                    enough = true;
-                    break;
+                ComponentRequirement.CraftCheck result = perTickRequirement.doIOTick(component, this);
+                switch (result) {
+                    case SUCCESS:
+                        enough = true;
+                        break lblComps;
                 }
             }
-            energyRequirement.resetEnergyIO();
+            perTickRequirement.resetIOTick(this);
             if(!enough) {
                 return false;
             }
         }
-        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
-            if(!requirement.getRequiredComponentType().equals(ComponentType.Registry.getComponent("energy")) ||
-                    requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
-            RequirementEnergy energyRequirement = (RequirementEnergy) requirement;
 
-            energyRequirement.resetEnergyIO();
-            energyRequirement.startEnergyIO(this);
+        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+            if(!(requirement instanceof ComponentRequirement.PerTick) ||
+                    requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
+            ComponentRequirement.PerTick perTickRequirement = (ComponentRequirement.PerTick) requirement;
+
+            perTickRequirement.resetIOTick(this);
+            perTickRequirement.startIOTick(this, durMultiplier);
+            lblComps:
             for (MachineComponent component : getComponentsFor(requirement.getRequiredComponentType())) {
-                energyRequirement.handleEnergyIO(component, this);
+                ComponentRequirement.CraftCheck result = perTickRequirement.doIOTick(component, this);
+                switch (result) {
+                    case SUCCESS:
+                        break lblComps;
+                    case PARTIAL_SUCCESS:
+                        break;
+                    case FAILURE_MISSING_INPUT:
+                        break;
+                    case INVALID_SKIP:
+                        break;
+                }
             }
-            energyRequirement.resetEnergyIO();
+            perTickRequirement.resetIOTick(this);
+
         }
         return true;
     }
@@ -193,9 +216,7 @@ public class RecipeCraftingContext {
 
             requirement.endRequirementCheck();
             currentRestrictions.clear();
-            return requirement.getRequiredComponentType().getRegistryName().equalsIgnoreCase("energy") ?
-                    ComponentRequirement.CraftCheck.FAILURE_MISSING_ENERGY :
-                    ComponentRequirement.CraftCheck.FAILURE_MISSING_INPUT;
+            return ComponentRequirement.CraftCheck.FAILURE_MISSING_INPUT;
         }
         currentRestrictions.clear();
         return ComponentRequirement.CraftCheck.SUCCESS;

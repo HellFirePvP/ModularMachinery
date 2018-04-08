@@ -11,7 +11,6 @@ package hellfirepvp.modularmachinery.common.tiles;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.block.BlockController;
-import hellfirepvp.modularmachinery.common.block.BlockMachineComponent;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
@@ -129,15 +128,6 @@ public class TileMachineController extends TileEntityRestrictedTick {
                                 searchMatchingRecipe();
                                 if(this.activeRecipe == null) {
                                     this.craftingStatus = CraftingStatus.NO_RECIPE;
-                                } else {
-                                    this.craftingStatus = CraftingStatus.CRAFTING;
-                                }
-                                break;
-                            case FAILURE_MISSING_ENERGY:
-                                this.activeRecipe = null;
-                                searchMatchingRecipe();
-                                if(this.activeRecipe == null) {
-                                    this.craftingStatus = CraftingStatus.NO_ENERGY;
                                 } else {
                                     this.craftingStatus = CraftingStatus.CRAFTING;
                                 }
@@ -416,7 +406,6 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
         MISSING_STRUCTURE,
         NO_RECIPE,
-        NO_ENERGY,
         CRAFTING;
 
     }

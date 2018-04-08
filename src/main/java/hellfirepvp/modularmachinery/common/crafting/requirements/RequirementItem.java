@@ -133,11 +133,6 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public RecipeLayoutPart provideRenderableLayoutPart(Point componentOffset) {
-        return new RecipeLayoutPart.Item(componentOffset);
-    }
-
-    @Override
     public void setChance(float chance) {
         this.chance = chance;
     }

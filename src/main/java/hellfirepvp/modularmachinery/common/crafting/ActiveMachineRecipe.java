@@ -52,7 +52,7 @@ public class ActiveMachineRecipe {
             return TileMachineController.CraftingStatus.CRAFTING;
         } else {
             this.tick = 0;
-            return TileMachineController.CraftingStatus.NO_ENERGY;
+            return TileMachineController.CraftingStatus.NO_RECIPE;
         }
     }
 
@@ -63,8 +63,7 @@ public class ActiveMachineRecipe {
     public boolean isCompleted(TileMachineController controller, RecipeCraftingContext context) {
         int time = this.recipe.getRecipeTotalTickTime();
         //Not sure which a user will use... let's try both.
-        time = Math.round(context.applyModifiers("duration", MachineComponent.IOType.INPUT, time, false));
-        time = Math.round(context.applyModifiers("duration", MachineComponent.IOType.OUTPUT, time, false));
+        time = Math.round(context.applyModifiers("duration", null, time, false));
         return this.tick >= time;
     }
 
