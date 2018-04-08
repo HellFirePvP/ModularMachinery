@@ -46,6 +46,10 @@ public abstract class RecipeLayoutPart<T> {
 
     public abstract IIngredientRenderer<T> provideIngredientRenderer();
 
+    public abstract int getRendererPaddingX();
+
+    public abstract int getRendererPaddingY();
+
     //Defines how many of them can be placed next to each other horizontally, before
     //a new 'line' is used for more.
     public abstract int getMaxHorizontalCount();
@@ -56,6 +60,11 @@ public abstract class RecipeLayoutPart<T> {
 
     //The higher number, the more left (for inputs) and the more right (for outputs) the component is gonna appear.
     //Should be unique/final depending on component type and NOT vary between different recipe instances or components!!
+
+    //Defaults:
+    //1000 is energy
+    //100 is fluids/mek gases
+    //10 is items
     public abstract int getComponentHorizontalSortingOrder();
 
     @Deprecated
@@ -124,6 +133,16 @@ public abstract class RecipeLayoutPart<T> {
                 copy = addGasRenderer(copy);
             }
             return copy;
+        }
+
+        @Override
+        public int getRendererPaddingX() {
+            return 0;
+        }
+
+        @Override
+        public int getRendererPaddingY() {
+            return 0;
         }
 
         @Optional.Method(modid = "mekanism")
@@ -197,6 +216,16 @@ public abstract class RecipeLayoutPart<T> {
         }
 
         @Override
+        public int getRendererPaddingX() {
+            return 0;
+        }
+
+        @Override
+        public int getRendererPaddingY() {
+            return 0;
+        }
+
+        @Override
         public void drawBackground(Minecraft mc) {
             RecipeLayoutHelper.PART_ENERGY_BACKGROUND.drawable.draw(mc, getOffset().x, getOffset().y);
         }
@@ -259,6 +288,16 @@ public abstract class RecipeLayoutPart<T> {
         @Override
         public IIngredientRenderer<ItemStack> provideIngredientRenderer() {
             return new ItemStackRenderer();
+        }
+
+        @Override
+        public int getRendererPaddingX() {
+            return 1;
+        }
+
+        @Override
+        public int getRendererPaddingY() {
+            return 1;
         }
 
         @Override

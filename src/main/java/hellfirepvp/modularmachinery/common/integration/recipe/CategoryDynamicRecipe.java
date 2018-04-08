@@ -280,8 +280,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                         slot.getOffset().y,
                         slot.getComponentWidth(),
                         slot.getComponentHeight(),
-                        0,
-                        0);
+                        slot.getRendererPaddingX(),
+                        slot.getRendererPaddingY());
                 compSlotIndex++;
                 amtCompInputs++;
             }
@@ -297,8 +297,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                         slot.getOffset().y,
                         slot.getComponentWidth(),
                         slot.getComponentHeight(),
-                        0,
-                        0);
+                        slot.getRendererPaddingX(),
+                        slot.getRendererPaddingY());
                 compSlotIndex++;
             }
 
