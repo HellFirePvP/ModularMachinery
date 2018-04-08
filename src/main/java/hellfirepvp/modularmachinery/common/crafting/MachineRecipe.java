@@ -13,6 +13,7 @@ import com.google.common.collect.Lists;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
@@ -90,6 +91,13 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     public void addRequirement(ComponentRequirement requirement) {
         if(frozen) {
             throw new IllegalStateException("Tried to add Requirement after recipes have been registered!");
+        }
+        if(requirement instanceof RequirementEnergy) {
+            for (ComponentRequirement req : this.recipeRequirements) {
+                if(req instanceof RequirementEnergy && req.getActionType() == requirement.getActionType()) {
+                    throw new IllegalStateException("Tried to add multiple energy requirements for the same ioType! Please only add one for each ioType!");
+                }
+            }
         }
         this.recipeRequirements.add(requirement);
     }

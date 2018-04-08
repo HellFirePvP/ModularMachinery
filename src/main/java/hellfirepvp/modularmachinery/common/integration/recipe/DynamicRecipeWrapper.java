@@ -8,36 +8,25 @@
 
 package hellfirepvp.modularmachinery.common.integration.recipe;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
-import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.NonNullList;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.client.model.animation.Animation;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.oredict.OreDictionary;
 
 import javax.annotation.Nonnull;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
-
-import static hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem.ItemRequirementType.ITEMSTACKS;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -49,47 +38,19 @@ import static hellfirepvp.modularmachinery.common.crafting.requirements.Requirem
 public class DynamicRecipeWrapper implements IRecipeWrapper {
 
     private final MachineRecipe recipe;
-    public final List<RequirementFluid> immulatbleOrderedInputFluids;
-    public final List<RequirementFluid> immulatbleOrderedOutputFluids;
-    public final List<RequirementItem> immulatbleOrderedInputItems;
-    public final List<RequirementItem> immulatbleOrderedOutputItems;
+    public final Map<MachineComponent.IOType, Map<Class<?>, List<ComponentRequirement<?>>>> finalOrderedComponents = new HashMap<>();
 
     public DynamicRecipeWrapper(MachineRecipe recipe) {
         this.recipe = recipe;
 
-        List<ComponentRequirement> requirements = this.recipe.getCraftingRequirements();
-
-        List<ComponentRequirement> components = requirements.stream()
-                .filter(c -> c instanceof RequirementFluid)
-                .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
-                .collect(Collectors.toList());
-        List<RequirementFluid> fluidsInCopy = Lists.newLinkedList();
-        components.forEach(r -> fluidsInCopy.add((RequirementFluid) r));
-        this.immulatbleOrderedInputFluids = ImmutableList.copyOf(fluidsInCopy);
-
-        components = requirements.stream()
-                .filter(c -> c instanceof RequirementFluid)
-                .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
-                .collect(Collectors.toList());
-        List<RequirementFluid> fluidsOutCopy = Lists.newLinkedList();
-        components.forEach(r -> fluidsOutCopy.add((RequirementFluid) r));
-        this.immulatbleOrderedOutputFluids = ImmutableList.copyOf(fluidsOutCopy);
-
-        components = requirements.stream()
-                .filter(c -> c instanceof RequirementItem)
-                .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
-                .collect(Collectors.toList());
-        List<RequirementItem> itemsInCopy = Lists.newLinkedList();
-        components.forEach(r -> itemsInCopy.add((RequirementItem) r));
-        this.immulatbleOrderedInputItems = ImmutableList.copyOf(itemsInCopy);
-
-        components = requirements.stream()
-                .filter(c -> c instanceof RequirementItem)
-                .filter(c -> c.getActionType() == MachineComponent.IOType.OUTPUT)
-                .collect(Collectors.toList());
-        List<RequirementItem> itemsOutCopy = Lists.newLinkedList();
-        components.forEach(r -> itemsOutCopy.add((RequirementItem) r));
-        this.immulatbleOrderedOutputItems = ImmutableList.copyOf(itemsOutCopy);
+        for (MachineComponent.IOType type : MachineComponent.IOType.values()) {
+            finalOrderedComponents.put(type, new HashMap<>());
+        }
+        for (ComponentRequirement<?> req : recipe.getCraftingRequirements()) {
+            ComponentRequirement.JEIComponent<?> comp = req.provideJEIComponent();
+            finalOrderedComponents.get(req.getActionType())
+                    .computeIfAbsent(comp.getJEIRequirementClass(), clazz -> new LinkedList<>()).add(req);
+        }
     }
 
     @Override
@@ -97,9 +58,12 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
     public List<String> getTooltipStrings(int mouseX, int mouseY) {
         List<String> tooltips = Lists.newArrayList();
         CategoryDynamicRecipe recipeCategory = ModIntegrationJEI.getCategory(recipe.getOwningMachine());
-        if(recipeCategory != null && recipeCategory.rectangleProcessArrow.contains(mouseX, mouseY)) {
-            tooltips.add(I18n.format("tooltip.machinery.duration", recipe.getRecipeTotalTickTime()));
+        if(recipeCategory != null) {
+            if(recipeCategory.rectangleProcessArrow.contains(mouseX, mouseY)) {
+                tooltips.add(I18n.format("tooltip.machinery.duration", recipe.getRecipeTotalTickTime()));
+            }
         }
+
         return tooltips;
     }
 
@@ -117,7 +81,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int offsetY = recipeCategory.realHeight;
 
-        int totalEnergyIn = 0;
+        long totalEnergyIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                         .filter(r -> r instanceof RequirementEnergy)
                         .filter(r -> r.getActionType() == MachineComponent.IOType.INPUT).collect(Collectors.toList())) {
@@ -149,12 +113,19 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
             offsetY -= 26;
         }
 
+        GlStateManager.color(1F, 1F, 1F, 1F);
+        long finalTotalEnergyIn = totalEnergyIn;
+        recipeCategory.inputComponents.stream()
+                .filter(r -> r instanceof RecipeLayoutPart.Energy)
+                .forEach(part -> part.drawForeground(minecraft, finalTotalEnergyIn));
+        long finalTotalEnergyOut = totalEnergyOut;
+        recipeCategory.outputComponents.stream()
+                .filter(r -> r instanceof RecipeLayoutPart.Energy)
+                .forEach(part -> part.drawForeground(minecraft, finalTotalEnergyOut));
+        GlStateManager.color(1F, 1F, 1F, 1F);
+
         if(totalEnergyIn > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
-            recipeCategory.inputComponents.stream()
-                    .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
-                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getOffset().x, r.getOffset().y));
-
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in"), 8,  offsetY + 10, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", totalEnergyIn), 8,  offsetY + 20, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", totalEnergyIn * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
@@ -172,9 +143,6 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         if(totalEnergyOut > 0) {
             GlStateManager.color(1F, 1F, 1F, 1F);
-            recipeCategory.outputComponents.stream()
-                    .filter(r -> r instanceof RecipeLayoutPart.Energy).forEach(r ->
-                    RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(minecraft, r.getOffset().x, r.getOffset().y));
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out"), 8,  offsetY + 10, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergyOut), 8,  offsetY + 20, 0x222222);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergyOut * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
@@ -186,67 +154,33 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
     @Override
     public void getIngredients(@Nonnull IIngredients ingredients) {
-        List<List<ItemStack>> applicableStacksIn = Lists.newLinkedList();
+        Map<Class<?>, Map<MachineComponent.IOType, List<ComponentRequirement<?>>>> componentMap = new HashMap<>();
+        for (ComponentRequirement req : this.recipe.getCraftingRequirements()) {
+            if(req instanceof RequirementEnergy) continue; //Ignore. They're handled differently.
 
-
-        for (RequirementItem itemIn : this.immulatbleOrderedInputItems) {
-            applicableStacksIn.add(getIIngredientComponents(itemIn));
+            ComponentRequirement.JEIComponent<?> comp = req.provideJEIComponent();
+            componentMap.computeIfAbsent(comp.getJEIRequirementClass(), clazz -> new HashMap<>())
+                    .computeIfAbsent(req.getActionType(), type -> new LinkedList<>()).add(req);
         }
-        ingredients.setInputLists(ItemStack.class, applicableStacksIn);
 
-        List<HybridFluid> applicableFluidsIn = Lists.newLinkedList();
-        for (RequirementFluid fluidIn : this.immulatbleOrderedInputFluids) {
-            applicableFluidsIn.add(fluidIn.required);
-        }
-        ingredients.setInputs(HybridFluid.class, applicableFluidsIn);
-
-
-
-        List<List<ItemStack>> applicableStacksOut = Lists.newLinkedList();
-        for (RequirementItem itemOut : this.immulatbleOrderedOutputItems) {
-            applicableStacksOut.add(getIIngredientComponents(itemOut));
-        }
-        ingredients.setOutputLists(ItemStack.class, applicableStacksOut);
-
-        List<HybridFluid> applicableFluidsOut = Lists.newLinkedList();
-        for (RequirementFluid fluidIn : this.immulatbleOrderedOutputFluids) {
-            applicableFluidsOut.add(fluidIn.required);
-        }
-        ingredients.setOutputs(HybridFluid.class, applicableFluidsOut);
-    }
-
-    private List<ItemStack> getIIngredientComponents(RequirementItem itemRequirement) {
-        switch (itemRequirement.requirementType) {
-            case ITEMSTACKS:
-                ItemStack stack = ItemUtils.copyStackWithSize(itemRequirement.required, itemRequirement.required.getCount());
-                if(itemRequirement.previewDisplayTag != null) {
-                    stack.setTagCompound(itemRequirement.previewDisplayTag);
-                } else if(itemRequirement.tag != null) {
-                    itemRequirement.previewDisplayTag = itemRequirement.tag.copy();
-                    stack.setTagCompound(itemRequirement.previewDisplayTag.copy());
+        for (Class<?> clazz : componentMap.keySet()) {
+            Map<MachineComponent.IOType, List<ComponentRequirement<?>>> ioGroup = componentMap.get(clazz);
+            for (MachineComponent.IOType ioType : ioGroup.keySet()) {
+                List<ComponentRequirement<?>> components = ioGroup.get(ioType);
+                List<List<Object>> componentObjects = new ArrayList<>(components.size());
+                for (ComponentRequirement req : components) {
+                    componentObjects.add(req.provideJEIComponent().getJEIIORequirements());
                 }
-                return Lists.newArrayList(stack);
-            case OREDICT:
-                NonNullList<ItemStack> stacks = OreDictionary.getOres(itemRequirement.oreDictName);
-                NonNullList<ItemStack> out = NonNullList.create();
-                for (ItemStack oreDictIn : stacks) {
-                    if (oreDictIn.getItemDamage() == OreDictionary.WILDCARD_VALUE && !oreDictIn.isItemStackDamageable() && oreDictIn.getItem().getCreativeTab() != null) {
-                        oreDictIn.getItem().getSubItems(oreDictIn.getItem().getCreativeTab(), out);
-                    } else {
-                        out.add(oreDictIn);
-                    }
+                switch (ioType) {
+                    case INPUT:
+                        ingredients.setInputLists(clazz, componentObjects);
+                        break;
+                    case OUTPUT:
+                        ingredients.setOutputLists(clazz, componentObjects);
+                        break;
                 }
-                NonNullList<ItemStack> stacksOut = NonNullList.create();
-                for (ItemStack s : out) {
-                    ItemStack copy = s.copy();
-                    copy.setCount(itemRequirement.oreDictItemAmount);
-                    stacksOut.add(copy);
-                }
-                return stacksOut;
-            case FUEL:
-                return FuelItemHelper.getFuelItems();
+            }
         }
-        return Lists.newArrayList();
     }
 
 }

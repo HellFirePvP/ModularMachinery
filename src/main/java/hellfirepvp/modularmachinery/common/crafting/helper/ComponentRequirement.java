@@ -12,6 +12,8 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.awt.*;
 import java.util.List;
@@ -23,7 +25,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 28.06.2017 / 10:34
  */
-public abstract class ComponentRequirement {
+public abstract class ComponentRequirement<T> {
 
     private final ComponentType componentType;
     private final MachineComponent.IOType actionType;
@@ -55,7 +57,26 @@ public abstract class ComponentRequirement {
 
     public abstract void endRequirementCheck();
 
+    //Be sure, that if you specify a new object here as type that you register that along with a helper and renderer
+    //in the JEI Integration! Otherwise JEI will complain about not having proper handling for this
+    //Also, be sure that this generic T is the *only one* with that type otherwise internally stuff might break...
+    public abstract JEIComponent<T> provideJEIComponent();
+
     public abstract RecipeLayoutPart provideRenderableLayoutPart(Point componentOffset);
+
+    public static abstract class JEIComponent<T> {
+
+        public abstract Class<T> getJEIRequirementClass();
+
+        public abstract List<T> getJEIIORequirements();
+
+        @SideOnly(Side.CLIENT)
+        public abstract RecipeLayoutPart<T> getLayoutPart(Point offset);
+
+        @SideOnly(Side.CLIENT)
+        public abstract void onJEIHoverTooltip(int slotIndex, boolean input, T ingredient, List<String> tooltip);
+
+    }
 
     public static enum CraftCheck {
 

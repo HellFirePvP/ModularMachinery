@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentHybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
@@ -30,6 +31,7 @@ import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
 import java.awt.*;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -39,7 +41,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:28
  */
-public class RequirementFluid extends ComponentRequirement implements ComponentRequirement.ChancedRequirement {
+public class RequirementFluid extends ComponentRequirement<HybridFluid> implements ComponentRequirement.ChancedRequirement {
 
     public final HybridFluid required;
     public float chance = 1F;
@@ -73,6 +75,11 @@ public class RequirementFluid extends ComponentRequirement implements ComponentR
         fluid.tagMatch = this.tagMatch;
         fluid.tagDisplay = this.tagDisplay;
         return fluid;
+    }
+
+    @Override
+    public JEIComponent<HybridFluid> provideJEIComponent() {
+        return new JEIComponentHybridFluid(this);
     }
 
     public void setMatchNBTTag(@Nullable NBTTagCompound tag) {

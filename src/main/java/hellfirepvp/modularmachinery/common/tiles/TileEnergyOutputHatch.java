@@ -77,7 +77,9 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
             if(te.hasCapability(CapabilityEnergy.ENERGY, accessingSide)) {
                 net.minecraftforge.energy.IEnergyStorage ce = te.getCapability(CapabilityEnergy.ENERGY, accessingSide);
                 if(ce != null && ce.canReceive()) {
+                    try {
                     receivedEnergy = ce.receiveEnergy(maxTransferLeft, false);
+                    } catch (Exception ignored) {}
                 }
             }
         }
@@ -93,15 +95,21 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
         TileEntity te = world.getTileEntity(at);
         if(te != null && !(te instanceof TileEnergyHatch)) {
             if(te instanceof cofh.redstoneflux.api.IEnergyReceiver && ((IEnergyReceiver) te).canConnectEnergy(accessingSide)) {
-                receivedEnergy = ((IEnergyReceiver) te).receiveEnergy(accessingSide, maxTransferLeft, false);
+                try {
+                    receivedEnergy = ((IEnergyReceiver) te).receiveEnergy(accessingSide, maxTransferLeft, false);
+                } catch (Exception ignored) {}
             }
             if(receivedEnergy <= 0 && te instanceof IEnergyStorage) {
-                receivedEnergy = ((IEnergyStorage) te).receiveEnergy(maxTransferLeft, false);
+                try {
+                    receivedEnergy = ((IEnergyStorage) te).receiveEnergy(maxTransferLeft, false);
+                } catch (Exception ignored) {}
             }
             if(receivedEnergy <= 0 && te.hasCapability(CapabilityEnergy.ENERGY, accessingSide)) {
                 net.minecraftforge.energy.IEnergyStorage ce = te.getCapability(CapabilityEnergy.ENERGY, accessingSide);
                 if(ce != null && ce.canReceive()) {
-                    receivedEnergy = ce.receiveEnergy(maxTransferLeft, false);
+                    try {
+                        receivedEnergy = ce.receiveEnergy(maxTransferLeft, false);
+                    } catch (Exception ignored) {}
                 }
             }
         }

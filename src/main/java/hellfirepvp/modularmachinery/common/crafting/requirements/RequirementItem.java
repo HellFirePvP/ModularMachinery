@@ -9,21 +9,22 @@
 package hellfirepvp.modularmachinery.common.crafting.requirements;
 
 import com.google.common.collect.Iterables;
+import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentItem;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.util.CopyHandlerHelper;
-import hellfirepvp.modularmachinery.common.util.IOInventory;
-import hellfirepvp.modularmachinery.common.util.ItemUtils;
-import hellfirepvp.modularmachinery.common.util.ResultChance;
+import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.NonNullList;
 import net.minecraftforge.oredict.OreDictionary;
 
 import java.awt.*;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -33,7 +34,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:35
  */
-public class RequirementItem extends ComponentRequirement implements ComponentRequirement.ChancedRequirement {
+public class RequirementItem extends ComponentRequirement<ItemStack> implements ComponentRequirement.ChancedRequirement {
 
     public final ItemRequirementType requirementType;
 
@@ -103,6 +104,11 @@ public class RequirementItem extends ComponentRequirement implements ComponentRe
             item.previewDisplayTag = this.previewDisplayTag.copy();
         }
         return item;
+    }
+
+    @Override
+    public JEIComponent<ItemStack> provideJEIComponent() {
+        return new JEIComponentItem(this);
     }
 
     @Override

@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
+import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentEnergy;
 import hellfirepvp.modularmachinery.common.crafting.types.ComponentEnergy;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -30,9 +31,9 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:26
  */
-public class RequirementEnergy extends ComponentRequirement {
+public class RequirementEnergy extends ComponentRequirement<Long> {
 
-    private int requirementPerTick;
+    public final int requirementPerTick;
     private int activeIO;
 
     public RequirementEnergy(MachineComponent.IOType ioType, int requirementPerTick) {
@@ -56,6 +57,11 @@ public class RequirementEnergy extends ComponentRequirement {
 
     public int getRequiredEnergyPerTick() {
         return requirementPerTick;
+    }
+
+    @Override
+    public JEIComponent<Long> provideJEIComponent() {
+        return new JEIComponentEnergy(this);
     }
 
     @Override

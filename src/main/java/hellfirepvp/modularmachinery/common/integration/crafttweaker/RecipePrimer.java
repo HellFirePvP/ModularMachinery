@@ -116,8 +116,14 @@ public class RecipePrimer implements PreparedRecipe {
         return this;
     }
 
+    //DERP. Sorry x)
     @ZenMethod
     public RecipePrimer addFuelItemInout(int requiredTotalBurnTime) {
+        return addFuelItemInput(requiredTotalBurnTime);
+    }
+
+    @ZenMethod
+    public RecipePrimer addFuelItemInput(int requiredTotalBurnTime) {
         requireItem(MachineComponent.IOType.INPUT, requiredTotalBurnTime);
         return this;
     }
