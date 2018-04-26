@@ -41,10 +41,10 @@ tooltip.machinery.chance.out=有 %s 概率产出
 tooltip.machinery.chance.in.never=不被消耗。
 tooltip.machinery.chance.out.never=不产出。
 tooltip.machinery.energy.in=能量消耗：
-tooltip.machinery.energy.in.tick=Per Tick: %s FE/t
+tooltip.machinery.energy.in.tick=平均：%s FE/t
 tooltip.machinery.energy.in.total=总计：%s FE
 tooltip.machinery.energy.out=能量产出：
-tooltip.machinery.energy.out.tick=Per Tick: %s FE/t
+tooltip.machinery.energy.out.tick=平均：%s FE/t
 tooltip.machinery.energy.out.total=总计：%s FE
 
 tooltip.constructtool.creative=创造模式用机械结构到 JSON 转换工具
@@ -60,7 +60,7 @@ tooltip.fluidhatch.tank.gas=%s / %s
 tooltip.fluidhatch.tank.info=容积：%s mb
 tooltip.fluidhatch.tank.mek=接受 Mekanism 的气体
 
-tooltip.energyhatch.charge=%s / %s Energy
+tooltip.energyhatch.charge=当前储能：%s / %s
 tooltip.energyhatch.storage=储存 %s FE
 tooltip.energyhatch.out.transfer=最大传输 %s FE/t
 tooltip.energyhatch.in.accept=最大输入 %s FE/t
@@ -87,7 +87,7 @@ tooltip.ic2.powertier.11.name=UIV
 tooltip.ic2.powertier.12.name=UXV
 
 item.itemblueprint.name=机械蓝图
-item.itemmodularium.name=Modularium
+item.itemmodularium.name=模块化合金锭
 item.itemconstructtool.name=建造选择工具
 
 tile.blockcontroller.name=机械控制器
