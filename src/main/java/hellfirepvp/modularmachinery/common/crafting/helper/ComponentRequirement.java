@@ -52,7 +52,7 @@ public abstract class ComponentRequirement<T> {
 
     public abstract CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
-    public abstract ComponentRequirement deepCopy();
+    public abstract ComponentRequirement<T> deepCopy();
 
     public abstract void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context);
 

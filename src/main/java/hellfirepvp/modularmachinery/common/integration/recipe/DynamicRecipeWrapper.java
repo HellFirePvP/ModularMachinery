@@ -115,13 +115,14 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         GlStateManager.color(1F, 1F, 1F, 1F);
         long finalTotalEnergyIn = totalEnergyIn;
+
         recipeCategory.inputComponents.stream()
                 .filter(r -> r instanceof RecipeLayoutPart.Energy)
-                .forEach(part -> part.drawForeground(minecraft, finalTotalEnergyIn));
+                .forEach(part -> ((RecipeLayoutPart.Energy) part).drawEnergy(minecraft, finalTotalEnergyIn));
         long finalTotalEnergyOut = totalEnergyOut;
         recipeCategory.outputComponents.stream()
                 .filter(r -> r instanceof RecipeLayoutPart.Energy)
-                .forEach(part -> part.drawForeground(minecraft, finalTotalEnergyOut));
+                .forEach(part -> ((RecipeLayoutPart.Energy) part).drawEnergy(minecraft, finalTotalEnergyOut));
         GlStateManager.color(1F, 1F, 1F, 1F);
 
         if(totalEnergyIn > 0) {

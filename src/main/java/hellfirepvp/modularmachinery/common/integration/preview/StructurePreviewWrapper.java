@@ -49,6 +49,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec2f;
+import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
@@ -85,14 +86,13 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     private final IDrawable drawableUpgradesHover;
 
     private final DynamicMachine machine;
-    private final DynamicMachineRenderContext context;
+    private DynamicMachineRenderContext dynamnicContext;
 
     public static long lastRenderMs = 0;
     public static DynamicMachine lastPreviewedMachine = null;
 
     public StructurePreviewWrapper(DynamicMachine machine) {
         this.machine = machine;
-        this.context = DynamicMachineRenderContext.createContext(this.machine);
 
         IGuiHelper h = ModIntegrationJEI.jeiHelpers.getGuiHelper();
         this.drawableArrowDown =  h.createDrawable(TEXTURE_BACKGROUND, 176, 0,  16, 16);
@@ -119,30 +119,34 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
 
     @Override
     public boolean handleClick(Minecraft minecraft, int mouseX, int mouseY, int mouseButton) {
+        if(dynamnicContext == null) { //If no context exists, it didn't even render yet.
+            return false;
+        }
+
         if(mouseButton == 0) {
-            if(!context.doesRenderIn3D()) {
+            if(!dynamnicContext.doesRenderIn3D()) {
                 if(mouseX >= 132 && mouseX <= 132 + 16 &&
                         mouseY >= 106 && mouseY <= 106 + 16) {
-                    context.setTo3D();
+                    dynamnicContext.setTo3D();
                 }
-                if(context.hasSliceUp() && mouseX >= 150 && mouseX <= 150 + 16 &&
+                if(dynamnicContext.hasSliceUp() && mouseX >= 150 && mouseX <= 150 + 16 &&
                         mouseY >= 102 && mouseY <= 102 + 16) {
-                    context.sliceUp();
+                    dynamnicContext.sliceUp();
                 }
-                if(context.hasSliceDown() && mouseX >= 150 && mouseX <= 150 + 16 &&
+                if(dynamnicContext.hasSliceDown() && mouseX >= 150 && mouseX <= 150 + 16 &&
                         mouseY >= 124 && mouseY <= 124 + 16) {
-                    context.sliceDown();
+                    dynamnicContext.sliceDown();
                 }
             } else {
                 if(mouseX >= 132 && mouseX <= 132 + 16 &&
                         mouseY >= 122 && mouseY <= 122 + 16) {
-                    context.setTo2D();
+                    dynamnicContext.setTo2D();
                 }
             }
             if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak) &&
                     mouseX >= 116 && mouseX <= 116 + 16 &&
                     mouseY >= 106 && mouseY < 106 + 16) {
-                if(ClientProxy.renderHelper.startPreview(context)) {
+                if(ClientProxy.renderHelper.startPreview(dynamnicContext)) {
                     Minecraft.getMinecraft().displayGuiScreen(null);
                 }
             }
@@ -153,38 +157,42 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     @Override
     public void drawInfo(Minecraft minecraft, int recipeWidth, int recipeHeight, int mouseX, int mouseY) {
         GuiScreen current = Minecraft.getMinecraft().currentScreen;
-        if(current == null) {
+        World clWorld = minecraft.world;
+        if(current == null || clWorld == null) {
             return; //Wtf. where are we rendering in.
+        }
+        if (dynamnicContext == null) {
+            dynamnicContext = DynamicMachineRenderContext.createContext(this.machine);
         }
 
         if(System.currentTimeMillis() - lastRenderMs >= 500 || lastPreviewedMachine == null || !lastPreviewedMachine.equals(machine)) {
-            context.resetRender();
+            dynamnicContext.resetRender();
             lastPreviewedMachine = this.machine;
         }
         lastRenderMs = System.currentTimeMillis();
 
         if(GameSettings.isKeyDown(Minecraft.getMinecraft().gameSettings.keyBindSneak)) {
-            if(context.getShiftSnap() == -1) {
-                context.snapSamples();
+            if(dynamnicContext.getShiftSnap() == -1) {
+                dynamnicContext.snapSamples();
             }
         } else {
-            context.releaseSamples();
+            dynamnicContext.releaseSamples();
         }
 
-        if(context.doesRenderIn3D()) {
+        if(dynamnicContext.doesRenderIn3D()) {
             if (Mouse.isButtonDown(0)) {
-                context.rotateRender(0.25 * Mouse.getDY(), 0.25 * Mouse.getDX(), 0);
+                dynamnicContext.rotateRender(0.25 * Mouse.getDY(), 0.25 * Mouse.getDX(), 0);
             }
         } else {
             if (Mouse.isButtonDown(0)) {
-                context.moveRender(0.25 * Mouse.getDX(), 0, -0.25 * Mouse.getDY());
+                dynamnicContext.moveRender(0.25 * Mouse.getDX(), 0, -0.25 * Mouse.getDY());
             }
         }
         int dwheel = ClientMouseJEIGuiEventHandler.eventDWheelState;
         if(dwheel < 0) {
-            context.zoomOut();
+            dynamnicContext.zoomOut();
         } else if(dwheel > 0) {
-            context.zoomIn();
+            dynamnicContext.zoomIn();
         }
         ClientMouseJEIGuiEventHandler.eventDWheelState = 0;
 
@@ -198,7 +206,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         int x = 88;
         int z = 64;
         GlStateManager.enableBlend();
-        context.renderAt(x,  z);
+        dynamnicContext.renderAt(x,  z);
         GL11.glDisable(GL11.GL_SCISSOR_TEST);
 
         drawButtons(minecraft, mouseX, mouseY, 0, 0, recipeWidth, recipeHeight);
@@ -223,7 +231,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                         descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
                     }
                     first = false;
-                    ItemStack stack = mod.getBlockInformation().getDescriptiveStack(context.getShiftSnap() == -1 ? Optional.empty() : Optional.of(context.getShiftSnap()));
+                    ItemStack stack = mod.getBlockInformation().getDescriptiveStack(dynamnicContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(dynamnicContext.getShiftSnap()));
                     List<String> tooltip = stack.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
                             ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
                     descriptionList.add(new Tuple<>(
@@ -248,13 +256,13 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Rectangle scissorFrame = new Rectangle(4, 4,
                 160, 94);
-        if(!context.doesRenderIn3D() && scissorFrame.contains(mouseX, mouseY)) {
-            double scale = context.getScale();
-            Vec2f offset = context.getCurrentRenderOffset(x, z);
+        if(!dynamnicContext.doesRenderIn3D() && scissorFrame.contains(mouseX, mouseY)) {
+            double scale = dynamnicContext.getScale();
+            Vec2f offset = dynamnicContext.getCurrentRenderOffset(x, z);
             int jumpWidth = 14;
             double scaleJump = jumpWidth * scale;
-            Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(context.getRenderSlice());
-            if(context.getRenderSlice() == 0) {
+            Map<BlockPos, BlockArray.BlockInformation> slice = machine.getPattern().getPatternSlice(dynamnicContext.getRenderSlice());
+            if(dynamnicContext.getRenderSlice() == 0) {
                 slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
             }
             for (BlockPos pos : slice.keySet()) {
@@ -263,7 +271,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
                 if(rct.contains(mouseX, mouseY)) {
                     BlockArray.BlockInformation bi = slice.get(pos);
-                    IBlockState state = bi.getSampleState(context.getShiftSnap() == -1 ? Optional.empty() : Optional.of(context.getShiftSnap()));
+                    IBlockState state = bi.getSampleState(dynamnicContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(dynamnicContext.getShiftSnap()));
                     Tuple<IBlockState, TileEntity> recovered = BlockCompatHelper.transformState(state, bi.matchingTag,
                             new BlockArray.TileInstantiateContext(Minecraft.getMinecraft().world, pos));
                     state = recovered.getFirst();
@@ -332,6 +340,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     }
 
     private void drawButtons(Minecraft minecraft, int mouseX, int mouseY, int guiLeft, int guiTop, int recipeWidth, int recipeHeight) {
+        if(dynamnicContext == null) { //Didn't even render machine yet...
+            return;
+        }
+
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         minecraft.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
         minecraft.getTextureManager().bindTexture(TEXTURE_BACKGROUND);
@@ -339,7 +351,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         boolean drawPopoutInfo = false, drawContents = false;
 
         IDrawable drawable = drawable3DDisabled;
-        if(!context.doesRenderIn3D()) {
+        if(!dynamnicContext.doesRenderIn3D()) {
             if(mouseX >= guiLeft + 132 && mouseX <= guiLeft + 132 + 16 &&
                     mouseY >= guiTop + 106 && mouseY < guiTop + 106 + 16) {
                 drawable = drawable3DHover;
@@ -360,7 +372,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         drawable.draw(minecraft, guiLeft + 116, guiTop + 106);
 
         drawable = drawable2DDisabled;
-        if(context.doesRenderIn3D()) {
+        if(dynamnicContext.doesRenderIn3D()) {
             if(mouseX >= guiLeft + 132 && mouseX <= guiLeft + 132 + 16 &&
                     mouseY >= guiTop + 122 && mouseY <= guiTop + 122 + 16) {
                 drawable = drawable2DHover;
@@ -379,22 +391,22 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
         drawable.draw(minecraft, guiLeft + 116, guiTop + 122);
 
-        if(context.doesRenderIn3D()) {
+        if(dynamnicContext.doesRenderIn3D()) {
             GlStateManager.color(0.3F, 0.3F, 0.3F, 1.0F);
         } else {
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
 
-        if(context.hasSliceUp()) {
-            if(!context.doesRenderIn3D() && mouseX >= guiLeft + 150 && mouseX <= guiLeft + 150 + 16 &&
+        if(dynamnicContext.hasSliceUp()) {
+            if(!dynamnicContext.doesRenderIn3D() && mouseX >= guiLeft + 150 && mouseX <= guiLeft + 150 + 16 &&
                     mouseY >= guiTop + 102 && mouseY <= guiTop + 102 + 16) {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
             drawableArrowUp.draw(minecraft, guiLeft + 150, guiTop + 102);
             GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         }
-        if(context.hasSliceDown()) {
-            if(!context.doesRenderIn3D() && mouseX >= guiLeft + 150 && mouseX <= guiLeft + 150 + 16 &&
+        if(dynamnicContext.hasSliceDown()) {
+            if(!dynamnicContext.doesRenderIn3D() && mouseX >= guiLeft + 150 && mouseX <= guiLeft + 150 + 16 &&
                     mouseY >= guiTop + 124 && mouseY <= guiTop + 124 + 16) {
                 GlStateManager.color(0.7F, 0.7F, 1.0F, 1.0F);
             }
@@ -403,10 +415,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
 
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
-        int width = minecraft.fontRenderer.getStringWidth(String.valueOf(context.getRenderSlice()));
+        int width = minecraft.fontRenderer.getStringWidth(String.valueOf(dynamnicContext.getRenderSlice()));
         GlStateManager.pushMatrix();
         GlStateManager.translate(0.5, 0, 0); //Don't ask.
-        minecraft.fontRenderer.drawString(String.valueOf(context.getRenderSlice()), guiLeft + 158 - (width / 2), guiTop + 118, 0x222222);
+        minecraft.fontRenderer.drawString(String.valueOf(dynamnicContext.getRenderSlice()), guiLeft + 158 - (width / 2), guiTop + 118, 0x222222);
         if(drawPopoutInfo) {
             ScaledResolution res = new ScaledResolution(Minecraft.getMinecraft());
             java.util.List<String> out = minecraft.fontRenderer.listFormattedStringToWidth(
@@ -415,7 +427,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             RenderingUtils.renderBlueTooltip(mouseX, mouseY, out, minecraft.fontRenderer);
         }
         if(drawContents) {
-            java.util.List<ItemStack> contents = context.getDescriptiveStacks();
+            java.util.List<ItemStack> contents = dynamnicContext.getDescriptiveStacks();
             java.util.List<Tuple<ItemStack, String>> contentMap = Lists.newArrayList();
             ItemStack ctrl = new ItemStack(BlocksMM.blockController);
             contentMap.add(new Tuple<>(ctrl, "1x " + Iterables.getFirst(ctrl.getTooltip(Minecraft.getMinecraft().player,

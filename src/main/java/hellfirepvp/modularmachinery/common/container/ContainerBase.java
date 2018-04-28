@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.container;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.inventory.Container;
 import net.minecraft.inventory.Slot;
+import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 
 /**
@@ -43,6 +44,43 @@ public abstract class ContainerBase<T extends TileEntity> extends Container {
         for (int i = 0; i < 9; i++) {
             addSlotToContainer(new Slot(opening.inventory, i, 8 + i * 18, 142));
         }
+    }
+
+    @Override
+    public ItemStack transferStackInSlot(EntityPlayer playerIn, int index) {
+        ItemStack itemstack = ItemStack.EMPTY;
+        Slot slot = this.inventorySlots.get(index);
+
+        if (slot != null && slot.getHasStack()) {
+            ItemStack itemstack1 = slot.getStack();
+            itemstack = itemstack1.copy();
+
+            if (index < 27) {
+                if (!this.mergeItemStack(itemstack1, 27, 36, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (index < 36) {
+                if (!this.mergeItemStack(itemstack1, 0, 27, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (!this.mergeItemStack(itemstack1, 0, 36, false)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (itemstack1.getCount() == 0) {
+                slot.putStack(ItemStack.EMPTY);
+            } else {
+                slot.onSlotChanged();
+            }
+
+            if (itemstack1.getCount() == itemstack.getCount()) {
+                return ItemStack.EMPTY;
+            }
+
+            slot.onTake(playerIn, itemstack1);
+        }
+
+        return itemstack;
     }
 
     public boolean isValid() {

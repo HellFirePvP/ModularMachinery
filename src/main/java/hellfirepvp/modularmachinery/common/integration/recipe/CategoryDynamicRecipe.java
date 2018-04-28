@@ -56,8 +56,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
     final int realHeight;
 
-    LinkedList<RecipeLayoutPart> inputComponents  = Lists.newLinkedList();
-    LinkedList<RecipeLayoutPart> outputComponents = Lists.newLinkedList();
+    LinkedList<RecipeLayoutPart<?>> inputComponents  = Lists.newLinkedList();
+    LinkedList<RecipeLayoutPart<?>> outputComponents = Lists.newLinkedList();
 
     private Point offsetProcessArrow;
     Rectangle rectangleProcessArrow;
@@ -246,12 +246,6 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
     @Override
     public void setRecipe(IRecipeLayout recipeLayout, DynamicRecipeWrapper recipeWrapper, IIngredients ingredients) {
-        if(ModularMachinery.isMekanismLoaded) {
-            //addFluidStacksWithMekanism(recipeLayout, recipeWrapper, ingredients);
-        } else {
-            //addFluidsWithoutMekanism(recipeLayout, recipeWrapper, ingredients);
-        }
-
         List<Class<?>> foundClasses = new LinkedList<>();
         for (MachineComponent.IOType type : MachineComponent.IOType.values()) {
             for (Class<?> clazz : recipeWrapper.finalOrderedComponents.get(type).keySet()) {

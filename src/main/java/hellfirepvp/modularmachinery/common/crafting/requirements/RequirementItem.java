@@ -80,7 +80,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public ComponentRequirement deepCopy() {
+    public ComponentRequirement<ItemStack> deepCopy() {
         RequirementItem item;
         switch (this.requirementType) {
             case OREDICT:

@@ -72,8 +72,6 @@ public abstract class RecipeLayoutPart<T> {
 
     public abstract void drawBackground(Minecraft mc);
 
-    public abstract void drawForeground(Minecraft mc, T obj);
-
     public static class Tank extends RecipeLayoutPart<HybridFluid> {
 
         public Tank(Point offset) {
@@ -158,10 +156,6 @@ public abstract class RecipeLayoutPart<T> {
         @Override
         public void drawBackground(Minecraft mc) {}
 
-        //JEI draws fluids and gases for us
-        @Override
-        public void drawForeground(Minecraft mc, HybridFluid obj) {}
-
     }
 
     public static class Energy extends RecipeLayoutPart<Long> {
@@ -230,9 +224,8 @@ public abstract class RecipeLayoutPart<T> {
             RecipeLayoutHelper.PART_ENERGY_BACKGROUND.drawable.draw(mc, getOffset().x, getOffset().y);
         }
 
-        @Override
-        public void drawForeground(Minecraft mc, Long obj) {
-            if(obj > 0) {
+        public void drawEnergy(Minecraft mc, Long energy) {
+            if(energy > 0) {
                 RecipeLayoutHelper.PART_ENERGY_FOREGROUND.drawable.draw(mc, getOffset().x, getOffset().y);
             }
         }
@@ -304,10 +297,6 @@ public abstract class RecipeLayoutPart<T> {
         public void drawBackground(Minecraft mc) {
             RecipeLayoutHelper.PART_INVENTORY_CELL.drawable.draw(mc, getOffset().x, getOffset().y);
         }
-
-        //JEI draws itemstacks as inputs for us
-        @Override
-        public void drawForeground(Minecraft mc, ItemStack obj) {}
     }
 
 }

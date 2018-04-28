@@ -42,7 +42,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     }
 
     @Override
-    public ComponentRequirement deepCopy() {
+    public ComponentRequirement<Long> deepCopy() {
         RequirementEnergy energy = new RequirementEnergy(this.getActionType(), this.requirementPerTick);
         energy.activeIO = this.activeIO;
         return energy;
