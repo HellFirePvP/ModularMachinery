@@ -31,6 +31,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.StringUtils;
 import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.translation.I18n;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import net.minecraftforge.registries.IForgeRegistryEntry;
 
@@ -87,7 +88,12 @@ public class DynamicMachine {
     }
 
     public String getLocalizedName() {
-        return localizedName;
+        String localizationKey = registryName.getResourceDomain() + "." + registryName.getResourcePath();
+        if (I18n.canTranslate(localizationKey)) {
+            return I18n.translateToLocal(localizationKey);
+        } else {
+            return localizedName;
+        }
     }
 
     public int getMachineColor() {

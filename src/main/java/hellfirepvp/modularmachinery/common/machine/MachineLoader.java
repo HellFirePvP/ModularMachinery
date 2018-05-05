@@ -20,6 +20,7 @@ import net.minecraft.util.JsonUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,7 +74,7 @@ public class MachineLoader {
     public static List<DynamicMachine> loadMachines(List<File> machineCandidates) {
         List<DynamicMachine> loadedMachines = Lists.newArrayList();
         for (File f : machineCandidates) {
-            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
+            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)) {
                 loadedMachines.add(JsonUtils.fromJson(GSON, isr, DynamicMachine.class));
             } catch (Exception exc) {
                 failedAttempts.put(f.getPath(), exc);
