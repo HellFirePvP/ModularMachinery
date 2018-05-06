@@ -19,6 +19,7 @@ import net.minecraft.util.JsonUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -69,7 +70,7 @@ public class RecipeLoader {
         List<MachineRecipe> loadedRecipes = Lists.newArrayList();
         for (File f : candidates.get(FileType.RECIPE)) {
             currentlyReadingPath = f.getPath();
-            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
+            try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)) {
                 MachineRecipe.MachineRecipeContainer container = JsonUtils.fromJson(GSON, isr, MachineRecipe.MachineRecipeContainer.class);
                 loadedRecipes.addAll(container.getRecipes());
             } catch (Exception exc) {
