@@ -22,9 +22,13 @@ import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEner
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import mekanism.api.gas.Gas;
+import mekanism.api.gas.GasRegistry;
+import mekanism.api.gas.GasStack;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fml.common.Optional;
 import stanhebben.zenscript.annotations.ZenClass;
 import stanhebben.zenscript.annotations.ZenMethod;
 
@@ -93,6 +97,23 @@ public class RecipePrimer implements PreparedRecipe {
     @ZenMethod
     public RecipePrimer addFluidOutput(ILiquidStack stack) {
         requireFluid(MachineComponent.IOType.OUTPUT, stack);
+        return this;
+    }
+
+    //----------------------------------------------------------------------------------------------
+    // GAS input & output
+    //----------------------------------------------------------------------------------------------
+    @ZenMethod
+    @Optional.Method(modid = "mekanism")
+    public RecipePrimer addGasInput(String gasName, int amount) {
+        requireGas(MachineComponent.IOType.INPUT, gasName, amount);
+        return this;
+    }
+
+    @ZenMethod
+    @Optional.Method(modid = "mekanism")
+    public RecipePrimer addGasOutput(String gasName, int amount) {
+        requireGas(MachineComponent.IOType.OUTPUT, gasName, amount);
         return this;
     }
 
@@ -166,6 +187,19 @@ public class RecipePrimer implements PreparedRecipe {
         }
         RequirementFluid rf = new RequirementFluid(ComponentType.Registry.getComponent("fluid"), ioType, mcFluid);
         appendComponent(rf);
+    }
+
+    @Optional.Method(modid = "mekanism")
+    private void requireGas(MachineComponent.IOType ioType, String gasName, int amount) {
+        Gas gas = GasRegistry.getGas(gasName);
+        if (gas == null) {
+            CraftTweakerAPI.logError("GasStack not found/unknown gas: " + gasName);
+            return;
+        }
+        amount = Math.max(0, amount);
+        GasStack gasStack = new GasStack(gas, amount);
+        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(ComponentType.Registry.getComponent("gas"), ioType, gasStack);
+        appendComponent(req);
     }
 
     private void requireItem(MachineComponent.IOType ioType, int requiredTotalBurnTime) {
