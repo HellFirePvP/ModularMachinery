@@ -179,7 +179,7 @@ public class RecipePrimer implements PreparedRecipe {
     private void requireFluid(MachineComponent.IOType ioType, ILiquidStack stack) {
         FluidStack mcFluid = CraftTweakerMC.getLiquidStack(stack);
         if(mcFluid == null) {
-            CraftTweakerAPI.logError("Fluidstack not found/unknown fluid: " + stack.toString());
+            CraftTweakerAPI.logError("FluidStack not found/unknown fluid: " + stack.toString());
             return;
         }
         if(stack.getTag() != null) {
@@ -209,7 +209,7 @@ public class RecipePrimer implements PreparedRecipe {
     private void requireItem(MachineComponent.IOType ioType, IItemStack stack) {
         ItemStack mcStack = CraftTweakerMC.getItemStack(stack);
         if(mcStack.isEmpty()) {
-            CraftTweakerAPI.logError("Itemstack not found/unknown item: " + stack.toString());
+            CraftTweakerAPI.logError("ItemStack not found/unknown item: " + stack.toString());
             return;
         }
         RequirementItem ri = new RequirementItem(ioType, mcStack);
