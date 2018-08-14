@@ -41,7 +41,7 @@ public class RegistryItems {
 
     private static <T extends Item> T prepareRegister(T item) {
         String name = item.getClass().getSimpleName().toLowerCase();
-        item.setRegistryName(name).setUnlocalizedName(name);
+        item.setRegistryName(name).setUnlocalizedName(ModularMachinery.MODID + '.' + name);
         itemsToRegister.add(item);
         if(item instanceof ItemDynamicColor) {
             pendingDynamicColorItems.add((ItemDynamicColor) item);
