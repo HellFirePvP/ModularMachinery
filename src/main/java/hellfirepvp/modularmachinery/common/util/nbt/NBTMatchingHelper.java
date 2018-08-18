@@ -83,7 +83,7 @@ public class NBTMatchingHelper {
             }
 
         }
-        return true;
+        return matchBase.equals(matchStack);
     }
 
     private static boolean matchCompound(NBTTagCompound matchNBT, NBTTagCompound itemStackNBTToCheck) {

@@ -16,30 +16,21 @@ import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
-import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
-import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
-import net.minecraft.block.Block;
-import net.minecraft.block.state.IBlockState;
-import net.minecraft.init.Blocks;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.StringUtils;
-import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.translation.I18n;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
-import net.minecraftforge.registries.IForgeRegistryEntry;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -87,13 +78,13 @@ public class DynamicMachine {
         this.localizedName = localizedName;
     }
 
+    @SideOnly(Side.CLIENT)
     public String getLocalizedName() {
-        String localizationKey = registryName.getResourceDomain() + "." + registryName.getResourcePath();
-        if (I18n.canTranslate(localizationKey)) {
-            return I18n.translateToLocal(localizationKey);
-        } else {
+        if (localizedName != null) {
             return localizedName;
         }
+        String localizationKey = registryName.getResourceDomain() + "." + registryName.getResourcePath();
+        return I18n.hasKey(localizationKey) ? I18n.format(localizationKey) : localizationKey;
     }
 
     public int getMachineColor() {

@@ -42,10 +42,12 @@ public class FuelItemHelper {
         }
         List<ItemStack> out = new LinkedList<>();
         for (ItemStack stack : stacks) {
-            int burn = TileEntityFurnace.getItemBurnTime(stack); //Respects vanilla values.
-            if(burn > 0) {
-                out.add(stack);
-            }
+            try {
+                int burn = TileEntityFurnace.getItemBurnTime(stack); //Respects vanilla values.
+                if(burn > 0) {
+                    out.add(stack);
+                }
+            } catch (Exception exc) {}
         }
         knownFuelStacks = ImmutableList.copyOf(out);
     }

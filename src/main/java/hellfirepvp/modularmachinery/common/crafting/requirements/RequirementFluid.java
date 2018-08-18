@@ -126,7 +126,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     @Override
     public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
+        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
                 !(component instanceof MachineComponent.FluidHatch) ||
                 component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
@@ -261,7 +261,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     @Override
     public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
+        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
                 !(component instanceof MachineComponent.FluidHatch) ||
                 component.getIOType() != getActionType()) return false;
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
@@ -347,7 +347,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     @Override
     public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
+        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
                 !(component instanceof MachineComponent.FluidHatch) ||
                 component.getIOType() != getActionType()) return false;
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);

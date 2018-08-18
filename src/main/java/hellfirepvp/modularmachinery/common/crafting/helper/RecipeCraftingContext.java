@@ -93,7 +93,11 @@ public class RecipeCraftingContext {
     }
 
     public Collection<MachineComponent> getComponentsFor(ComponentType type) {
-        return this.typeComponents.computeIfAbsent(type.getRegistryName(), (s) -> new HashMap<>()).keySet();
+        String key = type.getRegistryName();
+        if(key.equalsIgnoreCase("gas")) {
+            key = "fluid";
+        }
+        return this.typeComponents.computeIfAbsent(key, (s) -> new HashMap<>()).keySet();
     }
 
     public boolean energyTick() {

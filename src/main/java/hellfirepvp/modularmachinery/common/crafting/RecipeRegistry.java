@@ -112,7 +112,7 @@ public class RecipeRegistry {
             }
             Tuple<DataLoadProfiler.Status, DataLoadProfiler.Status> status = statusMap.get(m);
             if(status == null) {
-                DataLoadProfiler.StatusLine line = profiler.createLine(m.getLocalizedName() + " (Recipes): ");
+                DataLoadProfiler.StatusLine line = profiler.createLine(m.getRegistryName() + " (Recipes): ");
                 status = new Tuple<>(line.appendStatus("%s loaded"), line.appendStatus("%s failed"));
                 statusMap.put(m, status);
             }
