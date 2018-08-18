@@ -116,7 +116,7 @@ public class RegistryBlocks {
 
     private static <T extends ItemBlock> T prepareItemBlockRegister(T item) {
         String name = item.getBlock().getClass().getSimpleName().toLowerCase();
-        item.setRegistryName(name).setUnlocalizedName(name);
+        item.setRegistryName(name).setUnlocalizedName(ModularMachinery.MODID + '.' + name);
         RegistryItems.itemsToRegister.add(item);
         if(item instanceof ItemDynamicColor) {
             RegistryItems.pendingDynamicColorItems.add((ItemDynamicColor) item);
@@ -126,7 +126,7 @@ public class RegistryBlocks {
 
     private static <T extends Block> T prepareRegister(T block) {
         String name = block.getClass().getSimpleName().toLowerCase();
-        block.setRegistryName(name).setUnlocalizedName(name);
+        block.setRegistryName(name).setUnlocalizedName(ModularMachinery.MODID + '.' + name);
         blocksToRegister.add(block);
         if(block instanceof BlockDynamicColor) {
             pendingIBlockColorBlocks.add((BlockDynamicColor) block);
