@@ -247,7 +247,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
 
         minecraft.fontRenderer.drawString(machine.getLocalizedName(),
-                4, -7,
+                4, 0,
                 0x222222);
         if(machine.requiresBlueprint()) {
             String reqBlueprint = I18n.format("tooltip.machinery.blueprint.required");

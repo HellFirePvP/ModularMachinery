@@ -34,7 +34,7 @@ public class CategoryStructurePreview implements IRecipeCategory<StructurePrevie
 
     public CategoryStructurePreview() {
         ResourceLocation location = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint.png");
-        this.background = ModIntegrationJEI.jeiHelpers.getGuiHelper().createDrawable(location, 4, 4, 168, 136);
+        this.background = ModIntegrationJEI.jeiHelpers.getGuiHelper().createDrawable(location, 4, 4, 168, 136, 7,3,0,0);
         this.trTitle = I18n.format("jei.category.preview");
     }
 
