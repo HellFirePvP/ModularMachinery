@@ -34,6 +34,7 @@ import net.minecraft.block.BlockLiquid;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
@@ -53,10 +54,11 @@ import net.minecraft.world.World;
 import net.minecraftforge.fluids.BlockFluidBase;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
-import net.minecraftforge.fluids.UniversalBucket;
-import net.minecraftforge.fml.relauncher.ReflectionHelper;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
+import org.lwjgl.opengl.GL14;
 
 import java.awt.*;
 import java.awt.geom.Rectangle2D;
@@ -74,6 +76,7 @@ import java.util.List;
 public class StructurePreviewWrapper implements IRecipeWrapper {
 
     private static final Field layouts;
+    private static final Field recipeLayoutWrapper;
 
     private static final ResourceLocation ic2TileBlock = new ResourceLocation("ic2", "te");
     public static final ResourceLocation TEXTURE_BACKGROUND = new ResourceLocation(ModularMachinery.MODID, "textures/gui/guiblueprint_jei.png");
@@ -88,8 +91,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     private final DynamicMachine machine;
     private DynamicMachineRenderContext dynamnicContext;
 
-    public static long lastRenderMs = 0;
-    public static DynamicMachine lastPreviewedMachine = null;
+    public long lastRenderMs = 0;
 
     public StructurePreviewWrapper(DynamicMachine machine) {
         this.machine = machine;
@@ -158,16 +160,14 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     public void drawInfo(Minecraft minecraft, int recipeWidth, int recipeHeight, int mouseX, int mouseY) {
         GuiScreen current = Minecraft.getMinecraft().currentScreen;
         World clWorld = minecraft.world;
-        if(current == null || clWorld == null) {
+        if(current == null || clWorld == null || !(current instanceof RecipesGui)) {
             return; //Wtf. where are we rendering in.
         }
         if (dynamnicContext == null) {
             dynamnicContext = DynamicMachineRenderContext.createContext(this.machine);
         }
-
-        if(System.currentTimeMillis() - lastRenderMs >= 500 || lastPreviewedMachine == null || !lastPreviewedMachine.equals(machine)) {
+        if(System.currentTimeMillis() - lastRenderMs >= 500) {
             dynamnicContext.resetRender();
-            lastPreviewedMachine = this.machine;
         }
         lastRenderMs = System.currentTimeMillis();
 
@@ -180,29 +180,31 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         }
 
         if(dynamnicContext.doesRenderIn3D()) {
-            if (Mouse.isButtonDown(0)) {
+            if (isMouseOver(mouseX, mouseY, recipeWidth, recipeHeight) && Mouse.isButtonDown(0)) {
                 dynamnicContext.rotateRender(0.25 * Mouse.getDY(), 0.25 * Mouse.getDX(), 0);
             }
         } else {
-            if (Mouse.isButtonDown(0)) {
+            if (isMouseOver(mouseX, mouseY, recipeWidth, recipeHeight) && Mouse.isButtonDown(0)) {
                 dynamnicContext.moveRender(0.25 * Mouse.getDX(), 0, -0.25 * Mouse.getDY());
             }
         }
-        int dwheel = ClientMouseJEIGuiEventHandler.eventDWheelState;
-        if(dwheel < 0) {
-            dynamnicContext.zoomOut();
-        } else if(dwheel > 0) {
-            dynamnicContext.zoomIn();
+        if (isMouseOver(mouseX, mouseY, recipeWidth, recipeHeight)){
+            int dwheel = ClientMouseJEIGuiEventHandler.eventDWheelState;
+            if(dwheel < 0) {
+                dynamnicContext.zoomOut();
+            } else if(dwheel > 0) {
+                dynamnicContext.zoomIn();
+            }
+            ClientMouseJEIGuiEventHandler.eventDWheelState = 0;
         }
-        ClientMouseJEIGuiEventHandler.eventDWheelState = 0;
-
-        int guiLeft = (current.width - recipeWidth) / 2;
-        int guiTop  = (current.height - recipeHeight) / 2;
-
         ScaledResolution res = new ScaledResolution(minecraft);
+        RecipeLayout recipeLayout = getCurrentLayout(minecraft, this);
+        int recipeY = recipeLayout != null ? recipeLayout.getPosY() : 0;
+        int guiLeft = (current.width - recipeWidth) / 2;
+        int guiTop  = res.getScaledHeight() - recipeY - recipeHeight + 38 ;
+
         GL11.glEnable(GL11.GL_SCISSOR_TEST);
-        GL11.glScissor((guiLeft + 4) * res.getScaleFactor(), (guiTop + 14) * res.getScaleFactor(),
-                160 * res.getScaleFactor(), 94 * res.getScaleFactor());
+        GL11.glScissor((guiLeft + 4) * res.getScaleFactor(),guiTop * res.getScaleFactor(), 160 * res.getScaleFactor(), 94 * res.getScaleFactor());
         int x = 88;
         int z = 64;
         GlStateManager.enableBlend();
@@ -476,6 +478,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
         ingredients.setOutput(ItemStack.class, bOut);
     }
 
+    private boolean isMouseOver(int mouseX, int mouseY, int width, int height){
+        return 0 < mouseX && mouseX < width &&  0 < mouseY && mouseY < height;
+    }
+
     //I blame mezz for this, making stuff not accessible and badly organizing the original values so it's horrible to draw custom stuff onto the GUI frame.
     static {
         Field f;
@@ -486,6 +492,28 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
             f = null;
         }
         layouts = f;
+        try {
+            f = RecipeLayout.class.getDeclaredField("recipeWrapper");
+            f.setAccessible(true);
+        } catch (Exception exc) {
+            f = null;
+        }
+        recipeLayoutWrapper = f;
     }
 
+    public static RecipeLayout getCurrentLayout(Minecraft minecraft, IRecipeWrapper wrapper){
+        if (minecraft.currentScreen instanceof RecipesGui){
+            try {
+                List<RecipeLayout> recipesRendering = (List<RecipeLayout>) layouts.get((RecipesGui) minecraft.currentScreen);
+                for (RecipeLayout recipeLayout : recipesRendering) {
+                    if (recipeLayoutWrapper.get(recipeLayout).equals(wrapper)){
+                        return recipeLayout;
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
 }
