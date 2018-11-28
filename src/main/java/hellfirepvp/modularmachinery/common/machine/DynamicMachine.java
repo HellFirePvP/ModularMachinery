@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.machine;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
@@ -31,6 +32,7 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import javax.annotation.Nonnull;
 import java.lang.reflect.Type;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -46,7 +48,7 @@ public class DynamicMachine {
     private String localizedName = null;
     private BlockArray pattern = new BlockArray();
     private int definedColor = Config.machineColor;
-    private Map<BlockPos, ModifierReplacement> modifiers = new HashMap<>();
+    private Map<BlockPos, List<ModifierReplacement>> modifiers = new HashMap<>();
 
     private boolean requiresBlueprint = false;
 
@@ -66,12 +68,19 @@ public class DynamicMachine {
         return pattern;
     }
 
-    public Map<BlockPos, ModifierReplacement> getModifiers() {
+    public Map<BlockPos, List<ModifierReplacement>> getModifiers() {
         return modifiers;
     }
 
-    public Map<BlockPos, BlockArray.BlockInformation> getModifiersAsMatchingReplacements() {
-        return MiscUtils.remap(this.modifiers, ModifierReplacement::getBlockInformation);
+    public Map<BlockPos, List<BlockArray.BlockInformation>> getModifiersAsMatchingReplacements() {
+        Map<BlockPos, List<BlockArray.BlockInformation>> infoMap = Maps.newHashMap();
+        for (BlockPos pos : modifiers.keySet()) {
+            infoMap.put(pos, modifiers.get(pos)
+                    .stream()
+                    .map(ModifierReplacement::getBlockInformation)
+                    .collect(Collectors.toList()));
+        }
+        return infoMap;
     }
 
     public void setLocalizedName(String localizedName) {
@@ -252,7 +261,8 @@ public class DynamicMachine {
                 if(permutation.getX() == 0 && permutation.getY() == 0 && permutation.getZ() == 0) {
                     continue; //We're not going to overwrite the controller.
                 }
-                machine.modifiers.put(permutation, mod);
+                machine.modifiers.putIfAbsent(permutation, Lists.newArrayList());
+                machine.modifiers.get(permutation).add(mod);
             }
         }
 

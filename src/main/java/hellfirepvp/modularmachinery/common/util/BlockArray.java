@@ -169,14 +169,15 @@ public class BlockArray {
         return out;
     }
 
-    public boolean matches(World world, BlockPos center, boolean oldState, @Nullable Map<BlockPos, BlockInformation> modifierReplacementPattern) {
+    public boolean matches(World world, BlockPos center, boolean oldState, @Nullable Map<BlockPos, List<BlockInformation>> modifierReplacementPattern) {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockPos at = center.add(entry.getKey());
             if(!entry.getValue().matches(world, at, oldState)) {
                 if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(entry.getKey())) {
-                    BlockInformation value = modifierReplacementPattern.get(entry.getKey());
-                    if(value.matches(world, at, oldState)) {
-                        continue;
+                    for (BlockInformation info : modifierReplacementPattern.get(entry.getKey())) {
+                        if (info.matches(world, at, oldState)) {
+                            continue;
+                        }
                     }
                 }
                 return false;
@@ -185,14 +186,15 @@ public class BlockArray {
         return true;
     }
 
-    public BlockPos getRelativeMismatchPosition(World world, BlockPos center, @Nullable Map<BlockPos, BlockInformation> modifierReplacementPattern) {
+    public BlockPos getRelativeMismatchPosition(World world, BlockPos center, @Nullable Map<BlockPos, List<BlockInformation>> modifierReplacementPattern) {
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockPos at = center.add(entry.getKey());
             if(!entry.getValue().matches(world, at, false)) {
                 if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(entry.getKey())) {
-                    BlockInformation value = modifierReplacementPattern.get(entry.getKey());
-                    if(value.matches(world, at, false)) {
-                        continue;
+                    for (BlockInformation info : modifierReplacementPattern.get(entry.getKey())) {
+                        if (info.matches(world, at, false)) {
+                            continue;
+                        }
                     }
                 }
                 return entry.getKey();
@@ -384,6 +386,22 @@ public class BlockArray {
                 bi.matchingTag = this.matchingTag;
             }
             return bi;
+        }
+
+        public boolean matchesState(IBlockState state) {
+            Block atBlock = state.getBlock();
+            int atMeta = atBlock.getMetaFromState(state);
+
+            for (IBlockStateDescriptor descriptor : matchingStates) {
+                for (IBlockState applicable : descriptor.applicable) {
+                    Block type = applicable.getBlock();
+                    int meta = type.getMetaFromState(applicable);
+                    if(type.equals(state.getBlock()) && meta == atMeta) {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         public boolean matches(World world, BlockPos at, boolean default_) {

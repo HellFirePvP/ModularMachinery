@@ -11,10 +11,13 @@ package hellfirepvp.modularmachinery.common.util;
 import com.google.common.collect.Lists;
 import net.minecraft.util.Tuple;
 
+import javax.annotation.Nullable;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +37,22 @@ public class MiscUtils {
 
     public static List<String> splitStringBy(String str, String spl) {
         return Lists.newArrayList(str.split(spl));
+    }
+
+    public static <T> List<T> flatten(Collection<List<T>> collection) {
+        return collection.stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    @Nullable
+    public static <T> T iterativeSearch(Collection<T> collection, Predicate<T> matchingFct) {
+        for (T element : collection) {
+            if(matchingFct.test(element)) {
+                return element;
+            }
+        }
+        return null;
     }
 
 }

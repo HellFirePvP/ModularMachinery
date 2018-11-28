@@ -151,19 +151,21 @@ public class GuiScreenBlueprint extends GuiScreen {
                     mouseY >= guiTop + 124 && mouseY <= guiTop + 139) {
                 List<Tuple<ItemStack, String>> descriptionList = new LinkedList<>();
                 boolean first = true;
-                for (ModifierReplacement mod : machine.getModifiers().values()) {
-                    if(!first) {
-                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
-                    }
-                    first = false;
-                    ItemStack stack = mod.getBlockInformation().getDescriptiveStack(renderContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(renderContext.getShiftSnap()));
-                    List<String> tooltip = stack.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
-                            ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
-                    descriptionList.add(new Tuple<>(
-                            stack,
-                            Iterables.getFirst(tooltip, "")));
-                    for (String str : mod.getDescriptionLines()) {
-                        descriptionList.add(new Tuple<>(ItemStack.EMPTY, str));
+                for (List<ModifierReplacement> modifiers : machine.getModifiers().values()) {
+                    for (ModifierReplacement mod : modifiers) {
+                        if(!first) {
+                            descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
+                        }
+                        first = false;
+                        ItemStack stack = mod.getBlockInformation().getDescriptiveStack(renderContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(renderContext.getShiftSnap()));
+                        List<String> tooltip = stack.getTooltip(Minecraft.getMinecraft().player, Minecraft.getMinecraft().gameSettings.advancedItemTooltips ?
+                                ITooltipFlag.TooltipFlags.ADVANCED : ITooltipFlag.TooltipFlags.NORMAL);
+                        descriptionList.add(new Tuple<>(
+                                stack,
+                                Iterables.getFirst(tooltip, "")));
+                        for (String str : mod.getDescriptionLines()) {
+                            descriptionList.add(new Tuple<>(ItemStack.EMPTY, str));
+                        }
                     }
                 }
 
