@@ -11,7 +11,7 @@ package hellfirepvp.modularmachinery.common.integration.recipe;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidRenderer;
 import mezz.jei.api.ingredients.IIngredientRenderer;
-import mezz.jei.plugins.vanilla.ingredients.ItemStackRenderer;
+import mezz.jei.plugins.vanilla.ingredients.item.ItemStackRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.fml.common.Loader;

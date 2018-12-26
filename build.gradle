@@ -47,7 +47,7 @@ repositories {
 dependencies {
 
     def mc_version = "1.12.2"
-    def jei_version = "4.8.5.159"
+    def jei_version = "4.14.3.241"
 
     ////JEI stuff
     deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
