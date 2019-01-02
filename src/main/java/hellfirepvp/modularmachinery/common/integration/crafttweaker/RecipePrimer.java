@@ -224,7 +224,7 @@ public class RecipePrimer implements PreparedRecipe {
         appendComponent(new RequirementItem(ioType, oreDictName, amount));
     }
 
-    private void appendComponent(ComponentRequirement component) {
+    public void appendComponent(ComponentRequirement component) {
         this.components.add(component);
         this.lastComponent = component;
     }
