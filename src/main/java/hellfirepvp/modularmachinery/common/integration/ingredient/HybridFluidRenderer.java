@@ -15,7 +15,7 @@ import mekanism.api.gas.GasStack;
 import mekanism.client.jei.gas.GasStackRenderer;
 import mezz.jei.api.gui.IDrawable;
 import mezz.jei.api.ingredients.IIngredientRenderer;
-import mezz.jei.plugins.vanilla.ingredients.FluidStackRenderer;
+import mezz.jei.plugins.vanilla.ingredients.fluid.FluidStackRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.util.ITooltipFlag;
