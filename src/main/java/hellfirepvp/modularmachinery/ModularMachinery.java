@@ -39,7 +39,7 @@ import java.io.File;
  * Date: 26.06.2017 / 20:26
  */
 @Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION,
-acceptedMinecraftVersions = "[1.12, 1.13)", dependencies = "required-after:forge@[14.21.0.2371,);after:crafttweaker@[4.0.4,)")
+acceptedMinecraftVersions = "[1.12, 1.13)", dependencies = "required-after:forge@[14.21.0.2371,);after:crafttweaker@[4.0.4,);after:jei@[4.13.1.222,)")
 public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
