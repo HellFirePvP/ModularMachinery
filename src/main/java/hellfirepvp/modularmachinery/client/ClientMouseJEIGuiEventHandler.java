@@ -39,7 +39,7 @@ public class ClientMouseJEIGuiEventHandler {
         if(glMouseEventDWheelField == null) return;
 
         GuiScreen cScreen = preMouse.getGui();
-        if(cScreen != null && cScreen instanceof IRecipesGui && System.currentTimeMillis() - StructurePreviewWrapper.lastRenderMs <= 200) {
+        if(cScreen != null && cScreen instanceof IRecipesGui) {
             try {
                 eventDWheelState = Mouse.getEventDWheel();
                 glMouseEventDWheelField.set(null, 0);
