@@ -36,54 +36,23 @@ public class NBTMatchingHelper {
 
     private static boolean matchBase(NBTBase matchBase, NBTBase matchStack) {
         if(matchBase instanceof NBTComparableNumber) {
-            if (matchStack instanceof NBTPrimitive) {
-                if (!((NBTComparableNumber) matchBase).test((NBTPrimitive) matchStack)) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return (matchStack instanceof NBTPrimitive) &&
+                    ((NBTComparableNumber) matchBase).test((NBTPrimitive) matchStack);
         } else if(matchBase instanceof NBTPatternString) {
-            if(matchStack instanceof NBTTagString) {
-                if(!((NBTPatternString) matchBase).testString(((NBTTagString) matchStack).getString())) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return (matchStack instanceof NBTTagString) &&
+                    ((NBTPatternString) matchBase).testString(((NBTTagString) matchStack).getString());
         } else if(matchBase instanceof NBTTagCompound) {
-            if(matchStack instanceof NBTTagCompound) {
-                if(!matchCompound((NBTTagCompound) matchBase, (NBTTagCompound) matchStack)) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return (matchStack instanceof NBTTagCompound) &&
+                    matchCompound((NBTTagCompound) matchBase, (NBTTagCompound) matchStack);
         } else if(matchBase instanceof NBTTagList) {
-            if(matchStack instanceof NBTTagList) {
-                if(!matchList((NBTTagList) matchBase, (NBTTagList) matchStack)) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return (matchStack instanceof NBTTagList) &&
+                    matchList((NBTTagList) matchBase, (NBTTagList) matchStack);
         } else if(matchBase instanceof NBTTagByteArray) {
-            if(matchStack instanceof NBTTagByteArray) {
-                if(!Arrays.equals(((NBTTagByteArray) matchBase).getByteArray(), ((NBTTagByteArray) matchStack).getByteArray())) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return (matchStack instanceof NBTTagByteArray) &&
+                    Arrays.equals(((NBTTagByteArray) matchBase).getByteArray(), ((NBTTagByteArray) matchStack).getByteArray());
         } else if(matchBase instanceof NBTTagIntArray) {
-            if(matchStack instanceof NBTTagIntArray) {
-                if(!Arrays.equals(((NBTTagIntArray) matchBase).getIntArray(), ((NBTTagIntArray) matchStack).getIntArray())) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
-
+            return (matchStack instanceof NBTTagIntArray) &&
+                    Arrays.equals(((NBTTagIntArray) matchBase).getIntArray(), ((NBTTagIntArray) matchStack).getIntArray());
         }
         return matchBase.equals(matchStack);
     }
