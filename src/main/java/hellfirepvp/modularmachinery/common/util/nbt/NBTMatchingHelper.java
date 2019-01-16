@@ -8,10 +8,12 @@
 
 package hellfirepvp.modularmachinery.common.util.nbt;
 
+import com.google.common.collect.Lists;
 import net.minecraft.nbt.*;
 
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -112,12 +114,17 @@ public class NBTMatchingHelper {
         if(baseOriginal.getTagType() != baseStack.getTagType()) {
             return false;
         }
-        for (int i = 0; i < baseOriginal.tagCount(); i++) {
-            NBTBase entryBase = baseOriginal.get(i);
-            NBTBase stackBase = baseStack.get(i);
-            if(!matchBase(entryBase, stackBase)) {
-                return false;
+
+        List<NBTBase> copyConsumeTags = Lists.newArrayList(baseStack);
+        lblSearchTags:
+        for (NBTBase entryBase : baseOriginal) {
+            for (NBTBase stackBase : copyConsumeTags) {
+                if (matchBase(entryBase, stackBase)) {
+                    copyConsumeTags.remove(stackBase);
+                    continue lblSearchTags;
+                }
             }
+            return false;
         }
         return true;
     }
