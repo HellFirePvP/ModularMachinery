@@ -67,7 +67,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Override
     @Optional.Method(modid = "ic2")
     public int getSinkTier() {
-        return Integer.MAX_VALUE;
+        return this.size.energyTier;
     }
 
     @Override
