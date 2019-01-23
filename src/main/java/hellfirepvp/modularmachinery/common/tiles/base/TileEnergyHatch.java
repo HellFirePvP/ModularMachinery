@@ -12,6 +12,9 @@ import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
+import net.minecraft.nbt.NBTBase;
+import net.minecraft.nbt.NBTPrimitive;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
@@ -33,7 +36,7 @@ import javax.annotation.Nullable;
 @Optional.Interface(iface = "cofh.redstoneflux.api.IEnergyStorage", modid = "redstoneflux")
 public abstract class TileEnergyHatch extends TileColorableMachineComponent implements ITickable, IEnergyStorage, IEnergyHandler, MachineComponentTile, cofh.redstoneflux.api.IEnergyStorage {
 
-    protected int energy = 0;
+    protected long energy = 0;
     protected EnergyHatchSize size;
 
     public TileEnergyHatch() {}
@@ -47,10 +50,10 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
         if(!canReceive()) {
             return 0;
         }
-        int insertable = this.energy + maxReceive > this.size.maxEnergy ? this.size.maxEnergy - this.energy : maxReceive;
+        int insertable = this.energy + maxReceive > this.size.maxEnergy ? convertDownEnergy(this.size.maxEnergy - this.energy) : maxReceive;
         insertable = Math.min(insertable, size.transferLimit);
         if(!simulate) {
-            this.energy = MathHelper.clamp(this.energy + insertable, 0, this.size.maxEnergy);
+            this.energy = MiscUtils.clamp(this.energy + insertable, 0, this.size.maxEnergy);
             markForUpdate();
         }
         return insertable;
@@ -61,10 +64,10 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
         if(!canExtract()) {
             return 0;
         }
-        int extractable = this.energy - maxExtract < 0 ? this.energy : maxExtract;
+        int extractable = this.energy - maxExtract < 0 ? convertDownEnergy(this.energy) : maxExtract;
         extractable = Math.min(extractable, size.transferLimit);
         if(!simulate) {
-            this.energy = MathHelper.clamp(this.energy - extractable, 0, this.size.maxEnergy);
+            this.energy = MiscUtils.clamp(this.energy - extractable, 0, this.size.maxEnergy);
             markForUpdate();
         }
         return extractable;
@@ -72,12 +75,12 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
 
     @Override
     public int getEnergyStored() {
-        return this.energy;
+        return convertDownEnergy(this.energy);
     }
 
     @Override
     public int getMaxEnergyStored() {
-        return this.size.maxEnergy;
+        return convertDownEnergy(this.size.maxEnergy);
     }
 
     @Override
@@ -108,7 +111,10 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
 
-        this.energy = compound.getInteger("energy");
+        NBTBase energyTag = compound.getTag("energy");
+        if (energyTag instanceof NBTPrimitive) {
+            this.energy = ((NBTPrimitive) energyTag).getLong();
+        }
         this.size = EnergyHatchSize.values()[compound.getInteger("hatchSize")];
     }
 
@@ -116,26 +122,30 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
     public void writeCustomNBT(NBTTagCompound compound) {
         super.writeCustomNBT(compound);
 
-        compound.setInteger("energy", this.energy);
+        compound.setLong("energy", this.energy);
         compound.setInteger("hatchSize", this.size.ordinal());
+    }
+
+    protected int convertDownEnergy(long energy) {
+        return energy >= Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) energy;
     }
 
     //MM stuff
 
     @Override
     public int getCurrentEnergy() {
-        return this.energy;
+        return convertDownEnergy(this.energy);
     }
 
     @Override
     public void setCurrentEnergy(int energy) {
-        this.energy = MathHelper.clamp(energy, 0, this.size.maxEnergy);
+        this.energy = MathHelper.clamp(energy, 0, getMaxEnergy());
         markForUpdate();
     }
 
     @Override
     public int getMaxEnergy() {
-        return this.size.maxEnergy;
+        return convertDownEnergy(this.size.maxEnergy);
     }
 
 }

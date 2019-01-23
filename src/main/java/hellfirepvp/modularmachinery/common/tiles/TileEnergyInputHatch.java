@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandle
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyEmitter;
 import ic2.api.energy.tile.IEnergySink;
@@ -61,7 +62,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Override
     @Optional.Method(modid = "ic2")
     public double getDemandedEnergy() {
-        return Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, this.size.getEnergyTransmission());
+        return Math.min((this.size.maxEnergy - this.energy) / 4, this.size.getEnergyTransmission());
     }
 
     @Override
@@ -73,9 +74,9 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Override
     @Optional.Method(modid = "ic2")
     public double injectEnergy(EnumFacing directionFrom, double amount, double voltage) {
-        double addable = Math.min((getMaxEnergy() - getCurrentEnergy()) / 4, amount);
+        long addable = Math.min((this.size.maxEnergy - this.energy) / 4L, MathHelper.lfloor(amount));
         amount -= addable;
-        this.energy = MathHelper.clamp(this.energy + MathHelper.floor(addable * 4), 0, this.size.maxEnergy);
+        this.energy = MiscUtils.clamp(this.energy + MathHelper.lfloor(addable * 4), 0, this.size.maxEnergy);
         markForUpdate();
         return amount;
     }

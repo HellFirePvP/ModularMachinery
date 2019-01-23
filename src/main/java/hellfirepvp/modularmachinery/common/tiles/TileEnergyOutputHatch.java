@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandle
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import ic2.api.energy.event.EnergyTileLoadEvent;
 import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyAcceptor;
@@ -50,7 +51,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
 
     @Override
     public void update() {
-        int transferCap = Math.min(this.size.transferLimit, this.energy);
+        int transferCap = Math.min(this.size.transferLimit, convertDownEnergy(this.energy));
         for (EnumFacing face : EnumFacing.VALUES) {
             if(Loader.isModLoaded("redstoneflux")) {
                 int transferred = attemptFERFTransfer(face, transferCap);
@@ -135,13 +136,13 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Override
     @Optional.Method(modid = "ic2")
     public double getOfferedEnergy() {
-        return Math.min(this.size.getEnergyTransmission(), this.getCurrentEnergy() / 4);
+        return Math.min(this.size.getEnergyTransmission(), this.getCurrentEnergy() / 4L);
     }
 
     @Override
     @Optional.Method(modid = "ic2")
     public void drawEnergy(double amount) {
-        this.energy = MathHelper.clamp(MathHelper.floor(this.energy - (amount * 4)), 0, this.size.maxEnergy);
+        this.energy = MiscUtils.clamp(this.energy - (MathHelper.lfloor(amount) * 4L), 0, this.size.maxEnergy);
         markForUpdate();
     }
 

@@ -32,7 +32,7 @@ public enum EnergyHatchSize implements IStringSerializable {
     LUDICROUS (524288,  6, 131072),
     ULTIMATE  (2097152, 6, 131072);
 
-    public int maxEnergy;
+    public long maxEnergy;
     public int energyTier;
     public int transferLimit;
 
