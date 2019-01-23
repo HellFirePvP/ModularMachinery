@@ -91,7 +91,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
     private final DynamicMachine machine;
     private DynamicMachineRenderContext dynamnicContext;
 
-    public long lastRenderMs = 0;
+    public static long lastRenderMs = 0;
 
     public StructurePreviewWrapper(DynamicMachine machine) {
         this.machine = machine;
