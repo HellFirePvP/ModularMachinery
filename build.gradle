@@ -39,7 +39,17 @@ repositories {
 
     maven {
         // CraftTweaker
-        url "http://maven.blamejared.com/"
+        url "https://maven.blamejared.com/"
+    }
+
+    maven {
+        // Brandonscore and DE
+        url "http://chickenbones.net/maven/"
+    }
+
+    maven {
+        // Open Computers
+        url "http://maven.cil.li/"
     }
 
 }
@@ -60,6 +70,9 @@ dependencies {
     def ct_version = "4.1.4.432"
 
     deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:1.12-${ct_version}"
+
+    deobfCompile group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
+    deobfCompile group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
 
 }
 
