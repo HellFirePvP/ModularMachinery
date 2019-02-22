@@ -10,6 +10,10 @@ package hellfirepvp.modularmachinery.common.tiles;
 
 import cofh.redstoneflux.api.IEnergyReceiver;
 import cofh.redstoneflux.api.IEnergyStorage;
+import com.brandon3055.brandonscore.lib.datamanager.ManagedLong;
+import com.brandon3055.draconicevolution.DEFeatures;
+import com.brandon3055.draconicevolution.blocks.tileentity.TileEnergyStorageCore;
+import com.google.common.collect.Iterables;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -32,6 +36,9 @@ import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -43,6 +50,8 @@ import javax.annotation.Nullable;
 @Optional.Interface(iface = "ic2.api.energy.tile.IEnergySource", modid = "ic2")
 public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySource {
 
+    private BlockPos foundCore = null;
+
     public TileEnergyOutputHatch() {}
 
     public TileEnergyOutputHatch(EnergyHatchSize size) {
@@ -51,14 +60,23 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
 
     @Override
     public void update() {
-        int transferCap = Math.min(this.size.transferLimit, convertDownEnergy(this.energy));
+        if (world.isRemote) {
+            return;
+        }
+
+        long transferCap = Math.min(this.size.transferLimit, this.energy);
+        if (Loader.isModLoaded("draconicevolution")) {
+            long transferred = attemptDECoreTransfer(transferCap);
+            transferCap -= transferred;
+            this.energy -= transferred;
+        }
         for (EnumFacing face : EnumFacing.VALUES) {
-            if(Loader.isModLoaded("redstoneflux")) {
-                int transferred = attemptFERFTransfer(face, transferCap);
+            if (Loader.isModLoaded("redstoneflux")) {
+                int transferred = attemptFERFTransfer(face, convertDownEnergy(transferCap));
                 transferCap -= transferred;
                 this.energy -= transferred;
             } else {
-                int transferred = attemptFETransfer(face, transferCap);
+                int transferred = attemptFETransfer(face, convertDownEnergy(transferCap));
                 transferCap -= transferred;
                 this.energy -= transferred;
             }
@@ -66,6 +84,47 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
                 break;
             }
         }
+    }
+
+    @Optional.Method(modid = "draconicevolution")
+    private long attemptDECoreTransfer(long transferCap) {
+        TileEntity te = foundCore == null ? null : world.getTileEntity(foundCore);
+        if (foundCore == null || !(te instanceof TileEnergyStorageCore)) {
+            foundCore = findCore(foundCore);
+        }
+
+        if (foundCore != null && te instanceof TileEnergyStorageCore) {
+            TileEnergyStorageCore core = (TileEnergyStorageCore) te;
+
+            long energyReceived = Math.min(core.getExtendedCapacity() - core.energy.value, transferCap);
+            ((TileEnergyStorageCore) te).energy.value += energyReceived;
+
+            return energyReceived;
+        }
+        return 0;
+    }
+
+    @Optional.Method(modid = "draconicevolution")
+    private BlockPos findCore(BlockPos before) {
+        List<TileEnergyStorageCore> list = new LinkedList<>();
+        int range = 24;
+
+        Iterable<BlockPos> positions = BlockPos.getAllInBox(pos.add(-range, -range, -range), pos.add(range, range, range));
+
+        for (BlockPos blockPos : positions) {
+            if (world.getBlockState(blockPos).getBlock() == DEFeatures.energyStorageCore) {
+                TileEntity tile = world.getTileEntity(blockPos);
+                if (tile instanceof TileEnergyStorageCore && ((TileEnergyStorageCore) tile).active.value) {
+                    list.add(((TileEnergyStorageCore) tile));
+                }
+            }
+        }
+        if (before != null) {
+            list.removeIf(tile -> tile.getPos().equals(before));
+        }
+        Collections.shuffle(list);
+        TileEnergyStorageCore first = Iterables.getFirst(list, null);
+        return first == null ? null : first.getPos();
     }
 
     private int attemptFETransfer(EnumFacing face, int maxTransferLeft) {

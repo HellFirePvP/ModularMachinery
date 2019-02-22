@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.block.prop;
 
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import net.minecraft.util.IStringSerializable;
 import net.minecraftforge.common.config.Configuration;
 
@@ -34,7 +35,7 @@ public enum EnergyHatchSize implements IStringSerializable {
 
     public long maxEnergy;
     public int energyTier;
-    public int transferLimit;
+    public long transferLimit;
 
     private final int defaultConfigurationEnergy;
     private final int defaultEnergyTier;
@@ -65,9 +66,11 @@ public enum EnergyHatchSize implements IStringSerializable {
 
     public static void loadSizeFromConfig(Configuration cfg) {
         for (EnergyHatchSize size : values()) {
-            size.maxEnergy = cfg.getInt("size", "energyhatch." + size.name().toUpperCase(), size.defaultConfigurationEnergy, 1, Integer.MAX_VALUE, "Energy storage size of the energy hatch.");
-            size.transferLimit = cfg.getInt("limit", "energyhatch." + size.name().toUpperCase(), size.defaultConfigurationTransferLimit, 1, Integer.MAX_VALUE, "Defines the transfer limit for RF/FE things. IC2's transfer limit is defined by the voltage tier.");
-            size.energyTier = cfg.getInt("tier", "energyhatch." + size.name().toUpperCase(), size.defaultEnergyTier, 0, 12, "Defines the IC2 output-voltage tier. Only affects the power the output hatches will output power as. 0 = 'ULV' = 8 EU/t, 1 = 'LV' = 32 EU/t, 2 = 'MV' = 128 EU/t, ...");
+            size.maxEnergy = cfg.get("energyhatch.size", size.name().toUpperCase(), size.defaultConfigurationEnergy + "", "Energy storage size of the energy hatch. [range: 0 ~ 9223372036854775807, default: " + size.defaultConfigurationEnergy + "]").getLong();
+            size.maxEnergy = MiscUtils.clamp(size.maxEnergy, 1, Long.MAX_VALUE);
+            size.transferLimit = cfg.get("energyhatch.limit", size.name().toUpperCase(), size.defaultConfigurationTransferLimit + "", "Defines the transfer limit for RF/FE things. IC2's transfer limit is defined by the voltage tier. [range: 1 ~ 9223372036854775806, default: " + size.defaultConfigurationEnergy + "]").getLong();
+            size.transferLimit = MiscUtils.clamp(size.transferLimit, 1, Long.MAX_VALUE - 1);
+            size.energyTier = cfg.getInt("energyhatch.tier", size.name().toUpperCase(), size.defaultEnergyTier, 0, 12, "Defines the IC2 output-voltage tier. Only affects the power the output hatches will output power as. 0 = 'ULV' = 8 EU/t, 1 = 'LV' = 32 EU/t, 2 = 'MV' = 128 EU/t, ...");
         }
     }
 

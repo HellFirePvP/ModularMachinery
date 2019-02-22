@@ -18,6 +18,7 @@ import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
+import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -32,10 +33,10 @@ import java.util.List;
  */
 public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
 
-    public final int requirementPerTick;
-    private int activeIO;
+    public final long requirementPerTick;
+    private long activeIO;
 
-    public RequirementEnergy(MachineComponent.IOType ioType, int requirementPerTick) {
+    public RequirementEnergy(MachineComponent.IOType ioType, long requirementPerTick) {
         super(ComponentType.Registry.getComponent("energy"), ioType);
         this.requirementPerTick = requirementPerTick;
         this.activeIO = this.requirementPerTick;
@@ -54,7 +55,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     @Override
     public void endRequirementCheck() {}
 
-    public int getRequiredEnergyPerTick() {
+    public long getRequiredEnergyPerTick() {
         return requirementPerTick;
     }
 
@@ -93,7 +94,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
 
     @Override
     public void startIOTick(RecipeCraftingContext context, float durationMultiplier) {
-        this.activeIO = Math.round(context.applyModifiers(this, getActionType(), this.activeIO , false) * durationMultiplier);
+        this.activeIO = Math.round(((double) context.applyModifiers(this, getActionType(), this.activeIO, false)) * durationMultiplier);
     }
 
     @Override
@@ -120,7 +121,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
                     return CraftCheck.PARTIAL_SUCCESS;
                 }
             case OUTPUT:
-                int remaining = handler.getRemainingCapacity();
+                long remaining = handler.getRemainingCapacity();
                 if(remaining - this.activeIO < 0) {
                     handler.setCurrentEnergy(handler.getMaxEnergy());
                     this.activeIO -= remaining;

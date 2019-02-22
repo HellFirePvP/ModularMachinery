@@ -51,7 +51,7 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
             return 0;
         }
         int insertable = this.energy + maxReceive > this.size.maxEnergy ? convertDownEnergy(this.size.maxEnergy - this.energy) : maxReceive;
-        insertable = Math.min(insertable, size.transferLimit);
+        insertable = Math.min(insertable, convertDownEnergy(size.transferLimit));
         if(!simulate) {
             this.energy = MiscUtils.clamp(this.energy + insertable, 0, this.size.maxEnergy);
             markForUpdate();
@@ -65,7 +65,7 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
             return 0;
         }
         int extractable = this.energy - maxExtract < 0 ? convertDownEnergy(this.energy) : maxExtract;
-        extractable = Math.min(extractable, size.transferLimit);
+        extractable = Math.min(extractable, convertDownEnergy(size.transferLimit));
         if(!simulate) {
             this.energy = MiscUtils.clamp(this.energy - extractable, 0, this.size.maxEnergy);
             markForUpdate();
@@ -133,19 +133,19 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
     //MM stuff
 
     @Override
-    public int getCurrentEnergy() {
-        return convertDownEnergy(this.energy);
+    public long getCurrentEnergy() {
+        return this.energy;
     }
 
     @Override
-    public void setCurrentEnergy(int energy) {
-        this.energy = MathHelper.clamp(energy, 0, getMaxEnergy());
+    public void setCurrentEnergy(long energy) {
+        this.energy = MiscUtils.clamp(energy, 0, getMaxEnergy());
         markForUpdate();
     }
 
     @Override
-    public int getMaxEnergy() {
-        return convertDownEnergy(this.size.maxEnergy);
+    public long getMaxEnergy() {
+        return this.size.maxEnergy;
     }
 
 }

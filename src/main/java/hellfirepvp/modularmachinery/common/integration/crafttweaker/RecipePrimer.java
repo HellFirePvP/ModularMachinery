@@ -172,7 +172,7 @@ public class RecipePrimer implements PreparedRecipe {
     //----------------------------------------------------------------------------------------------
     // Internals
     //----------------------------------------------------------------------------------------------
-    private void requireEnergy(MachineComponent.IOType ioType, int perTick) {
+    private void requireEnergy(MachineComponent.IOType ioType, long perTick) {
         appendComponent(new RequirementEnergy(ioType, perTick));
     }
 

@@ -45,7 +45,7 @@ public class ComponentEnergy extends ComponentType<RequirementEnergy> {
                 !requirement.get("energyPerTick").getAsJsonPrimitive().isNumber()) {
             throw new JsonParseException("The ComponentType 'energy' expects an 'energyPerTick'-entry that defines the amount of energy per tick!");
         }
-        int energyPerTick = requirement.getAsJsonPrimitive("energyPerTick").getAsInt();
+        long energyPerTick = requirement.getAsJsonPrimitive("energyPerTick").getAsLong();
         return new RequirementEnergy(machineIoType, energyPerTick);
     }
 
