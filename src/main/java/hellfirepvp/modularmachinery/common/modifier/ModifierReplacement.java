@@ -37,7 +37,7 @@ public class ModifierReplacement {
     public ModifierReplacement(BlockArray.BlockInformation info, RecipeModifier modifier, String description) {
         this.info = info;
         this.modifier = modifier;
-        this.description = MiscUtils.splitStringBy(description, "\n");
+        this.description = description.isEmpty() ? Lists.newArrayList() : MiscUtils.splitStringBy(description, "\n");
     }
 
     public BlockArray.BlockInformation getBlockInformation() {
@@ -116,10 +116,7 @@ public class ModifierReplacement {
             if(!part.has("modifier") || !part.get("modifier").isJsonObject()) {
                 throw new JsonParseException("'modifier' tag not found or not a json-object!");
             }
-            if(!part.has("description") || !part.get("description").isJsonPrimitive() || !part.getAsJsonPrimitive("description").isString()) {
-                throw new JsonParseException("'description' tag not found or not a string!");
-            }
-            String description = part.getAsJsonPrimitive("description").getAsString();
+            String description = part.has("description") ? part.getAsJsonPrimitive("description").getAsString() : "";
             return new ModifierReplacement(blockInfo, context.deserialize(part.get("modifier"), RecipeModifier.class), description);
         }
 

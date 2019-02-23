@@ -230,6 +230,10 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 boolean first = true;
                 for (List<ModifierReplacement> modifiers : machine.getModifiers().values()) {
                     for (ModifierReplacement mod : modifiers) {
+                        List<String> description = mod.getDescriptionLines();
+                        if (description.isEmpty()) {
+                            continue;
+                        }
                         if(!first) {
                             descriptionList.add(new Tuple<>(ItemStack.EMPTY, ""));
                         }
@@ -240,7 +244,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                         descriptionList.add(new Tuple<>(
                                 stack,
                                 Iterables.getFirst(tooltip, "")));
-                        for (String str : mod.getDescriptionLines()) {
+                        for (String str : description) {
                             descriptionList.add(new Tuple<>(ItemStack.EMPTY, str));
                         }
                     }
