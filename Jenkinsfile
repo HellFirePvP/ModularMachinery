@@ -8,8 +8,20 @@ pipeline {
       steps {
         sh '''cp -a /var/lib/jenkins/buildMetadata/ModularMachinery/. .
 rm -rf README.md
-./gradlew build
-cp -a ./build/libs/. .
+./gradlew build'''
+      }
+    }
+    stage('Publish') {
+      when{
+        branch 'master'
+      }
+      steps {
+        sh '''./gradlew publish'''
+      }
+    }
+    stage('Prepare Archiving') {
+      steps {
+        sh '''cp -a ./build/libs/. .
 rm -rf build gradle .gradle
 find . ! -name \'*.jar\' -delete'''
       }
