@@ -11,7 +11,7 @@ apply plugin: 'net.minecraftforge.gradle.forge'
 apply plugin: 'maven-publish'
 apply plugin: "java"
 
-version = "1.9.6"
+version = "1.12.2-1.9.6"
 group = "hellfirepvp.modularmachinery"
 archivesBaseName = "modularmachinery"
 String build_version = ""
@@ -107,8 +107,14 @@ task deobfJar(type: Jar) {
     archiveName = "${baseName}-${version}-deobf.${extension}"
 }
 
+task srcJar(type: Jar) {
+    from(sourceSets.main.java)
+    classifier = 'sources'
+    archiveName = "${baseName}-${version}-sources.${extension}"
+}
+
 artifacts {
-    archives deobfJar
+    archives deobfJar, srcJar
 }
 
 publishing {
@@ -121,6 +127,9 @@ publishing {
 
             artifact deobfJar {
                 classifier 'deobf'
+            }
+            artifact srcJar {
+                classifier 'sources'
             }
         }
     }
