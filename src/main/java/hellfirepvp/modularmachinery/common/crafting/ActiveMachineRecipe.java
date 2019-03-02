@@ -8,8 +8,8 @@
 
 package hellfirepvp.modularmachinery.common.crafting;
 
+import com.google.common.collect.Iterables;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.ResourceLocation;
@@ -47,12 +47,14 @@ public class ActiveMachineRecipe {
 
     @Nonnull
     public TileMachineController.CraftingStatus tick(RecipeCraftingContext context) {
-        if(context.energyTick()) {
+        RecipeCraftingContext.CraftingCheckResult check;
+        if(!(check = context.ioTick()).isFailure()) {
             this.tick++;
-            return TileMachineController.CraftingStatus.CRAFTING;
+            return TileMachineController.CraftingStatus.working();
         } else {
             this.tick = 0;
-            return TileMachineController.CraftingStatus.NO_RECIPE;
+            return TileMachineController.CraftingStatus.failure(
+                    Iterables.getFirst(check.getUnlocalizedErrorMessages(), ""));
         }
     }
 

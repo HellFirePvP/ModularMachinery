@@ -98,7 +98,9 @@ public class BlockEnergyInputHatch extends BlockMachineComponent implements Bloc
         return EnumBlockRenderType.MODEL;
     }
 
+
     @Override
+    @SideOnly(Side.CLIENT)
     public BlockRenderLayer getBlockLayer() {
         return BlockRenderLayer.CUTOUT;
     }

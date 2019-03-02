@@ -30,6 +30,8 @@ import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.IBlockAccess;
 import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 
@@ -119,14 +121,15 @@ public class BlockController extends BlockMachineComponent {
     @Override
     public int getComparatorInputOverride(IBlockState blockState, World worldIn, BlockPos pos) {
         TileEntity te = worldIn.getTileEntity(pos);
-        if(te != null && te instanceof TileMachineController) {
+        if(te instanceof TileMachineController) {
             TileMachineController ctrl = (TileMachineController) te;
-            return ctrl.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING ? 15 : ctrl.getFoundMachine() != null ? 1 : 0;
+            return ctrl.getCraftingStatus().isCrafting() ? 15 : ctrl.getFoundMachine() != null ? 1 : 0;
         }
         return 0;
     }
 
     @Override
+    @SideOnly(Side.CLIENT)
     public BlockRenderLayer getBlockLayer() {
         return BlockRenderLayer.CUTOUT;
     }

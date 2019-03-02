@@ -9,22 +9,19 @@
 package hellfirepvp.modularmachinery.common.crafting.requirements;
 
 import com.google.common.collect.Iterables;
-import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentItem;
-import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.NonNullList;
 import net.minecraftforge.oredict.OreDictionary;
 
-import java.awt.*;
-import java.util.LinkedList;
+import javax.annotation.Nonnull;
 import java.util.List;
 
 /**
@@ -137,11 +134,12 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
         this.chance = chance;
     }
 
+    @Nonnull
     @Override
     public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
         if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
                 !(component instanceof MachineComponent.ItemBus) ||
-                component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
+                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
         IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
@@ -151,23 +149,23 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                         int amt = Math.round(context.applyModifiers(this, getActionType(), inReq.getCount(), false));
                         inReq.setCount(amt);
                         if(ItemUtils.consumeFromInventory(handler, inReq, true, this.tag)) {
-                            return CraftCheck.SUCCESS;
+                            return CraftCheck.success();
                         }
                         break;
                     case OREDICT:
                         int inOreAmt = Math.round(context.applyModifiers(this, getActionType(), this.oreDictItemAmount, false));
                         if(ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, inOreAmt, true, this.tag)) {
-                            return CraftCheck.SUCCESS;
+                            return CraftCheck.success();
                         }
                         break;
                     case FUEL:
                         int inFuel = Math.round(context.applyModifiers(this, getActionType(), this.fuelBurntime, false));
                         if(ItemUtils.consumeFromInventoryFuel(handler, inFuel, true, this.tag) <= 0) {
-                            return CraftCheck.SUCCESS;
+                            return CraftCheck.success();
                         }
                         break;
                 }
-                break;
+                return CraftCheck.failure("craftcheck.failure.item.input");
             case OUTPUT:
                 handler = CopyHandlerHelper.copyInventory(handler);
 
@@ -185,12 +183,12 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 if(oreDictName != null) {
                     stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
                     stack = ItemUtils.copyStackWithSize(stack, this.countIOBuffer);
+
+                    if(stack.isEmpty()) {
+                        throw new IllegalArgumentException("Unknown ItemStack: Cannot find an item in oredict '" + oreDictName + "'!");
+                    }
                 } else {
                     stack = ItemUtils.copyStackWithSize(required, this.countIOBuffer);
-                }
-
-                if(stack.isEmpty()) {
-                    return CraftCheck.FAILURE_MISSING_INPUT;
                 }
 
                 if(tag != null) {
@@ -202,10 +200,11 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 }
                 this.countIOBuffer -= inserted;
                 if(this.countIOBuffer <= 0) {
-                    return CraftCheck.SUCCESS;
+                    return CraftCheck.success();
                 }
+                return CraftCheck.failure("craftcheck.failure.item.output.space");
         }
-        return CraftCheck.FAILURE_MISSING_INPUT;
+        return CraftCheck.skipComponent();
     }
 
     @Override

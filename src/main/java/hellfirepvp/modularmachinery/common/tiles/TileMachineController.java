@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.tiles;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import hellfirepvp.modularmachinery.ModularMachinery;
@@ -15,7 +16,6 @@ import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
@@ -105,12 +105,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
             if(this.foundMachine != null && this.foundPattern != null && this.patternRotation != null) {
                 if(this.activeRecipe == null) {
                     if(this.ticksExisted % 80 == 0) {
-                        searchMatchingRecipe();
-                        if(this.activeRecipe == null) {
-                            craftingStatus = CraftingStatus.NO_RECIPE;
-                        } else {
-                            craftingStatus = CraftingStatus.CRAFTING;
-                        }
+                        searchAndUpdateRecipe();
                         markForUpdate();
                     }
                 } else {
@@ -120,21 +115,14 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         this.activeRecipe.complete(context);
                         this.activeRecipe.reset();
                         context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
-                        ComponentRequirement.CraftCheck result = context.canStartCrafting();
-                        switch (result) {
-                            case SUCCESS:
-                                context.startCrafting();
-                                this.craftingStatus = CraftingStatus.CRAFTING;
-                                break;
-                            case FAILURE_MISSING_INPUT:
-                                this.activeRecipe = null;
-                                searchMatchingRecipe();
-                                if(this.activeRecipe == null) {
-                                    this.craftingStatus = CraftingStatus.NO_RECIPE;
-                                } else {
-                                    this.craftingStatus = CraftingStatus.CRAFTING;
-                                }
-                                break;
+                        RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
+
+                        if (result.isFailure()) {
+                            this.activeRecipe = null;
+                            searchAndUpdateRecipe();
+                        } else {
+                            context.startCrafting();
+                            this.craftingStatus = CraftingStatus.working();
                         }
                     }
                     markForUpdate();
@@ -146,15 +134,38 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
-    private void searchMatchingRecipe() {
+    private void searchAndUpdateRecipe() {
         Iterable<MachineRecipe> availableRecipes = RecipeRegistry.getRegistry().getRecipesFor(this.foundMachine);
+
+        MachineRecipe highestValidity = null;
+        RecipeCraftingContext.CraftingCheckResult highestValidityResult = null;
+        float validity = 0F;
+
         for (MachineRecipe recipe : availableRecipes) {
             RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
-            if(context.canStartCrafting() == ComponentRequirement.CraftCheck.SUCCESS) {
+            RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
+            if (!result.isFailure()) {
                 this.activeRecipe = new ActiveMachineRecipe(recipe);
                 context.startCrafting(); //chew up start items
-                return;
+                break;
+            } else if (highestValidity == null ||
+                    (result.getValidity() >= 0.5F && result.getValidity() > validity)) {
+                highestValidity = recipe;
+                highestValidityResult = result;
+                validity = result.getValidity();
             }
+        }
+
+
+        if(this.activeRecipe == null) {
+            if (highestValidity != null) {
+                this.craftingStatus = CraftingStatus.failure(
+                        Iterables.getFirst(highestValidityResult.getUnlocalizedErrorMessages(), ""));
+            } else {
+                this.craftingStatus = CraftingStatus.failure(Type.NO_RECIPE.getUnlocalizedDescription());
+            }
+        } else {
+            this.craftingStatus = CraftingStatus.working();
         }
     }
 
@@ -345,7 +356,12 @@ public class TileMachineController extends TileEntityRestrictedTick {
         super.readCustomNBT(compound);
         this.inventory = IOInventory.deserialize(this, compound.getCompoundTag("items"));
         this.inventory.setStackLimit(1, BLUEPRINT_SLOT);
-        this.craftingStatus = CraftingStatus.values()[compound.getInteger("status")];
+
+        if (compound.hasKey("status")) { //Legacy support
+            this.craftingStatus = new CraftingStatus(Type.values()[compound.getInteger("status")], "");
+        } else {
+            this.craftingStatus = CraftingStatus.deserialize(compound.getCompoundTag("statusTag"));
+        }
 
         if(compound.hasKey("machine") && compound.hasKey("rotation")) {
             ResourceLocation rl = new ResourceLocation(compound.getString("machine"));
@@ -405,7 +421,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     public void writeCustomNBT(NBTTagCompound compound) {
         super.writeCustomNBT(compound);
         compound.setTag("items", this.inventory.writeNBT());
-        compound.setInteger("status", this.craftingStatus.ordinal());
+        compound.setTag("statusTag", this.craftingStatus.serialize());
 
         if(this.foundMachine != null && this.patternRotation != null) {
             compound.setString("machine", this.foundMachine.getRegistryName().toString());
@@ -427,11 +443,62 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
-    public static enum CraftingStatus {
+    public static class CraftingStatus {
+
+        private static final CraftingStatus SUCCESS = new CraftingStatus(Type.CRAFTING, "");
+        private static final CraftingStatus MISSING_STRUCTURE = new CraftingStatus(Type.MISSING_STRUCTURE, "");
+
+        private final Type status;
+        private final String unlocMessage;
+
+        private CraftingStatus(Type status, String unlocMessage) {
+            this.status = status;
+            this.unlocMessage = unlocMessage;
+        }
+
+        public Type getStatus() {
+            return status;
+        }
+
+        public String getUnlocMessage() {
+            return !unlocMessage.isEmpty() ? unlocMessage : this.status.getUnlocalizedDescription();
+        }
+
+        public boolean isCrafting() {
+            return this.status == Type.CRAFTING;
+        }
+
+        public static CraftingStatus working() {
+            return SUCCESS;
+        }
+
+        public static CraftingStatus failure(String unlocMessage) {
+            return new CraftingStatus(Type.NO_RECIPE, unlocMessage);
+        }
+
+        private NBTTagCompound serialize() {
+            NBTTagCompound tag = new NBTTagCompound();
+            tag.setInteger("type", this.status.ordinal());
+            tag.setString("message", this.unlocMessage);
+            return tag;
+        }
+
+        private static CraftingStatus deserialize(NBTTagCompound tag) {
+            Type type = Type.values()[tag.getInteger("type")];
+            String unlocMessage = tag.getString("message");
+            return new CraftingStatus(type, unlocMessage);
+        }
+    }
+
+    public static enum Type {
 
         MISSING_STRUCTURE,
         NO_RECIPE,
         CRAFTING;
+
+        public String getUnlocalizedDescription() {
+            return "gui.controller.status." + this.name().toLowerCase();
+        }
 
     }
 

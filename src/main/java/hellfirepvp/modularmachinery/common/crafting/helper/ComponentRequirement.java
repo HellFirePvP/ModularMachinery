@@ -50,6 +50,7 @@ public abstract class ComponentRequirement<T> {
     //True, if the requirement could be fulfilled by the given component
     public abstract boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
 
+    @Nonnull
     public abstract CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
     public abstract ComponentRequirement<T> deepCopy();
@@ -86,28 +87,16 @@ public abstract class ComponentRequirement<T> {
         //Multiplier is passed into this to adjust 'production' or 'consumption' accordingly if the recipe has a longer or shorter duration
         public abstract void startIOTick(RecipeCraftingContext context, float durationMultiplier);
 
-        public abstract void resetIOTick(RecipeCraftingContext context);
+        // Returns the actual result of the IOTick-check after a sufficient amount of components have been checked for the requirement
+        // Supply a failure message if invalid!
+        @Nonnull
+        public abstract CraftCheck resetIOTick(RecipeCraftingContext context);
 
+        // Returns either success, partial success or skip component
+        // Return value indicates whether the IO tick requirement was already successful
+        // or if more components need to be checked.
         @Nonnull
         public abstract CraftCheck doIOTick(MachineComponent component, RecipeCraftingContext context);
-
-    }
-
-    public static enum CraftCheck {
-
-        //requirement check succeeded.
-        SUCCESS,
-
-        //Meaning this has successfully done something, however other components might need to be checked to see
-        //if this is an actual success or if just some parts are successful
-        //NOTE: Only to be used in PerTick-subclasses for per-tick operations!
-        PARTIAL_SUCCESS,
-
-        //requirement check failed
-        FAILURE_MISSING_INPUT,
-
-        //component is not suitable to be checked for given requirement-check (i.e. component type != requirement type)
-        INVALID_SKIP
 
     }
 

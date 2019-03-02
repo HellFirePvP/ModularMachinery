@@ -99,7 +99,9 @@ public class BlockEnergyOutputHatch extends BlockMachineComponent implements Blo
         return EnumBlockRenderType.MODEL;
     }
 
+
     @Override
+    @SideOnly(Side.CLIENT)
     public BlockRenderLayer getBlockLayer() {
         return BlockRenderLayer.CUTOUT;
     }

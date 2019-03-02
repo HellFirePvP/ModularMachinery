@@ -44,6 +44,14 @@ public abstract class ComponentType<R extends ComponentRequirement> {
     @Nullable
     public abstract String requiresModid();
 
+    //Should return an unlocalized error message to display if no component for the given io-type was found
+    //i.e. a recipe has an item output, but there's no item output bus on the machine at all.
+    //Overwrite this if necessary at all
+    @Nonnull
+    public String getMissingComponentErrorMessage(MachineComponent.IOType ioType) {
+        return String.format("component.missing.%s.%s", getRegistryName(), ioType.name().toLowerCase());
+    }
+
     //If parsing goes wrong, throw an appropiate exception instead. MM catches this and batches the information!
     //Will also only be called if the appropriate mod is loaded, if specified!
     @Nonnull

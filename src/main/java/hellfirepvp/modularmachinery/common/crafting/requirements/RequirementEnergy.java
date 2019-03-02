@@ -12,16 +12,14 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentEnergy;
-import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
-import net.minecraft.util.math.MathHelper;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.util.List;
 
 /**
@@ -64,27 +62,29 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
         return new JEIComponentEnergy(this);
     }
 
+    @Nonnull
     @Override
     public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
         if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
                 !(component instanceof MachineComponent.EnergyHatch) ||
-                component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
+                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
+
         IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
                 if(handler.getCurrentEnergy() >= context.applyModifiers(this, getActionType(), this.requirementPerTick, false)) {
-                    return CraftCheck.SUCCESS;
+                    return CraftCheck.success();
                 }
                 break;
             case OUTPUT:
-                return CraftCheck.SUCCESS;
+                return CraftCheck.success();
         }
-        return CraftCheck.FAILURE_MISSING_INPUT;
+        return CraftCheck.failure("craftcheck.failure.energy.input");
     }
 
     @Override
     public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        return canStartCrafting(component, context, Lists.newArrayList()) == CraftCheck.SUCCESS;
+        return canStartCrafting(component, context, Lists.newArrayList()).isSuccess();
     }
 
     @Override
@@ -97,41 +97,44 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
         this.activeIO = Math.round(((double) context.applyModifiers(this, getActionType(), this.activeIO, false)) * durationMultiplier);
     }
 
+    @Nonnull
     @Override
-    public void resetIOTick(RecipeCraftingContext context) {
+    public CraftCheck resetIOTick(RecipeCraftingContext context) {
+        boolean enough = this.activeIO <= 0;
         this.activeIO = this.requirementPerTick;
+        return enough ? CraftCheck.success() : CraftCheck.failure("craftcheck.failure.energy.input");
     }
 
-    @Override
     @Nonnull
+    @Override
     public CraftCheck doIOTick(MachineComponent component, RecipeCraftingContext context) {
         if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
                 !(component instanceof MachineComponent.EnergyHatch) ||
-                component.getIOType() != getActionType()) return CraftCheck.INVALID_SKIP;
+                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
         IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
                 if(handler.getCurrentEnergy() >= this.activeIO) {
                     handler.setCurrentEnergy(handler.getCurrentEnergy() - this.activeIO);
                     this.activeIO = 0;
-                    return CraftCheck.SUCCESS;
+                    return CraftCheck.success();
                 } else {
                     this.activeIO -= handler.getCurrentEnergy();
                     handler.setCurrentEnergy(0);
-                    return CraftCheck.PARTIAL_SUCCESS;
+                    return CraftCheck.partialSuccess();
                 }
             case OUTPUT:
                 long remaining = handler.getRemainingCapacity();
                 if(remaining - this.activeIO < 0) {
                     handler.setCurrentEnergy(handler.getMaxEnergy());
                     this.activeIO -= remaining;
-                    return CraftCheck.PARTIAL_SUCCESS;
+                    return CraftCheck.partialSuccess();
                 }
                 handler.setCurrentEnergy(Math.min(handler.getCurrentEnergy() + this.activeIO, handler.getMaxEnergy()));
                 this.activeIO = 0;
-                return CraftCheck.SUCCESS;
+                return CraftCheck.success();
         }
         //This is neither input nor output? when do we actually end up in this case down here?
-        return CraftCheck.INVALID_SKIP;
+        return CraftCheck.skipComponent();
     }
 }

@@ -104,7 +104,7 @@ public class GuiMachineController extends GuiContainerBase<ContainerController> 
 
         String status = I18n.format("gui.controller.status");
         fr.drawString(status, offsetX, offsetY, 0xFFFFFF);
-        String statusKey = "gui.controller.status." + controller.getCraftingStatus().name().toLowerCase();
+        String statusKey = controller.getCraftingStatus().getUnlocMessage();
 
         List<String> out = fr.listFormattedStringToWidth(I18n.format(statusKey), MathHelper.floor(135 * (1 / scale)));
         for (String draw : out) {
@@ -112,7 +112,7 @@ public class GuiMachineController extends GuiContainerBase<ContainerController> 
             fr.drawString(draw, offsetX, offsetY, 0xFFFFFF);
         }
         offsetY += 15;
-        if(controller.getCraftingStatus() == TileMachineController.CraftingStatus.CRAFTING) {
+        if (controller.getCraftingStatus().isCrafting()) {
             int percProgress = MathHelper.floor(controller.getCurrentActiveRecipeProgress(Animation.getPartialTickTime()) * 100F);
             percProgress = MathHelper.clamp(percProgress, 0, 100);
             String progressStr = I18n.format("gui.controller.status.crafting.progress", percProgress + "%");

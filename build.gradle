@@ -32,13 +32,13 @@ minecraft {
     runDir = "run"
     useDepAts = true
 
-    mappings = "snapshot_20170624"
+    mappings = "snapshot_20171003"
 }
 
 repositories {
     maven {
         // for rf stuffs
-        url = "http://maven.covers1624.net"
+        url = "https://maven.covers1624.net"
     }
 
     maven {
@@ -66,20 +66,26 @@ repositories {
 dependencies {
 
     def mc_version = "1.12.2"
-    def jei_version = "4.14.3.241"
+    def jei_version = "4.14.4.267"
 
     ////JEI stuff
     deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
 
-    def rf_version = "2.1.0.6"
+    def rf_version = "2.1.0.7"
 
     deobfCompile "cofh:RedstoneFlux:1.12-${rf_version}:universal"
 
     def ct_mc_version = "MC1120"
-    def ct_version = "4.1.4.432"
+    def ct_version = "4.1.14.520"
 
     deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:1.12-${ct_version}"
 
+    //deobfCompile group: 'cofh', name: 'ThermalDynamics', version: '1.12.2-2.5.4.18', classifier: 'universal'
+    //deobfCompile group: 'cofh', name: 'ThermalExpansion', version: '1.12.2-5.5.3.40', classifier: 'universal'
+    //deobfCompile group: 'cofh', name: 'ThermalFoundation', version: '1.12.2-2.6.2.24', classifier: 'universal'
+    //deobfCompile group: 'cofh', name: 'CoFHCore', version: '1.12.2-4.6.1.22', classifier: 'universal'
+    //deobfCompile group: 'cofh', name: 'CoFHWorld', version: '1.12.2-1.2.0.5', classifier: 'universal'
+    deobfCompile group: 'codechicken', name: 'CodeChickenLib', version: '1.12.2-3.2.2.353', classifier: 'universal'
     deobfCompile group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
     deobfCompile group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
 
