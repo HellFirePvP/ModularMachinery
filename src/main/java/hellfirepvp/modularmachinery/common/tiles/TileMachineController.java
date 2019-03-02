@@ -69,6 +69,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private DynamicMachine foundMachine = null;
     private BlockArray foundPattern = null;
     private EnumFacing patternRotation = null;
+    private DynamicMachine.ModifierReplacementMap foundReplacements = null;
     private IOInventory inventory;
 
     private ActiveMachineRecipe activeRecipe = null;
@@ -177,30 +178,29 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     this.foundMachine = null;
                     this.foundPattern = null;
                     this.patternRotation = null;
+                    this.foundReplacements = null;
                     craftingStatus = CraftingStatus.MISSING_STRUCTURE;
                     markForUpdate();
-                } else if(!foundPattern.matches(getWorld(), getPos(), true, foundMachine.getModifiersAsMatchingReplacements())) {
+                } else if(!foundPattern.matches(getWorld(), getPos(), true, this.foundReplacements)) {
                     this.activeRecipe = null;
                     this.foundMachine = null;
                     this.foundPattern = null;
                     this.patternRotation = null;
+                    this.foundReplacements = null;
                     craftingStatus = CraftingStatus.MISSING_STRUCTURE;
                     markForUpdate();
                 }
             }
-            if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null) {
+            if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null || this.foundReplacements == null) {
                 this.foundMachine = null;
                 this.foundPattern = null;
                 this.patternRotation = null;
+                this.foundReplacements = null;
 
                 DynamicMachine blueprint = getBlueprintMachine();
                 if(blueprint != null) {
-                    Tuple<EnumFacing, BlockArray> res = matchesRotation(blueprint.getPattern(), blueprint);
-                    if(res != null) {
-                        this.foundMachine = blueprint;
-                        this.foundPattern = res.getSecond();
-                        this.patternRotation = res.getFirst();
-                        this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
+                    if(matchesRotation(blueprint.getPattern(), blueprint)) {
+                        this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, this.patternRotation));
                         markForUpdate();
 
                         if(this.foundMachine.getMachineColor() != Config.machineColor) {
@@ -210,12 +210,8 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 } else {
                     for (DynamicMachine machine : MachineRegistry.getRegistry()) {
                         if (machine.requiresBlueprint()) continue;
-                        Tuple<EnumFacing, BlockArray> res = matchesRotation(machine.getPattern(), machine);
-                        if (res != null) {
-                            this.foundMachine = machine;
-                            this.foundPattern = res.getSecond();
-                            this.patternRotation = res.getFirst();
-                            this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, res.getFirst()));
+                        if (matchesRotation(machine.getPattern(), machine)) {
+                            this.world.setBlockState(pos, BlocksMM.blockController.getDefaultState().withProperty(BlockController.FACING, this.patternRotation));
                             markForUpdate();
 
                             if(this.foundMachine.getMachineColor() != Config.machineColor) {
@@ -248,26 +244,36 @@ public class TileMachineController extends TileEntityRestrictedTick {
         }
     }
 
-    @Nullable
-    public Tuple<EnumFacing, BlockArray> matchesRotation(BlockArray pattern, DynamicMachine machine) {
+    private boolean matchesRotation(BlockArray pattern, DynamicMachine machine) {
         EnumFacing face = EnumFacing.NORTH;
+        DynamicMachine.ModifierReplacementMap replacements = machine.getModifiersAsMatchingReplacements();
         do {
-            if(pattern.matches(getWorld(), getPos(), false, machine.getModifiersAsMatchingReplacements())) {
-                return new Tuple<>(face, pattern);
+            if(pattern.matches(getWorld(), getPos(), false, replacements)) {
+                this.foundPattern = pattern;
+                this.patternRotation = face;
+                this.foundMachine = machine;
+                this.foundReplacements = replacements;
+                return true;
             }
             face = face.rotateYCCW();
             pattern = pattern.rotateYCCW();
+            replacements = replacements.rotateYCCW();
         } while (face != EnumFacing.NORTH);
-        return null;
+        this.foundPattern = null;
+        this.patternRotation = null;
+        this.foundMachine = null;
+        this.foundReplacements = null;
+        return false;
     }
 
     private void updateComponents() {
-        if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null) {
+        if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null || this.foundReplacements == null) {
             this.foundComponents.clear();
             this.foundModifiers.clear();
             this.foundMachine = null;
             this.foundPattern = null;
             this.patternRotation = null;
+            this.foundReplacements = null;
             return;
         }
         if(ticksExisted % 20 == 0) {
@@ -275,7 +281,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
             for (BlockPos potentialPosition : this.foundPattern.getPattern().keySet()) {
                 BlockPos realPos = getPos().add(potentialPosition);
                 TileEntity te = getWorld().getTileEntity(realPos);
-                if(te != null && te instanceof MachineComponentTile) {
+                if(te instanceof MachineComponentTile) {
                     MachineComponent component = ((MachineComponentTile) te).provideComponent();
                     if(component != null) {
                         this.foundComponents.add(component);
@@ -371,17 +377,21 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 this.foundMachine = null;
                 this.foundPattern = null;
                 this.patternRotation = null;
+                this.foundReplacements = null;
             } else {
                 EnumFacing rot = EnumFacing.getHorizontal(compound.getInteger("rotation"));
                 EnumFacing offset = EnumFacing.NORTH;
                 BlockArray pattern = machine.getPattern();
+                DynamicMachine.ModifierReplacementMap replacements = machine.getModifiersAsMatchingReplacements();
                 while (offset != rot) {
+                    replacements = replacements.rotateYCCW();
                     pattern = pattern.rotateYCCW();
                     offset = offset.rotateY();
                 }
                 this.patternRotation = rot;
                 this.foundPattern = pattern;
                 this.foundMachine = machine;
+                this.foundReplacements = replacements;
 
                 if(compound.hasKey("modifierOffsets")) {
                     NBTTagList list = compound.getTagList("modifierOffsets", Constants.NBT.TAG_COMPOUND);
@@ -402,6 +412,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
             this.foundMachine = null;
             this.foundPattern = null;
             this.patternRotation = null;
+            this.foundReplacements = null;
         }
         if(compound.hasKey("activeRecipe")) {
             NBTTagCompound tag = compound.getCompoundTag("activeRecipe");

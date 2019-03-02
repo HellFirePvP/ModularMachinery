@@ -18,7 +18,6 @@ import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
-import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.nbt.NBTException;
@@ -72,8 +71,8 @@ public class DynamicMachine {
         return modifiers;
     }
 
-    public Map<BlockPos, List<BlockArray.BlockInformation>> getModifiersAsMatchingReplacements() {
-        Map<BlockPos, List<BlockArray.BlockInformation>> infoMap = Maps.newHashMap();
+    public ModifierReplacementMap getModifiersAsMatchingReplacements() {
+        ModifierReplacementMap infoMap = new ModifierReplacementMap();
         for (BlockPos pos : modifiers.keySet()) {
             infoMap.put(pos, modifiers.get(pos)
                     .stream()
@@ -118,6 +117,25 @@ public class DynamicMachine {
         components.forEach(context::addComponent);
         modifiers.forEach(context::addModifier);
         return context;
+    }
+
+    public static class ModifierReplacementMap extends HashMap<BlockPos, List<BlockArray.BlockInformation>> {
+
+        public ModifierReplacementMap rotateYCCW() {
+            ModifierReplacementMap map = new ModifierReplacementMap();
+
+            for (BlockPos pos : keySet()) {
+                List<BlockArray.BlockInformation> infoList = this.get(pos);
+                List<BlockArray.BlockInformation> copyRotated = new ArrayList<>(infoList.size());
+                for (BlockArray.BlockInformation info : infoList) {
+                    copyRotated.add(info.copyRotateYCCW());
+                }
+                map.put(new BlockPos(pos.getZ(), pos.getY(), -pos.getX()), copyRotated);
+            }
+
+            return map;
+        }
+
     }
 
     public static class MachineDeserializer implements JsonDeserializer<DynamicMachine> {

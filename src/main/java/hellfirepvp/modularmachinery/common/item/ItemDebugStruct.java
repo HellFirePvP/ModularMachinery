@@ -51,15 +51,17 @@ public class ItemDebugStruct extends Item {
                     EnumFacing face = EnumFacing.NORTH;
                     player.sendMessage(new TextComponentString("Attempting structure matching:"));
                     player.sendMessage(new TextComponentString("Structure is facing: " + worldIn.getBlockState(pos).getValue(BlockController.FACING).name()));
+                    DynamicMachine.ModifierReplacementMap replacements = dm.getModifiersAsMatchingReplacements();
                     do {
                         if(face == worldIn.getBlockState(pos).getValue(BlockController.FACING)) {
-                            BlockPos mismatch = pattern.getRelativeMismatchPosition(worldIn, pos, dm.getModifiersAsMatchingReplacements());
+                            BlockPos mismatch = pattern.getRelativeMismatchPosition(worldIn, pos, replacements);
                             if(mismatch != null) {
                                 player.sendMessage(new TextComponentString("Failed at relative position: " + mismatch.toString()));
                             }
                         }
                         face = face.rotateYCCW();
                         pattern = pattern.rotateYCCW();
+                        replacements = replacements.rotateYCCW();
                     } while (face != EnumFacing.NORTH);
                 }
             }

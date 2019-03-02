@@ -170,13 +170,14 @@ public class BlockArray {
     }
 
     public boolean matches(World world, BlockPos center, boolean oldState, @Nullable Map<BlockPos, List<BlockInformation>> modifierReplacementPattern) {
+        lblPattern:
         for (Map.Entry<BlockPos, BlockInformation> entry : pattern.entrySet()) {
             BlockPos at = center.add(entry.getKey());
             if(!entry.getValue().matches(world, at, oldState)) {
                 if(modifierReplacementPattern != null && modifierReplacementPattern.containsKey(entry.getKey())) {
                     for (BlockInformation info : modifierReplacementPattern.get(entry.getKey())) {
                         if (info.matches(world, at, oldState)) {
-                            continue;
+                            continue lblPattern;
                         }
                     }
                 }
@@ -358,7 +359,7 @@ public class BlockArray {
             }
         }
 
-        private BlockInformation copyRotateYCCW() {
+        public BlockInformation copyRotateYCCW() {
             List<IBlockStateDescriptor> newDescriptors = new ArrayList<>(this.matchingStates.size());
             for (IBlockStateDescriptor desc : this.matchingStates) {
                 IBlockStateDescriptor copy = new IBlockStateDescriptor();
