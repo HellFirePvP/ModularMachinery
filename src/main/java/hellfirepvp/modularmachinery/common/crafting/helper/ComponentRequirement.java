@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -53,7 +54,12 @@ public abstract class ComponentRequirement<T> {
     @Nonnull
     public abstract CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
+    //Creates an exact copy of the current requirement
     public abstract ComponentRequirement<T> deepCopy();
+
+    //Creates a copy of the current requirement and applies all modifiers to the requirement.
+    //Supplying an empty list should behave identical to deepCopy
+    public abstract ComponentRequirement<T> deepCopyModified(List<RecipeModifier> modifiers);
 
     public abstract void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context);
 

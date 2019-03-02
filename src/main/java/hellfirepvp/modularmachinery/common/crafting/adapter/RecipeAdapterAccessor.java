@@ -12,9 +12,11 @@ import com.google.common.collect.ImmutableList;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.ResourceLocation;
 
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,6 +31,8 @@ import java.util.List;
 public class RecipeAdapterAccessor {
 
     private final ResourceLocation owningMachine, adapterKey;
+    private List<RecipeModifier> modifiers = new ArrayList<>();
+
     private List<MachineRecipe> cacheLoaded = new LinkedList<>();
 
     private RecipeAdapterAccessor(ResourceLocation owningMachine, ResourceLocation adapterKey) {
@@ -44,9 +48,13 @@ public class RecipeAdapterAccessor {
         return adapterKey;
     }
 
+    public void addModifier(RecipeModifier modifier) {
+        this.modifiers.add(modifier);
+    }
+
     public List<MachineRecipe> loadRecipesForAdapter() {
         cacheLoaded.clear();
-        Collection<MachineRecipe> recipes = RecipeAdapterRegistry.createRecipesFor(owningMachine, adapterKey);
+        Collection<MachineRecipe> recipes = RecipeAdapterRegistry.createRecipesFor(owningMachine, adapterKey, modifiers);
         if(recipes != null) {
             cacheLoaded.addAll(recipes);
         }
@@ -78,7 +86,19 @@ public class RecipeAdapterAccessor {
             }
             ResourceLocation owningMachineKey = new ResourceLocation(ModularMachinery.MODID, elementMachine.getAsJsonPrimitive().getAsString());
             ResourceLocation adapterKey = new ResourceLocation(elementAdapter.getAsJsonPrimitive().getAsString());
-            return new RecipeAdapterAccessor(owningMachineKey, adapterKey);
+            RecipeAdapterAccessor adapterAccessor = new RecipeAdapterAccessor(owningMachineKey, adapterKey);
+
+            if (root.has("modifiers") && root.get("modifiers").isJsonArray()) {
+                JsonArray modifierList = root.getAsJsonArray("modifiers");
+                for (JsonElement element : modifierList) {
+                    if (!element.isJsonObject()) {
+                        throw new JsonParseException("Elements of 'modifiers' have to be objects!");
+                    }
+                    adapterAccessor.addModifier(context.deserialize(element.getAsJsonObject(), RecipeModifier.class));
+                }
+            }
+
+            return adapterAccessor;
         }
     }
 

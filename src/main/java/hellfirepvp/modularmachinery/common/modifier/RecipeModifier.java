@@ -10,11 +10,16 @@ package hellfirepvp.modularmachinery.common.modifier;
 
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -69,6 +74,36 @@ public class RecipeModifier {
 
     public int getOperation() {
         return operation;
+    }
+
+    public static float applyModifiers(RecipeCraftingContext context, ComponentRequirement<?> in, float value, boolean isChance) {
+        String target = in.getRequiredComponentType().getRegistryName();
+        return applyModifiers(context.getModifiers(target), target, in.getActionType(), value, isChance);
+    }
+
+    public static float applyModifiers(Collection<RecipeModifier> modifiers, ComponentRequirement<?> in, float value, boolean isChance) {
+        return applyModifiers(modifiers, in.getRequiredComponentType().getRegistryName(), in.getActionType(), value, isChance);
+    }
+
+    public static float applyModifiers(Collection<RecipeModifier> modifiers, String target, MachineComponent.IOType ioType, float value, boolean isChance) {
+        List<RecipeModifier> applicable = modifiers
+                .stream()
+                .filter(mod -> mod.getTarget().equals(target) &&
+                        (ioType == null || mod.getIOTarget() == ioType) &&
+                        mod.affectsChance() == isChance)
+                .collect(Collectors.toList());
+        float add = 0F;
+        float mul = 1F;
+        for (RecipeModifier mod : applicable) {
+            if(mod.getOperation() == 0) {
+                add += mod.getModifier();
+            } else if(mod.getOperation() == 1) {
+                mul *= mod.getModifier();
+            } else {
+                throw new RuntimeException("Unknown modifier operation: " + mod.getOperation());
+            }
+        }
+        return (value + add) * mul;
     }
 
     public static class Deserializer implements JsonDeserializer<RecipeModifier> {

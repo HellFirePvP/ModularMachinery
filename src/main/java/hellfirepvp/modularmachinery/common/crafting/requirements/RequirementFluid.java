@@ -8,7 +8,6 @@
 
 package hellfirepvp.modularmachinery.common.crafting.requirements;
 
-import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
@@ -19,6 +18,7 @@ import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponen
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.CopyHandlerHelper;
 import hellfirepvp.modularmachinery.common.util.HybridGasTank;
 import hellfirepvp.modularmachinery.common.util.HybridTank;
@@ -78,6 +78,18 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @Override
+    public ComponentRequirement<HybridFluid> deepCopyModified(List<RecipeModifier> modifiers) {
+        HybridFluid hybrid = this.required.copy();
+        hybrid.setAmount(Math.round(RecipeModifier.applyModifiers(modifiers, this, hybrid.getAmount(), false)));
+        RequirementFluid fluid = new RequirementFluid(this.getRequiredComponentType(), this.getActionType(), hybrid);
+
+        fluid.chance = RecipeModifier.applyModifiers(modifiers, this, this.chance, true);
+        fluid.tagMatch = getTagMatch();
+        fluid.tagDisplay = getTagDisplay();
+        return fluid;
+    }
+
+    @Override
     public JEIComponent<HybridFluid> provideJEIComponent() {
         return new JEIComponentHybridFluid(this);
     }
@@ -114,8 +126,8 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     @Override
     public void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context) {
         this.requirementCheck = this.required.copy();
-        this.requirementCheck.setAmount(Math.round(context.applyModifiers(this, getActionType(), this.requirementCheck.getAmount(), false)));
-        this.doesntConsumeInput = contextChance.canProduce(context.applyModifiers(this, getActionType(), this.chance, true));
+        this.requirementCheck.setAmount(Math.round(RecipeModifier.applyModifiers(context, this, this.requirementCheck.getAmount(), false)));
+        this.doesntConsumeInput = contextChance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true));
     }
 
     @Override
@@ -325,12 +337,12 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
         switch (getActionType()) {
             case OUTPUT:
                 if(Mods.MEKANISM.isPresent()) {
-                    return finishWithMekanismHandling(handler, chance);
+                    return finishWithMekanismHandling(handler, context, chance);
                 } else {
                     FluidStack outStack = this.requirementCheck.asFluidStack();
                     if(outStack != null) {
                         int fillableAmount = handler.fillInternal(outStack.copy(), false);
-                        if(chance.canProduce(this.chance)) {
+                        if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
                             return fillableAmount >= outStack.amount;
                         }
                         FluidStack copyOut = outStack.copy();
@@ -345,12 +357,12 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @net.minecraftforge.fml.common.Optional.Method(modid = "mekanism")
-    private boolean finishWithMekanismHandling(HybridTank handler, ResultChance chance) {
+    private boolean finishWithMekanismHandling(HybridTank handler, RecipeCraftingContext context, ResultChance chance) {
         if(this.requirementCheck instanceof HybridFluidGas && handler instanceof HybridGasTank) {
             GasStack gasOut = ((HybridFluidGas) this.requirementCheck).asGasStack();
             HybridGasTank gasTankHandler = (HybridGasTank) handler;
             int fillableGas = gasTankHandler.receiveGas(EnumFacing.UP, gasOut, false);
-            if(chance.canProduce(this.chance)) {
+            if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
                 return fillableGas >= gasOut.amount;
             }
             return fillableGas >= gasOut.amount && gasTankHandler.receiveGas(EnumFacing.UP, gasOut, true) >= gasOut.amount;
@@ -358,7 +370,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
             FluidStack outStack = this.requirementCheck.asFluidStack();
             if(outStack != null) {
                 int fillableAmount = handler.fillInternal(outStack.copy(), false);
-                if(chance.canProduce(this.chance)) {
+                if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
                     return fillableAmount >= outStack.amount;
                 }
                 FluidStack copyOut = outStack.copy();

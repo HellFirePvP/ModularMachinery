@@ -62,6 +62,8 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
             return;
         }
 
+        long prevEnergy = this.energy;
+
         long transferCap = Math.min(this.size.transferLimit, this.energy);
         if (Mods.DRACONICEVOLUTION.isPresent()) {
             long transferred = attemptDECoreTransfer(transferCap);
@@ -90,6 +92,10 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
             if(transferCap <= 0) {
                 break;
             }
+        }
+
+        if (prevEnergy != this.energy) {
+            markForUpdate();
         }
     }
 

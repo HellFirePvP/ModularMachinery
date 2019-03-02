@@ -12,12 +12,14 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.RegistryBuilder;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -31,12 +33,12 @@ public class RecipeAdapterRegistry {
     private static IForgeRegistry<RecipeAdapter> ADAPTER_REGISTRY = null;
 
     @Nullable
-    public static Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachine, ResourceLocation adapterKey) {
+    public static Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachine, ResourceLocation adapterKey, List<RecipeModifier> modifiers) {
         RecipeAdapter adapter = ADAPTER_REGISTRY.getValue(adapterKey);
         if(adapter == null) {
             return null;
         }
-        return adapter.createRecipesFor(owningMachine);
+        return adapter.createRecipesFor(owningMachine, modifiers);
     }
 
     public static void registerAdapter(RecipeAdapter adapter) {

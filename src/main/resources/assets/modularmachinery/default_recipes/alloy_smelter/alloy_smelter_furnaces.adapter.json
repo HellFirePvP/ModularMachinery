@@ -1,4 +1,24 @@
 {
     "machine": "alloy_furnace",
-    "adapter": "minecraft:furnace"
+    "adapter": "minecraft:furnace",
+    "modifiers": [
+        {
+            "io": "output",
+            "target": "item",
+            "operation": 1,
+            "multiplier": 3.0
+        },
+        {
+            "io": "input",
+            "target": "item",
+            "operation": 1,
+            "multiplier": 3.0
+        },
+        {
+            "io": "input",
+            "target": "duration",
+            "operation": 0,
+            "multiplier": 40
+        }
+    ]
 }

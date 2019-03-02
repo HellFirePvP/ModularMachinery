@@ -60,30 +60,9 @@ public class RecipeCraftingContext {
         return modifiers.computeIfAbsent(target, t -> new LinkedList<>());
     }
 
-    public float applyModifiers(ComponentRequirement reqTarget, MachineComponent.IOType ioType, float value, boolean isChance) {
-        return applyModifiers(reqTarget.getRequiredComponentType().getRegistryName(), ioType, value, isChance);
-    }
-
-    public float applyModifiers(String target, MachineComponent.IOType ioType, float value, boolean isChance) {
-        List<RecipeModifier> applicable = getModifiers(target);
-        applicable = applicable.stream().filter(mod -> (ioType == null || mod.getIOTarget() == ioType) && mod.affectsChance() == isChance).collect(Collectors.toList());
-        float add = 0F;
-        float mul = 1F;
-        for (RecipeModifier mod : applicable) {
-            if(mod.getOperation() == 0) {
-                add += mod.getModifier();
-            } else if(mod.getOperation() == 1) {
-                mul *= mod.getModifier();
-            } else {
-                throw new RuntimeException("Unknown modifier operation: " + mod.getOperation() + " at recipe " + recipe.getRegistryName());
-            }
-        }
-        return (value + add) * mul;
-    }
-
     public float getDurationMultiplier() {
         float dur = this.recipe.getRecipeTotalTickTime();
-        float result = applyModifiers("duration", null, dur, false);
+        float result = RecipeModifier.applyModifiers(getModifiers(RecipeModifier.TARGET_DURATION), RecipeModifier.TARGET_DURATION, null, dur, false);
         return dur / result;
     }
 

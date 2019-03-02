@@ -14,6 +14,7 @@ import com.google.gson.GsonBuilder;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterAccessor;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.JsonUtils;
 
 import java.io.File;
@@ -34,6 +35,7 @@ public class RecipeLoader {
     private static final Gson GSON = new GsonBuilder()
             .registerTypeHierarchyAdapter(MachineRecipe.MachineRecipeContainer.class, new MachineRecipe.Deserializer())
             .registerTypeHierarchyAdapter(RecipeAdapterAccessor.class, new RecipeAdapterAccessor.Deserializer())
+            .registerTypeHierarchyAdapter(RecipeModifier.class, new RecipeModifier.Deserializer())
             .create();
 
     public static List<RecipeAdapterAccessor> recipeAdapters = new LinkedList<>();

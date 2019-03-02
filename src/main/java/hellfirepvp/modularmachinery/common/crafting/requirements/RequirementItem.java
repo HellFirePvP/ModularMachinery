@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentItem;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
@@ -104,6 +105,37 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
+    public ComponentRequirement<ItemStack> deepCopyModified(List<RecipeModifier> modifiers) {
+        RequirementItem item;
+        switch (this.requirementType) {
+            case OREDICT:
+                int inOreAmt = Math.round(RecipeModifier.applyModifiers(modifiers, this, this.oreDictItemAmount, false));
+                item = new RequirementItem(this.getActionType(), this.oreDictName, inOreAmt);
+                break;
+            case FUEL:
+                int inFuel = Math.round(RecipeModifier.applyModifiers(modifiers, this, this.fuelBurntime, false));
+                item = new RequirementItem(this.getActionType(), inFuel);
+                break;
+            default:
+            case ITEMSTACKS:
+                ItemStack inReq = this.required.copy();
+                int amt = Math.round(RecipeModifier.applyModifiers(modifiers, this, inReq.getCount(), false));
+                inReq.setCount(amt);
+                item = new RequirementItem(this.getActionType(), inReq);
+                break;
+        }
+
+        item.chance = RecipeModifier.applyModifiers(modifiers, this, this.chance, true);
+        if(this.tag != null) {
+            item.tag = this.tag.copy();
+        }
+        if(this.previewDisplayTag != null) {
+            item.previewDisplayTag = this.previewDisplayTag.copy();
+        }
+        return item;
+    }
+
+    @Override
     public JEIComponent<ItemStack> provideJEIComponent() {
         return new JEIComponentItem(this);
     }
@@ -121,7 +153,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 this.countIOBuffer = this.fuelBurntime;
                 break;
         }
-        this.countIOBuffer = Math.round(context.applyModifiers(this, getActionType(), this.countIOBuffer, false));
+        this.countIOBuffer = Math.round(RecipeModifier.applyModifiers(context, this, this.countIOBuffer, false));
     }
 
     @Override
@@ -146,20 +178,20 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 switch (this.requirementType) {
                     case ITEMSTACKS:
                         ItemStack inReq = this.required.copy();
-                        int amt = Math.round(context.applyModifiers(this, getActionType(), inReq.getCount(), false));
+                        int amt = Math.round(RecipeModifier.applyModifiers(context, this, inReq.getCount(), false));
                         inReq.setCount(amt);
                         if(ItemUtils.consumeFromInventory(handler, inReq, true, this.tag)) {
                             return CraftCheck.success();
                         }
                         break;
                     case OREDICT:
-                        int inOreAmt = Math.round(context.applyModifiers(this, getActionType(), this.oreDictItemAmount, false));
+                        int inOreAmt = Math.round(RecipeModifier.applyModifiers(context, this, this.oreDictItemAmount, false));
                         if(ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, inOreAmt, true, this.tag)) {
                             return CraftCheck.success();
                         }
                         break;
                     case FUEL:
-                        int inFuel = Math.round(context.applyModifiers(this, getActionType(), this.fuelBurntime, false));
+                        int inFuel = Math.round(RecipeModifier.applyModifiers(context, this, this.fuelBurntime, false));
                         if(ItemUtils.consumeFromInventoryFuel(handler, inFuel, true, this.tag) <= 0) {
                             return CraftCheck.success();
                         }
@@ -213,31 +245,31 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 !(component instanceof MachineComponent.ItemBus) ||
                 component.getIOType() != getActionType()) return false;
         IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
-        float productionChance = context.applyModifiers(this, getActionType(), this.chance, true);
+        float productionChance = RecipeModifier.applyModifiers(context, this, this.chance, true);
         switch (getActionType()) {
             case INPUT:
                 switch (this.requirementType) {
                     //If it doesn't consume the item, we only need to see if it's actually there.
                     case ITEMSTACKS:
                         ItemStack stackRequired = this.required.copy();
-                        int amt = Math.round(context.applyModifiers(this, getActionType(), stackRequired.getCount(), false));
+                        int amt = Math.round(RecipeModifier.applyModifiers(context, this, stackRequired.getCount(), false));
                         stackRequired.setCount(amt);
                         boolean can = ItemUtils.consumeFromInventory(handler, stackRequired, true, this.tag);
-                        if(chance.canProduce(productionChance)) {
+                        if (chance.canProduce(productionChance)) {
                             return can;
                         }
                         return can && ItemUtils.consumeFromInventory(handler, stackRequired, false, this.tag);
                     case OREDICT:
-                        int requiredOredict = Math.round(context.applyModifiers(this, getActionType(), this.oreDictItemAmount, false));
+                        int requiredOredict = Math.round(RecipeModifier.applyModifiers(context, this, this.oreDictItemAmount, false));
                         can = ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, requiredOredict, true, this.tag);
-                        if(chance.canProduce(productionChance)) {
+                        if (chance.canProduce(productionChance)) {
                             return can;
                         }
                         return can && ItemUtils.consumeFromInventoryOreDict(handler, this.oreDictName, requiredOredict, false, this.tag);
                     case FUEL:
-                        int requiredBurnTime = Math.round(context.applyModifiers(this, getActionType(), this.fuelBurntime, false));
+                        int requiredBurnTime = Math.round(RecipeModifier.applyModifiers(context, this, this.fuelBurntime, false));
                         can = ItemUtils.consumeFromInventoryFuel(handler, requiredBurnTime, true, this.tag) <= 0;
-                        if(chance.canProduce(productionChance)) {
+                        if (chance.canProduce(productionChance)) {
                             return can;
                         }
                         return can && ItemUtils.consumeFromInventoryFuel(handler, requiredBurnTime, false, this.tag) <= 0;
@@ -253,7 +285,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 component.getIOType() != getActionType()) return false;
 
         if(fuelBurntime > 0 && oreDictName == null && required.isEmpty()) {
-            throw new IllegalStateException("Can't output fuel burntime...");
+            throw new IllegalStateException("Invalid item output!");
         }
         IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
@@ -274,10 +306,10 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                 }
                 //If we don't produce the item, we only need to see if there would be space for it at all.
                 int inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
-                if(chance.canProduce(context.applyModifiers(this, getActionType(), this.chance, true))) {
-                    return inserted > 0;
+                if (inserted > 0 && chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
+                    return true;
                 }
-                if(inserted > 0) {
+                if (inserted > 0) {
                     int actual = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, false);
                     this.countIOBuffer -= actual;
                     return this.countIOBuffer <= 0;

@@ -17,6 +17,7 @@ import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEner
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import mekanism.api.gas.Gas;
 import mekanism.api.gas.GasRegistry;
@@ -116,8 +117,9 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
     }
 
-    public MachineRecipe deepCopy(Function<ResourceLocation, ResourceLocation> registryNameChange,
-                                  ResourceLocation newOwningMachineIdentifier) {
+    public MachineRecipe copy(Function<ResourceLocation, ResourceLocation> registryNameChange,
+                              ResourceLocation newOwningMachineIdentifier,
+                              List<RecipeModifier> modifiers) {
         boolean freeze = false;
         if (isFrozen()) {
             freeze = true;
@@ -126,11 +128,11 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         MachineRecipe copy = new MachineRecipe(this.getRecipeFilePath(),
                 registryNameChange.apply(this.getRegistryName()),
                 newOwningMachineIdentifier,
-                this.getRecipeTotalTickTime(),
+                Math.round(RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_DURATION, null, this.getRecipeTotalTickTime(), false)),
                 this.getConfiguredPriority());
 
         for (ComponentRequirement<?> requirement : this.getCraftingRequirements()) {
-            copy.addRequirement(requirement.deepCopy());
+            copy.addRequirement(requirement.deepCopyModified(modifiers));
         }
 
         if (freeze) {

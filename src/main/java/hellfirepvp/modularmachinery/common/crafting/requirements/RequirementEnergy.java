@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentEnergy;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 
@@ -48,6 +49,14 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     }
 
     @Override
+    public ComponentRequirement<Long> deepCopyModified(List<RecipeModifier> modifiers) {
+        int requirement = Math.round(RecipeModifier.applyModifiers(modifiers, this, this.requirementPerTick, false));
+        RequirementEnergy energy = new RequirementEnergy(this.getActionType(), requirement);
+        energy.activeIO = this.activeIO;
+        return energy;
+    }
+
+    @Override
     public void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context) {}
 
     @Override
@@ -72,7 +81,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
         IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
-                if(handler.getCurrentEnergy() >= context.applyModifiers(this, getActionType(), this.requirementPerTick, false)) {
+                if(handler.getCurrentEnergy() >= RecipeModifier.applyModifiers(context, this, this.requirementPerTick, false)) {
                     return CraftCheck.success();
                 }
                 break;
@@ -94,7 +103,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
 
     @Override
     public void startIOTick(RecipeCraftingContext context, float durationMultiplier) {
-        this.activeIO = Math.round(((double) context.applyModifiers(this, getActionType(), this.activeIO, false)) * durationMultiplier);
+        this.activeIO = Math.round(((double) RecipeModifier.applyModifiers(context, this, this.activeIO, false)) * durationMultiplier);
     }
 
     @Nonnull

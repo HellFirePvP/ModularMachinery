@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
@@ -38,14 +39,15 @@ public class DynamicMachineRecipeAdapter extends RecipeAdapter {
 
     @Nonnull
     @Override
-    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName) {
+    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName, List<RecipeModifier> modifiers) {
         String newIdentifier = owningMachineName.getResourceDomain() + "." + owningMachineName.getResourcePath();
 
         List<MachineRecipe> recipesNew = new ArrayList<>();
         for (MachineRecipe recipe : RecipeRegistry.getRegistry().getRecipesFor(this.originalMachine)) {
-            recipesNew.add(recipe.deepCopy(
+            recipesNew.add(recipe.copy(
                     (res) -> new ResourceLocation(ModularMachinery.MODID, res.getResourcePath() + ".copy." + newIdentifier),
-                    owningMachineName));
+                    owningMachineName,
+                    modifiers));
         }
         return recipesNew;
     }
