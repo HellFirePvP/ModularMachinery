@@ -60,6 +60,11 @@ repositories {
         // Open Computers
         url "http://maven.cil.li/"
     }
+    
+    maven {
+        // Curseforge
+        url "https://minecraft.curseforge.com/api/maven"
+    }
 
 }
 
@@ -88,6 +93,8 @@ dependencies {
     deobfCompile group: 'codechicken', name: 'CodeChickenLib', version: '1.12.2-3.2.2.353', classifier: 'universal'
     deobfCompile group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
     deobfCompile group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
+
+    deobfCompile "gregtechce:gregtech:1.12.2:1.5.21.182"
 
 }
 

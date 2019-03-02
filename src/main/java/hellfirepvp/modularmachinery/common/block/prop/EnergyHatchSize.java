@@ -102,10 +102,12 @@ public enum EnergyHatchSize implements IStringSerializable {
             size.transferLimit = cfg.get("energyhatch.limit", size.name().toUpperCase(), size.defaultConfigurationTransferLimit + "", "Defines the transfer limit for RF/FE things. IC2's transfer limit is defined by the voltage tier. [range: 1 ~ 9223372036854775806, default: " + size.defaultConfigurationEnergy + "]").getLong();
             size.transferLimit = MiscUtils.clamp(size.transferLimit, 1, Long.MAX_VALUE - 1);
 
-            size.ic2EnergyTier = cfg.getInt("energyhatch.tier", size.name().toUpperCase(), size.defaultIC2EnergyTier, 0, 12, "Defines the IC2 output-voltage tier. Only affects the power the output hatches will output power as. 0 = 'ULV' = 8 EU/t, 1 = 'LV' = 32 EU/t, 2 = 'MV' = 128 EU/t, ...");
+            size.ic2EnergyTier = cfg.get("energyhatch.tier", size.name().toUpperCase(), size.defaultIC2EnergyTier, "Defines the IC2 output-voltage tier. Only affects the power the output hatches will output power as. 0 = 'ULV' = 8 EU/t, 1 = 'LV' = 32 EU/t, 2 = 'MV' = 128 EU/t, ... [range: 0 ~ 12]").getInt();
 
-            size.gtEnergyTier = cfg.getInt("energyhatch.gtvoltage", size.name().toUpperCase(), size.defaultGTEnergyTier, 0, 8, "Defines the GT voltage tier. Affects both input and output hatches of this tier.");
-            size.gtAmperage = cfg.getInt("energyhatch.gtamperage", size.name().toUpperCase(), size.defaultGTAmperage, 1, 16, "Defines the GT amperage. Affects both output amperage as well as maximum input amperage.");
+            size.gtEnergyTier = cfg.get("energyhatch.gtvoltage", size.name().toUpperCase(), size.defaultGTEnergyTier, "Defines the GT voltage tier. Affects both input and output hatches of this tier. [range: 0 ~ 8]").getInt();
+            size.gtEnergyTier = MathHelper.clamp(size.gtEnergyTier, 0, 8);
+            size.gtAmperage = cfg.get("energyhatch.gtamperage", size.name().toUpperCase(), size.defaultGTAmperage, "Defines the GT amperage. Affects both output amperage as well as maximum input amperage. [range: 1 ~ 16]").getInt();
+            size.gtAmperage = MathHelper.clamp(size.gtAmperage, 1, 16);
         }
     }
 

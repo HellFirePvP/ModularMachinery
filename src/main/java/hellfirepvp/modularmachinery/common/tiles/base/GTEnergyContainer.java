@@ -38,7 +38,7 @@ public class GTEnergyContainer implements IEnergyContainer {
     @Optional.Method(modid = "gregtech")
     public long acceptEnergyFromNetwork(EnumFacing side, long voltage, long amperage) {
         if (ioType == MachineComponent.IOType.INPUT && amperage > 0 && voltage > 0) {
-            long available = hatch.getMaxEnergy() - hatch.getCurrentEnergy();
+            long available = hatch.getMaxEnergy() / 4L - hatch.getCurrentEnergy() / 4L;
             long maxAmperage = Math.min(getInputAmperage(), amperage);
 
             if (voltage > getInputVoltage()) {
@@ -57,7 +57,7 @@ public class GTEnergyContainer implements IEnergyContainer {
                 acceptingAmperage++;
             }
 
-            hatch.setCurrentEnergy(available + (acceptingAmperage * voltage));
+            hatch.setCurrentEnergy((available + (acceptingAmperage * voltage)) * 4L);
 
             return acceptingAmperage;
         }
@@ -79,19 +79,27 @@ public class GTEnergyContainer implements IEnergyContainer {
     @Override
     @Optional.Method(modid = "gregtech")
     public long changeEnergy(long differenceAmount) {
-        return 0;
+        long oldEnergyStored = hatch.getCurrentEnergy() / 4L;
+        long maxCapacity = hatch.getMaxEnergy() / 4L;
+
+        long newEnergyStored = (maxCapacity - oldEnergyStored < differenceAmount) ? maxCapacity : (oldEnergyStored + differenceAmount);
+        if(newEnergyStored < 0) {
+            newEnergyStored = 0;
+        }
+        hatch.setCurrentEnergy(newEnergyStored * 4L);
+        return newEnergyStored - oldEnergyStored;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public long getEnergyStored() {
-        return hatch.getCurrentEnergy();
+        return hatch.getCurrentEnergy() / 4L;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public long getEnergyCapacity() {
-        return hatch.getTier().maxEnergy;
+        return hatch.getTier().maxEnergy / 4L;
     }
 
     @Override
