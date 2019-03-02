@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.client.gui;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
 import hellfirepvp.modularmachinery.common.network.PktInteractFluidTankGui;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
@@ -80,7 +81,7 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
         int offsetZ = (this.height - this.ySize) / 2;
 
         if(x >= 15 + offsetX && x <= 35 + offsetX && z >= 10 + offsetZ && z <= 71 + offsetZ) {
-            if(ModularMachinery.isMekanismLoaded) {
+            if(Mods.MEKANISM.isPresent()) {
                 drawMekTooltip(x, z);
             } else {
                 List<String> text = Lists.newArrayList();
@@ -116,7 +117,7 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
                     amt = 0;
                     text.add(I18n.format("tooltip.fluidhatch.tank", String.valueOf(amt), String.valueOf(tank.getTank().getCapacity())));
                 } else {
-                    if(ModularMachinery.isMekanismLoaded) {
+                    if(Mods.MEKANISM.isPresent()) {
                         text.add(I18n.format("tooltip.fluidhatch.gas"));
                     }
                     text.add(gasContent.getGas().getLocalizedName());
@@ -129,7 +130,7 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
                 text.add(I18n.format("tooltip.fluidhatch.tank", String.valueOf(amt), String.valueOf(tank.getTank().getCapacity())));
             }
         } else {
-            if(ModularMachinery.isMekanismLoaded) {
+            if(Mods.MEKANISM.isPresent()) {
                 text.add(I18n.format("tooltip.fluidhatch.fluid"));
             }
             text.add(content.getLocalizedName());
@@ -163,7 +164,7 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
             }
             this.mc.getTextureManager().bindTexture(TextureMap.LOCATION_BLOCKS_TEXTURE);
             drawTexturedModalRect(15, 10 + 61 - pxFilled, tas, 20, pxFilled);
-        } else if (ModularMachinery.isMekanismLoaded){
+        } else if (Mods.MEKANISM.isPresent()){
             drawMekGasContent();
         }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);

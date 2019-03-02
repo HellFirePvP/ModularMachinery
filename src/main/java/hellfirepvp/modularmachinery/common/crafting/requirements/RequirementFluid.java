@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.crafting.requirements;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
@@ -131,7 +132,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
                 component.getIOType() != getActionType()) return CraftCheck.skipComponent();
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
 
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             java.util.Optional<CraftCheck> check = checkStartCraftingWithMekanism(component, context, handler, restrictions);
             if (check.isPresent()) {
                 return check.get();
@@ -237,7 +238,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case INPUT:
-                if(ModularMachinery.isMekanismLoaded) {
+                if(Mods.MEKANISM.isPresent()) {
                     return startCraftingWithMekanismHandling(handler, chance);
                 }
 
@@ -323,7 +324,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
         HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
         switch (getActionType()) {
             case OUTPUT:
-                if(ModularMachinery.isMekanismLoaded) {
+                if(Mods.MEKANISM.isPresent()) {
                     return finishWithMekanismHandling(handler, chance);
                 } else {
                     FluidStack outStack = this.requirementCheck.asFluidStack();

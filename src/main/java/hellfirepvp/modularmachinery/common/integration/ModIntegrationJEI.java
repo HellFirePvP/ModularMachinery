@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.integration;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
@@ -88,7 +89,7 @@ public class ModIntegrationJEI implements IModPlugin {
     public void registerIngredients(IModIngredientRegistration registry) {
         try {
             registry.register(HybridFluid.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
-            if(ModularMachinery.isMekanismLoaded) {
+            if(Mods.MEKANISM.isPresent()) {
                 registerHybridGas(registry);
             }
         } catch (Exception exc) {

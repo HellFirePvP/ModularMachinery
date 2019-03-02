@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.integration.ingredient;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import mekanism.api.gas.GasStack;
 import mekanism.client.jei.gas.GasStackRenderer;
@@ -55,7 +56,7 @@ public class HybridFluidRenderer<T extends HybridFluid> implements IIngredientRe
 
     @Override
     public void render(@Nonnull Minecraft minecraft, int xPosition, int yPosition, @Nullable T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             if(attemptRenderGas(minecraft, xPosition, yPosition, ingredient)) {
                 return;
             }
@@ -90,7 +91,7 @@ public class HybridFluidRenderer<T extends HybridFluid> implements IIngredientRe
 
     @Override
     public List<String> getTooltip(Minecraft minecraft, T ingredient, ITooltipFlag tooltipFlag) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             List<String> tooltip = attemptGetTooltip(minecraft, ingredient, tooltipFlag);
             if(tooltip != null) {
                 return tooltip;

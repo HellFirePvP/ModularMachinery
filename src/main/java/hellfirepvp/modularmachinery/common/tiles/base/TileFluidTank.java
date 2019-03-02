@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.tiles.base;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.HybridGasTank;
@@ -62,7 +63,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         if(capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             return true;
         }
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             if(checkMekanismGasCapabilitiesPresence(capability, facing)) {
                 return true;
             }
@@ -76,7 +77,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         if(capability == CapabilityFluidHandler.FLUID_HANDLER_CAPABILITY) {
             return (T) tank;
         }
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             if(checkMekanismGasCapabilities(capability, facing)) {
                 return (T) this;
             }
@@ -106,7 +107,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         NBTTagCompound tankTag = compound.getCompoundTag("tank");
         newTank.readFromNBT(tankTag);
         this.tank = newTank;
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             this.readMekGasData(tankTag);
         }
     }
@@ -119,7 +120,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
         compound.setInteger("size", this.hatchSize.ordinal());
         NBTTagCompound tankTag = new NBTTagCompound();
         this.tank.writeToNBT(tankTag);
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             this.writeMekGasData(tankTag);
         }
         compound.setTag("tank", tankTag);

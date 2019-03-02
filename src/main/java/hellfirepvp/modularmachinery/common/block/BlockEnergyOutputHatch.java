@@ -10,11 +10,11 @@ package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.RedstoneHelper;
-import net.minecraft.block.BlockContainer;
 import net.minecraft.block.SoundType;
 import net.minecraft.block.material.Material;
 import net.minecraft.block.properties.PropertyEnum;
@@ -24,7 +24,6 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.client.util.ITooltipFlag;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.*;
@@ -32,7 +31,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
-import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -73,14 +72,27 @@ public class BlockEnergyOutputHatch extends BlockMachineComponent implements Blo
         EnergyHatchSize size = EnergyHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, EnergyHatchSize.values().length - 1)];
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.storage", size.maxEnergy));
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.out.transfer", size.transferLimit));
-        if(Loader.isModLoaded("ic2")) {
+        if (Mods.IC2.isPresent()) {
             tooltip.add("");
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.out.voltage",
                     TextFormatting.BLUE + I18n.format(size.getUnlocalizedEnergyDescriptor())));
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.out.transfer",
-                    TextFormatting.BLUE + String.valueOf(size.getEnergyTransmission()),
+                    TextFormatting.BLUE + String.valueOf(size.getIC2EnergyTransmission()),
                     TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.powerrate")));
         }
+        if (Mods.GREGTECH.isPresent()) {
+            tooltip.add("");
+            addGTTooltip(tooltip, size);
+        }
+    }
+
+    @Optional.Method(modid = "gregtech")
+    private void addGTTooltip(List<String> tooltip, EnergyHatchSize size) {
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.voltage.out",
+                String.valueOf(size.getGTEnergyTransferVoltage()),
+                size.getUnlocalizedGTEnergyTier()));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.amperage",
+                String.valueOf(size.getGtAmperage())));
     }
 
     @Override

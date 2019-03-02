@@ -57,7 +57,6 @@ public class ModularMachinery {
     public static ModularMachinery instance;
 
     public static Logger log;
-    public static boolean isMekanismLoaded = false;
 
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
     public static CommonProxy proxy;
@@ -67,7 +66,6 @@ public class ModularMachinery {
         event.getModMetadata().version = VERSION;
         log = event.getModLog();
         devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
-        isMekanismLoaded = Loader.isModLoaded("mekanism");
 
         NET_CHANNEL.registerMessage(PktCopyToClipboard.class, PktCopyToClipboard.class, 0, Side.CLIENT);
         NET_CHANNEL.registerMessage(PktSyncSelection.class, PktSyncSelection.class, 1, Side.CLIENT);

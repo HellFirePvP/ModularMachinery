@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
@@ -33,6 +34,7 @@ import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
@@ -73,13 +75,26 @@ public class BlockEnergyInputHatch extends BlockMachineComponent implements Bloc
         EnergyHatchSize size = EnergyHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, EnergyHatchSize.values().length - 1)];
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.storage", size.maxEnergy));
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.in.accept", size.transferLimit));
-        if(Loader.isModLoaded("ic2")) {
+        if(Mods.IC2.isPresent()) {
             tooltip.add("");
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.voltage",
                     TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any")));
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.transfer",
                     TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any"), TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.powerrate")));
         }
+        if (Mods.GREGTECH.isPresent()) {
+            tooltip.add("");
+            addGTTooltip(tooltip, size);
+        }
+    }
+
+    @Optional.Method(modid = "gregtech")
+    private void addGTTooltip(List<String> tooltip, EnergyHatchSize size) {
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.voltage.in",
+                String.valueOf(size.getGTEnergyTransferVoltage()),
+                size.getUnlocalizedGTEnergyTier()));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.amperage",
+                String.valueOf(size.getGtAmperage())));
     }
 
     @Override

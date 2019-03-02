@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.block.prop;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntitySynchronized;
 import hellfirepvp.modularmachinery.common.util.HybridGasTank;
 import hellfirepvp.modularmachinery.common.util.HybridTank;
@@ -45,7 +46,7 @@ public enum FluidHatchSize implements IStringSerializable {
 
     public HybridTank buildTank(TileEntitySynchronized tileEntity, boolean canFill, boolean canDrain) {
         HybridTank tank;
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             tank = buildMekTank(tileEntity);
         } else {
             tank = buildDefaultTank(tileEntity);

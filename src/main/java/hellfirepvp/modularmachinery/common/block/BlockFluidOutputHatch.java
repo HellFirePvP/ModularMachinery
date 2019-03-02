@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileFluidOutputHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
@@ -71,7 +72,7 @@ public class BlockFluidOutputHatch extends BlockMachineComponent implements Bloc
     public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
         FluidHatchSize size = FluidHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, FluidHatchSize.values().length - 1)];
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.info", size.getSize()));
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.mek"));
         }
     }
@@ -80,7 +81,7 @@ public class BlockFluidOutputHatch extends BlockMachineComponent implements Bloc
     public boolean onBlockActivated(World worldIn, BlockPos pos, IBlockState state, EntityPlayer playerIn, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
         if(!worldIn.isRemote) {
             TileEntity te = worldIn.getTileEntity(pos);
-            if(te != null && te instanceof TileFluidTank) {
+            if(te instanceof TileFluidTank) {
                 ItemStack activeHand = playerIn.getHeldItem(hand);
                 if(!activeHand.isEmpty() && FluidUtil.getFluidHandler(activeHand) !=  null) {
                     FluidTank ft = ((TileFluidTank) te).getTank();

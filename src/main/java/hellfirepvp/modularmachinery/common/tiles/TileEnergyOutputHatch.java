@@ -10,29 +10,27 @@ package hellfirepvp.modularmachinery.common.tiles;
 
 import cofh.redstoneflux.api.IEnergyReceiver;
 import cofh.redstoneflux.api.IEnergyStorage;
-import com.brandon3055.brandonscore.lib.datamanager.ManagedLong;
 import com.brandon3055.draconicevolution.DEFeatures;
 import com.brandon3055.draconicevolution.blocks.tileentity.TileEnergyStorageCore;
 import com.google.common.collect.Iterables;
+import gregtech.api.capability.GregtechCapabilities;
+import gregtech.api.capability.IEnergyContainer;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.MiscUtils;
-import ic2.api.energy.event.EnergyTileLoadEvent;
 import ic2.api.energy.event.EnergyTileUnloadEvent;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import ic2.api.energy.tile.IEnergySource;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.energy.CapabilityEnergy;
-import net.minecraftforge.fml.common.FMLCommonHandler;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -55,7 +53,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     public TileEnergyOutputHatch() {}
 
     public TileEnergyOutputHatch(EnergyHatchSize size) {
-        super(size);
+        super(size, MachineComponent.IOType.OUTPUT);
     }
 
     @Override
@@ -65,20 +63,29 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
         }
 
         long transferCap = Math.min(this.size.transferLimit, this.energy);
-        if (Loader.isModLoaded("draconicevolution")) {
+        if (Mods.DRACONICEVOLUTION.isPresent()) {
             long transferred = attemptDECoreTransfer(transferCap);
             transferCap -= transferred;
             this.energy -= transferred;
         }
+        long usableAmps = Math.min(this.size.getGtAmperage(), transferCap / 4L / this.size.getGTEnergyTransferVoltage());
         for (EnumFacing face : EnumFacing.VALUES) {
-            if (Loader.isModLoaded("redstoneflux")) {
-                int transferred = attemptFERFTransfer(face, convertDownEnergy(transferCap));
-                transferCap -= transferred;
-                this.energy -= transferred;
-            } else {
-                int transferred = attemptFETransfer(face, convertDownEnergy(transferCap));
-                transferCap -= transferred;
-                this.energy -= transferred;
+            if (transferCap > 0 && Mods.GREGTECH.isPresent() && usableAmps > 0) {
+                long totalTransferred = attemptGTTransfer(face, transferCap / 4L, usableAmps) * 4L;
+                usableAmps -= totalTransferred / 4L / this.size.getGTEnergyTransferVoltage();
+                transferCap -= totalTransferred;
+                this.energy -= totalTransferred;
+            }
+            if (transferCap > 0) {
+                if (Mods.REDSTONEFLUXAPI.isPresent()) {
+                    int transferred = attemptFERFTransfer(face, convertDownEnergy(transferCap));
+                    transferCap -= transferred;
+                    this.energy -= transferred;
+                } else {
+                    int transferred = attemptFETransfer(face, convertDownEnergy(transferCap));
+                    transferCap -= transferred;
+                    this.energy -= transferred;
+                }
             }
             if(transferCap <= 0) {
                 break;
@@ -125,6 +132,30 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
         Collections.shuffle(list);
         TileEnergyStorageCore first = Iterables.getFirst(list, null);
         return first == null ? null : first.getPos();
+    }
+
+    @Optional.Method(modid = "gregtech")
+    private long attemptGTTransfer(EnumFacing face, long transferCap, long usedAmps) {
+        long voltage = this.size.getGTEnergyTransferVoltage();
+        long amperes = Math.min(usedAmps, this.size.getGtAmperage());
+        int transferableAmps = 0;
+        while (transferableAmps < amperes && (transferableAmps * voltage) <= transferCap) {
+            transferableAmps++;
+        }
+        if (transferableAmps == 0) {
+            return 0L;
+        }
+
+        TileEntity tileEntity = getWorld().getTileEntity(getPos().offset(face));
+        EnumFacing oppositeSide = face.getOpposite();
+        if(tileEntity != null && tileEntity.hasCapability(GregtechCapabilities.CAPABILITY_ENERGY_CONTAINER, oppositeSide)) {
+            IEnergyContainer energyContainer = tileEntity.getCapability(GregtechCapabilities.CAPABILITY_ENERGY_CONTAINER, oppositeSide);
+            if (energyContainer != null && energyContainer.inputsEnergy(oppositeSide)) {
+                return energyContainer.acceptEnergyFromNetwork(oppositeSide, voltage, transferableAmps)
+                        * voltage;
+            }
+        }
+        return 0L;
     }
 
     private int attemptFETransfer(EnumFacing face, int maxTransferLeft) {
@@ -195,7 +226,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Override
     @Optional.Method(modid = "ic2")
     public double getOfferedEnergy() {
-        return Math.min(this.size.getEnergyTransmission(), this.getCurrentEnergy() / 4L);
+        return Math.min(this.size.getIC2EnergyTransmission(), this.getCurrentEnergy() / 4L);
     }
 
     @Override
@@ -208,7 +239,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Override
     @Optional.Method(modid = "ic2")
     public int getSourceTier() {
-        return size.energyTier;
+        return size.ic2EnergyTier;
     }
 
     @Override

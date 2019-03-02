@@ -37,7 +37,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     public TileEnergyInputHatch() {}
 
     public TileEnergyInputHatch(EnergyHatchSize size) {
-        super(size);
+        super(size, MachineComponent.IOType.INPUT);
     }
 
     @Override
@@ -62,13 +62,13 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Override
     @Optional.Method(modid = "ic2")
     public double getDemandedEnergy() {
-        return Math.min((this.size.maxEnergy - this.energy) / 4, this.size.getEnergyTransmission());
+        return Math.min((this.size.maxEnergy - this.energy) / 4, this.size.getIC2EnergyTransmission());
     }
 
     @Override
     @Optional.Method(modid = "ic2")
     public int getSinkTier() {
-        return this.size.energyTier;
+        return this.size.ic2EnergyTier;
     }
 
     @Override
@@ -97,5 +97,4 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
             }
         };
     }
-
 }

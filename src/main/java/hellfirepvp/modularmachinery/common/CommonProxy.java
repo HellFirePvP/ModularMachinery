@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.container.ContainerController;
 import hellfirepvp.modularmachinery.common.container.ContainerEnergyHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
@@ -86,7 +87,7 @@ public class CommonProxy implements IGuiHandler {
 
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularMachinery.MODID, this);
 
-        if(Loader.isModLoaded("crafttweaker")) {
+        if(Mods.CRAFTTWEAKER.isPresent()) {
             MinecraftForge.EVENT_BUS.register(new ModIntegrationCrafttweaker());
         }
     }

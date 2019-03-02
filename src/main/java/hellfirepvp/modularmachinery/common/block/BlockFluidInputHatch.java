@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
 import hellfirepvp.modularmachinery.common.tiles.TileFluidInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
@@ -72,7 +73,7 @@ public class BlockFluidInputHatch extends BlockMachineComponent implements Block
     public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
         FluidHatchSize size = FluidHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, FluidHatchSize.values().length - 1)];
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.info", size.getSize()));
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.fluidhatch.tank.mek"));
         }
     }

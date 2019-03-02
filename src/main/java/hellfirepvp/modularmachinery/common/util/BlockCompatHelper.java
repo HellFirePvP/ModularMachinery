@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.util;
 
 import com.google.common.collect.Iterables;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.item.Item;
@@ -113,7 +114,7 @@ public class BlockCompatHelper {
         Method m = null, m2 = null, m3 = null, m4 = null, m5 = null, m6 = null;
         IProperty<EnumFacing> f = null;
         Field f1 = null;
-        if(Loader.isModLoaded("ic2")) {
+        if(Mods.IC2.isPresent()) {
             try {
                 Class c = Class.forName("ic2.core.block.TeBlockRegistry");
                 m = c.getDeclaredMethod("get", String.class);

@@ -12,6 +12,7 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Streams;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
 import mekanism.api.gas.GasStack;
 import mezz.jei.api.ingredients.IIngredientHelper;
@@ -42,7 +43,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
     @Nullable
     @Override
     public T getMatch(Iterable<T> ingredients, T ingredientToMatch) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             T gasMatch = attemptGasStackMatch(ingredients, ingredientToMatch);
             if(gasMatch != null) {
                 return gasMatch;
@@ -92,7 +93,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getDisplayName(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String display = getGasDisplayName(ingredient);
             if(display != null) {
                 return display;
@@ -117,7 +118,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getUniqueId(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String uniqueId = gasGasUniqueId(ingredient);
             if(uniqueId != null) {
                 return uniqueId;
@@ -142,7 +143,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getWildcardId(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String wildcard = getGasWildcardId(ingredient);
             if(wildcard != null) {
                 return wildcard;
@@ -167,7 +168,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getModId(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String modid = getGasModId(ingredient);
             if(modid != null) {
                 return modid;
@@ -192,7 +193,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public Iterable<Color> getColors(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             Iterable<Color> gasColors = getGasColors(ingredient);
             if(gasColors != null) {
                 return gasColors;
@@ -217,7 +218,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getResourceId(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String id = getGasResourceId(ingredient);
             if(id != null) {
                 return id;
@@ -247,7 +248,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public ItemStack cheatIngredient(T ingredient, boolean fullStack) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             ItemStack cheated = getGasCheatIngredient(ingredient, fullStack);
             if(cheated != null) {
                 return cheated;
@@ -272,7 +273,7 @@ public class HybridStackHelper<T extends HybridFluid> implements IIngredientHelp
 
     @Override
     public String getErrorInfo(T ingredient) {
-        if(ModularMachinery.isMekanismLoaded) {
+        if(Mods.MEKANISM.isPresent()) {
             String id = getGasErrorInfo(ingredient);
             if(id != null) {
                 return id;

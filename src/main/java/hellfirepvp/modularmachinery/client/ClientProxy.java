@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.client.util.BlockArrayPreviewRenderHelper;
 import hellfirepvp.modularmachinery.client.util.DebugOverlayHelper;
 import hellfirepvp.modularmachinery.client.util.SelectionBoxRenderHelper;
 import hellfirepvp.modularmachinery.common.CommonProxy;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.BlockDynamicColor;
 import hellfirepvp.modularmachinery.common.block.BlockVariants;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
@@ -76,7 +77,7 @@ public class ClientProxy extends CommonProxy {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(new DebugOverlayHelper());
         MinecraftForge.EVENT_BUS.register(new SelectionBoxRenderHelper());
-        if(Loader.isModLoaded("jei")) {
+        if(Mods.JEI.isPresent()) {
             registerJEIEventHandler();
         }
 

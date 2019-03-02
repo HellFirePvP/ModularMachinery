@@ -8,7 +8,10 @@
 
 package hellfirepvp.modularmachinery.common.tiles.base;
 
+import gregtech.api.capability.GregtechCapabilities;
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
+import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -22,6 +25,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -39,10 +43,13 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
     protected long energy = 0;
     protected EnergyHatchSize size;
 
+    private GTEnergyContainer energyContainer;
+
     public TileEnergyHatch() {}
 
-    public TileEnergyHatch(EnergyHatchSize size) {
+    public TileEnergyHatch(EnergyHatchSize size, MachineComponent.IOType ioType) {
         this.size = size;
+        this.energyContainer = new GTEnergyContainer(this, ioType);
     }
 
     @Override
@@ -95,7 +102,11 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
 
     @Override
     public boolean hasCapability(Capability<?> capability, @Nullable EnumFacing facing) {
-        return capability == CapabilityEnergy.ENERGY || super.hasCapability(capability, facing);
+        if (capability == CapabilityEnergy.ENERGY) {
+            return true;
+        }
+
+        return super.hasCapability(capability, facing);
     }
 
     @Nullable
@@ -104,7 +115,17 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
         if(capability == CapabilityEnergy.ENERGY) {
             return (T) this;
         }
+        if (Mods.GREGTECH.isPresent() &&
+                capability == getGTEnergyCapability()) {
+            return (T) this.energyContainer;
+        }
+
         return super.getCapability(capability, facing);
+    }
+
+    @Optional.Method(modid = "gregtech")
+    private Capability<?> getGTEnergyCapability() {
+        return GregtechCapabilities.CAPABILITY_ENERGY_CONTAINER;
     }
 
     @Override
@@ -131,6 +152,10 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
     }
 
     //MM stuff
+
+    public EnergyHatchSize getTier() {
+        return size;
+    }
 
     @Override
     public long getCurrentEnergy() {

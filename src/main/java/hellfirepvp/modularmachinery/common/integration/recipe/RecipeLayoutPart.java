@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.integration.recipe;
 
+import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidRenderer;
 import mezz.jei.api.ingredients.IIngredientRenderer;
@@ -127,7 +128,7 @@ public abstract class RecipeLayoutPart<T> {
                             1000,
                             false,
                             RecipeLayoutHelper.PART_TANK_SHELL.drawable);
-            if(Loader.isModLoaded("mekanism")) {
+            if(Mods.MEKANISM.isPresent()) {
                 copy = addGasRenderer(copy);
             }
             return copy;

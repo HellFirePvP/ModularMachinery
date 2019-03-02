@@ -83,10 +83,14 @@ tooltip.energyhatch.in.accept=Accepts %s FE per tick
 
 tooltip.energyhatch.ic2.powerrate=EU/t
 tooltip.energyhatch.ic2.any=Any
-tooltip.energyhatch.ic2.out.voltage=Output Voltage: %s
-tooltip.energyhatch.ic2.out.transfer=Output Transfer: %s %s
-tooltip.energyhatch.ic2.in.voltage=Input Voltage: %s
-tooltip.energyhatch.ic2.in.transfer=Input Transfer: %s %s
+tooltip.energyhatch.ic2.out.voltage=EU Output Voltage: %s
+tooltip.energyhatch.ic2.out.transfer=EU Output Transfer: %s %s
+tooltip.energyhatch.ic2.in.voltage=EU Input Voltage: %s
+tooltip.energyhatch.ic2.in.transfer=EU Input Transfer: %s %s
+
+tooltip.energyhatch.gregtech.voltage.in=Voltage IN: §a%s §7(§a%s§7)
+tooltip.energyhatch.gregtech.voltage.out=Voltage OUT: §a%s §7(§a%s§7)
+tooltip.energyhatch.gregtech.amperage=Amperage: §e%s
 
 tooltip.ic2.powertier.0.name=ULV
 tooltip.ic2.powertier.1.name=LV
