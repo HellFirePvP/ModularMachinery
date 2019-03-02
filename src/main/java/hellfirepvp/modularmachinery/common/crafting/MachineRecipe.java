@@ -39,6 +39,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -113,6 +114,29 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     @Nullable
     public DynamicMachine getOwningMachine() {
         return MachineRegistry.getRegistry().getMachine(getOwningMachineIdentifier());
+    }
+
+    public MachineRecipe deepCopy(Function<ResourceLocation, ResourceLocation> registryNameChange,
+                                  ResourceLocation newOwningMachineIdentifier) {
+        boolean freeze = false;
+        if (isFrozen()) {
+            freeze = true;
+            unfreeze();
+        }
+        MachineRecipe copy = new MachineRecipe(this.getRecipeFilePath(),
+                registryNameChange.apply(this.getRegistryName()),
+                newOwningMachineIdentifier,
+                this.getRecipeTotalTickTime(),
+                this.getConfiguredPriority());
+
+        for (ComponentRequirement<?> requirement : this.getCraftingRequirements()) {
+            copy.addRequirement(requirement.deepCopy());
+        }
+
+        if (freeze) {
+            freezeChanges();
+        }
+        return copy;
     }
 
     static boolean isFrozen() {

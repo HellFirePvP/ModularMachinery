@@ -67,8 +67,21 @@ public class RecipeRegistry {
         RECIPE_REGISTRY = new HashMap<>();
     }
 
-    public Map<DynamicMachine, List<MachineRecipe>> loadRecipes(@Nullable EntityPlayer player) {
-        ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry", 3);
+    public void loadRecipeRegistry(@Nullable EntityPlayer player, boolean doRegister) {
+        Map<ResourceLocation, MachineRecipe> sharedLoadRegistry = new HashMap<>();
+
+        Map<DynamicMachine, List<MachineRecipe>> recipes = loadRecipes(player, sharedLoadRegistry);
+        if (doRegister) {
+            registerRecipes(recipes);
+        }
+        recipes = loadAdapters(player, sharedLoadRegistry);
+        if (doRegister) {
+            registerRecipes(recipes);
+        }
+    }
+
+    private Map<DynamicMachine, List<MachineRecipe>> loadRecipes(@Nullable EntityPlayer player, Map<ResourceLocation, MachineRecipe> sharedLoadRegistry) {
+        ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry - Recipes", 3);
         barRecipes.step("Discovering Files");
         DataLoadProfiler profiler = new DataLoadProfiler();
 
@@ -79,30 +92,87 @@ public class RecipeRegistry {
 
         Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
         barRecipes.step("Loading Recipes");
-        List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes, earlyRecipes);
+
+        List<MachineRecipe> recipes = RecipeLoader.loadRecipes(potentialRecipes.getOrDefault(RecipeLoader.FileType.RECIPE, Lists.newArrayList()), earlyRecipes);
         DataLoadProfiler.StatusLine sl = profiler.createLine("Load-Phase: ");
-        DataLoadProfiler.Status success = sl.appendStatus("%s loaded");
-        DataLoadProfiler.Status failed = sl.appendStatus("%s failed");
+        DataLoadProfiler.Status success = sl.appendStatus("%s recipes loaded");
+        DataLoadProfiler.Status failed = sl.appendStatus("%s recipes failed");
 
         success.setCounter(recipes.size());
 
         Map<String, Exception> failures = RecipeLoader.captureFailedAttempts();
         failed.setCounter(failures.size());
         if(failures.size() > 0) {
-            ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading recipe!");
+            ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading recipes!");
             for (String fileName : failures.keySet()) {
                 ModularMachinery.log.warn("Couldn't load recipe from file " + fileName);
                 failures.get(fileName).printStackTrace();
             }
         }
 
-        Map<DynamicMachine, List<MachineRecipe>> out = new HashMap<>();
+        barRecipes.step("Validation");
+
+        Map<DynamicMachine, List<MachineRecipe>> validRecipes = loadAndValidateRecipes(recipes, profiler, sharedLoadRegistry);
+
+        profiler.printLines(player);
+        ProgressManager.pop(barRecipes);
+        if(frozen) {
+            MachineRecipe.freezeChanges();
+        }
+        return validRecipes;
+    }
+
+    private Map<DynamicMachine, List<MachineRecipe>> loadAdapters(@Nullable EntityPlayer player, Map<ResourceLocation, MachineRecipe> sharedLoadRegistry) {
+        ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry - Adapters", 3);
+        barRecipes.step("Discovering Adapter-Files");
+        DataLoadProfiler profiler = new DataLoadProfiler();
+
+        boolean frozen = MachineRecipe.isFrozen();
+        if(frozen) {
+            MachineRecipe.unfreeze();
+        }
+
+        Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
+        barRecipes.step("Loading Adapters");
+
+        List<MachineRecipe> recipes = RecipeLoader.loadAdapterRecipes(potentialRecipes.getOrDefault(RecipeLoader.FileType.ADAPTER, Lists.newArrayList()));
+        DataLoadProfiler.StatusLine sl = profiler.createLine("Load-Phase: ");
+        DataLoadProfiler.Status success = sl.appendStatus("%s adapter-recipes loaded");
+        DataLoadProfiler.Status failed = sl.appendStatus("%s adapter-recipes failed");
+
+        success.setCounter(recipes.size());
+
+        Map<String, Exception> failures = RecipeLoader.captureFailedAttempts();
+        failed.setCounter(failures.size());
+        if(failures.size() > 0) {
+            ModularMachinery.log.warn("Encountered " + failures.size() + " problems while loading adapters!");
+            for (String fileName : failures.keySet()) {
+                ModularMachinery.log.warn("Couldn't load recipe from file " + fileName);
+                failures.get(fileName).printStackTrace();
+            }
+        }
+
+        barRecipes.step("Validation");
+
+        Map<DynamicMachine, List<MachineRecipe>> validRecipes = loadAndValidateRecipes(recipes, profiler, sharedLoadRegistry);
+
+        profiler.printLines(player);
+        ProgressManager.pop(barRecipes);
+        if(frozen) {
+            MachineRecipe.freezeChanges();
+        }
+        return validRecipes;
+    }
+
+    private Map<DynamicMachine, List<MachineRecipe>> loadAndValidateRecipes(List<MachineRecipe> recipes,
+                                                                            DataLoadProfiler profiler,
+                                                                            Map<ResourceLocation, MachineRecipe> sharedLoadRegistry) {
         DataLoadProfiler.StatusLine unknown = profiler.createLine("");
         DataLoadProfiler.Status unknownCounter = unknown.appendStatus("Unknown Machinery: %s");
 
         Map<DynamicMachine, Tuple<DataLoadProfiler.Status, DataLoadProfiler.Status>> statusMap = new HashMap<>();
-        Map<ResourceLocation, MachineRecipe> tempRegistry = new HashMap<>();
-        barRecipes.step("Validation");
+        Map<DynamicMachine, List<MachineRecipe>> out = new HashMap<>();
+
         for (MachineRecipe mr : recipes) {
             DynamicMachine m = mr.getOwningMachine();
             if(m == null) {
@@ -120,8 +190,8 @@ public class RecipeRegistry {
             DataLoadProfiler.Status loaded = status.getFirst();
             DataLoadProfiler.Status fail = status.getSecond();
 
-            if(tempRegistry.containsKey(mr.getRegistryName())) {
-                MachineRecipe other = tempRegistry.get(mr.getRegistryName());
+            if(sharedLoadRegistry.containsKey(mr.getRegistryName())) {
+                MachineRecipe other = sharedLoadRegistry.get(mr.getRegistryName());
                 if(other != null) {
                     ModularMachinery.log.warn("MachineRecipe with registryName " + mr.getRegistryName() + " already exists!");
                     ModularMachinery.log.warn("Offending files: '" + mr.getRecipeFilePath() + "' and '" + other.getRecipeFilePath() + "' !");
@@ -130,14 +200,9 @@ public class RecipeRegistry {
                 }
             }
             loaded.incrementCounter();
-            tempRegistry.put(mr.getRegistryName(), mr);
+            sharedLoadRegistry.put(mr.getRegistryName(), mr);
             List<MachineRecipe> recipeList = out.computeIfAbsent(mr.getOwningMachine(), r -> Lists.newArrayList());
             recipeList.add(mr);
-        }
-        profiler.printLines(player);
-        ProgressManager.pop(barRecipes);
-        if(frozen) {
-            MachineRecipe.freezeChanges();
         }
         return out;
     }

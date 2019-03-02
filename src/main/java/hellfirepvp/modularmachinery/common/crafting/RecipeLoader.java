@@ -64,11 +64,11 @@ public class RecipeLoader {
         return candidates;
     }
 
-    public static List<MachineRecipe> loadRecipes(Map<RecipeLoader.FileType, List<File>> candidates, List<PreparedRecipe> preparedRecipes) {
+    public static List<MachineRecipe> loadRecipes(List<File> recipeCandidates, List<PreparedRecipe> preparedRecipes) {
         recipeAdapters.clear();
 
         List<MachineRecipe> loadedRecipes = Lists.newArrayList();
-        for (File f : candidates.get(FileType.RECIPE)) {
+        for (File f : recipeCandidates) {
             currentlyReadingPath = f.getPath();
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f), StandardCharsets.UTF_8)) {
                 MachineRecipe.MachineRecipeContainer container = JsonUtils.fromJson(GSON, isr, MachineRecipe.MachineRecipeContainer.class);
@@ -79,7 +79,15 @@ public class RecipeLoader {
                 currentlyReadingPath = null;
             }
         }
-        for (File f : candidates.get(FileType.ADAPTER)) {
+        for (PreparedRecipe recipe : preparedRecipes) {
+            loadedRecipes.add(convertPreparedRecipe(recipe));
+        }
+        return loadedRecipes;
+    }
+
+    public static List<MachineRecipe> loadAdapterRecipes(List<File> adapterCandidates) {
+        List<MachineRecipe> loadedRecipes = Lists.newArrayList();
+        for (File f : adapterCandidates) {
             try (InputStreamReader isr = new InputStreamReader(new FileInputStream(f))) {
                 RecipeAdapterAccessor accessor = JsonUtils.fromJson(GSON, isr, RecipeAdapterAccessor.class);
                 Collection<MachineRecipe> recipes = accessor.loadRecipesForAdapter();
@@ -92,9 +100,6 @@ public class RecipeLoader {
             } catch (Exception exc) {
                 failedAttempts.put(f.getPath(), exc);
             }
-        }
-        for (PreparedRecipe recipe : preparedRecipes) {
-            loadedRecipes.add(convertPreparedRecipe(recipe));
         }
         return loadedRecipes;
     }

@@ -28,6 +28,10 @@ public abstract class GuiContainerBase<T extends ContainerBase> extends GuiConta
         this.container = container;
     }
 
+    public T getContainer() {
+        return container;
+    }
+
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         this.drawDefaultBackground();

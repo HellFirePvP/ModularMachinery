@@ -10,17 +10,14 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
+import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
+import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.RegistryBuilder;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -42,6 +39,10 @@ public class RecipeAdapterRegistry {
         return adapter.createRecipesFor(owningMachine);
     }
 
+    public static void registerAdapter(RecipeAdapter adapter) {
+        ADAPTER_REGISTRY.register(adapter);
+    }
+
     public static void initDefaultAdapters() {
         ADAPTER_REGISTRY = new RegistryBuilder<RecipeAdapter>()
                 .setName(new ResourceLocation(ModularMachinery.MODID, "recipeadapters"))
@@ -50,7 +51,13 @@ public class RecipeAdapterRegistry {
                 .setMaxID(Short.MAX_VALUE)
         .create();
 
-        ADAPTER_REGISTRY.register(new AdapterMinecraftFurnace());
+        registerAdapter(new AdapterMinecraftFurnace());
+    }
+
+    public static void registerMachineAdapters() {
+        for (DynamicMachine machine : MachineRegistry.getRegistry()) {
+            registerAdapter(new DynamicMachineRecipeAdapter(machine.getRegistryName(), machine));
+        }
     }
 
 }

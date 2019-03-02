@@ -11,7 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import net.minecraft.nbt.NBTTagCompound;
 
 /**
- * This class is part of the Astral Sorcery Mod
+ * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
  * Class: CraftCheck
  * Created by HellFirePvP

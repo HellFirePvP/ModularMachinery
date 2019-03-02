@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.client.gui;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
+import hellfirepvp.modularmachinery.common.network.PktInteractFluidTankGui;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
 import hellfirepvp.modularmachinery.common.util.HybridGasTank;
 import mekanism.api.gas.GasStack;
@@ -21,6 +22,7 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureMap;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fluids.Fluid;
@@ -29,6 +31,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.common.Optional;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -51,6 +54,23 @@ public class GuiContainerFluidHatch extends GuiContainerBase<ContainerFluidHatch
 
     @Override
     protected void setWidthHeight() {}
+
+    @Override
+    protected void mouseClicked(int mouseX, int mouseY, int mouseButton) throws IOException {
+        super.mouseClicked(mouseX, mouseY, mouseButton);
+
+        int offsetX = (this.width - this.xSize) / 2;
+        int offsetZ = (this.height - this.ySize) / 2;
+        if (mouseButton == 0 &&
+                mouseX >= 15 + offsetX && mouseX <= 35 + offsetX &&
+                mouseY >= 10 + offsetZ && mouseY <= 71 + offsetZ) {
+
+            ItemStack held = this.mc.player.inventory.getItemStack();
+            if (!held.isEmpty()) {
+                ModularMachinery.NET_CHANNEL.sendToServer(new PktInteractFluidTankGui());
+            }
+        }
+    }
 
     @Override
     protected void renderHoveredToolTip(int x, int z) {

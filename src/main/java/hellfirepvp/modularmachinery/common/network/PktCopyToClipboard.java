@@ -13,6 +13,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessage;
 import net.minecraftforge.fml.common.network.simpleimpl.IMessageHandler;
 import net.minecraftforge.fml.common.network.simpleimpl.MessageContext;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
@@ -52,13 +54,16 @@ public class PktCopyToClipboard implements IMessage, IMessageHandler<PktCopyToCl
 
     @Override
     public IMessage onMessage(PktCopyToClipboard message, MessageContext ctx) {
-        Minecraft.getMinecraft().addScheduledTask(() -> handleCopy(message.strToCopy));
+        handleCopy(message.strToCopy);
         return null;
     }
 
+    @SideOnly(Side.CLIENT)
     private void handleCopy(String strToCopy) {
-        if(Desktop.isDesktopSupported()) {
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(strToCopy), null);
-        }
+        Minecraft.getMinecraft().addScheduledTask(() -> {
+            if(Desktop.isDesktopSupported()) {
+                Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(strToCopy), null);
+            }
+        });
     }
 }

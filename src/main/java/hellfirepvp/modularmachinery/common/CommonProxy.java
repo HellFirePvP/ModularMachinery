@@ -96,7 +96,9 @@ public class CommonProxy implements IGuiHandler {
         RecipeAdapterRegistry.initDefaultAdapters();
 
         MachineRegistry.getRegistry().registerMachines(MachineRegistry.getRegistry().loadMachines(null));
-        RecipeRegistry.getRegistry().registerRecipes(RecipeRegistry.getRegistry().loadRecipes(null));
+        RecipeAdapterRegistry.registerMachineAdapters();
+
+        RecipeRegistry.getRegistry().loadRecipeRegistry(null, true);
     }
 
     public void postInit() {}

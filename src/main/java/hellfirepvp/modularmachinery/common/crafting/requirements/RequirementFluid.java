@@ -69,10 +69,10 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     @Override
     public ComponentRequirement<HybridFluid> deepCopy() {
-        RequirementFluid fluid = new RequirementFluid(this.getRequiredComponentType(), this.getActionType(), this.required);
+        RequirementFluid fluid = new RequirementFluid(this.getRequiredComponentType(), this.getActionType(), this.required.copy());
         fluid.chance = this.chance;
-        fluid.tagMatch = this.tagMatch;
-        fluid.tagDisplay = this.tagDisplay;
+        fluid.tagMatch = getTagMatch();
+        fluid.tagDisplay = getTagDisplay();
         return fluid;
     }
 

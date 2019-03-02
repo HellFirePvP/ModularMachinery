@@ -48,7 +48,7 @@ public class CommandSyntax extends CommandBase {
         MachineRegistry.getRegistry().loadMachines(player);
         player.sendMessage(new TextComponentString(""));
         player.sendMessage(new TextComponentString("Testing Recipes:"));
-        RecipeRegistry.getRegistry().loadRecipes(player);
+        RecipeRegistry.getRegistry().loadRecipeRegistry(player, false);
     }
 
 }
