@@ -12,6 +12,8 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.crafting.command.RecipeCommandContainer;
+import hellfirepvp.modularmachinery.common.crafting.command.RecipeRunnableCommand;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
@@ -40,6 +42,7 @@ import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -62,6 +65,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     private final ResourceLocation owningMachine, registryName;
     private final int tickTime;
     private final List<ComponentRequirement> recipeRequirements = Lists.newArrayList();
+    private final RecipeCommandContainer commandContainer = new RecipeCommandContainer();
     private final int configuredPriority;
 
     public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority) {
@@ -88,6 +92,10 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
 
     public List<ComponentRequirement> getCraftingRequirements() {
         return Collections.unmodifiableList(recipeRequirements);
+    }
+
+    public RecipeCommandContainer getCommandContainer() {
+        return commandContainer;
     }
 
     public void addRequirement(ComponentRequirement requirement) {
@@ -279,7 +287,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 throw new JsonParseException("No 'requirements'-entry specified!");
             }
             JsonElement elementRequirements = root.get("requirements");
-            if(!elementRequirements.isJsonArray()) {
+            if (!elementRequirements.isJsonArray()) {
                 throw new JsonParseException("'requirements' should be an array of recipe requirements!");
             }
             JsonArray requirementsArray = elementRequirements.getAsJsonArray();
@@ -293,7 +301,25 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             if(recipe.recipeRequirements.isEmpty()) {
                 throw new JsonParseException("A recipe needs to have at least 1 requirement!");
             }
+
+            loadCommands(root, context, "startCommands", (cmd) -> recipe.getCommandContainer().addStartCommand(cmd));
+            loadCommands(root, context, "processingCommands", (cmd) -> recipe.getCommandContainer().addProcessingCommand(cmd));
+            loadCommands(root, context, "finishCommands", (cmd) -> recipe.getCommandContainer().addFinishCommand(cmd));
             return outContainer;
+        }
+
+        private void loadCommands(JsonObject root, JsonDeserializationContext context,
+                                  String arrayTag, Consumer<RecipeRunnableCommand> addFunction) {
+            if (root.has(arrayTag)) {
+                JsonElement elementStartCommands = root.get(arrayTag);
+                if (!elementStartCommands.isJsonArray()) {
+                    throw new JsonParseException(arrayTag + " should be an array of commands!");
+                }
+
+                for (JsonElement je : elementStartCommands.getAsJsonArray()) {
+                    addFunction.accept(context.deserialize(je, RecipeRunnableCommand.class));
+                }
+            }
         }
 
         @Nonnull

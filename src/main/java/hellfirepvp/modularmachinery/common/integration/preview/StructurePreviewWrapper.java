@@ -259,7 +259,7 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 0x222222);
         if(machine.requiresBlueprint()) {
             String reqBlueprint = I18n.format("tooltip.machinery.blueprint.required");
-            minecraft.fontRenderer.drawString(reqBlueprint, 6, 102, 0x222222);
+            minecraft.fontRenderer.drawString(reqBlueprint, 6, 108, 0x222222);
         }
         GlStateManager.color(1.0F, 1.0F, 1.0F, 1.0F);
         Rectangle scissorFrame = new Rectangle(4, 4,

@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
+import hellfirepvp.modularmachinery.common.crafting.command.ControllerCommandSender;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
@@ -35,6 +36,7 @@ public class RecipeCraftingContext {
 
     private final MachineRecipe recipe;
     private final TileMachineController machineController;
+    private final ControllerCommandSender commandSender;
 
     private int currentCraftingTick = 0;
     private Map<String, Map<MachineComponent<?>, Object>> typeComponents = new HashMap<>();
@@ -45,6 +47,7 @@ public class RecipeCraftingContext {
     public RecipeCraftingContext(MachineRecipe recipe, TileMachineController controller) {
         this.recipe = recipe;
         this.machineController = controller;
+        this.commandSender = new ControllerCommandSender(machineController);
     }
 
     public TileMachineController getMachineController() {
@@ -86,7 +89,7 @@ public class RecipeCraftingContext {
         return this.typeComponents.computeIfAbsent(key, (s) -> new HashMap<>()).keySet();
     }
 
-    public CraftingCheckResult ioTick() {
+    public CraftingCheckResult ioTick(int currentTick) {
         float durMultiplier = this.getDurationMultiplier();
 
         for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
@@ -127,8 +130,10 @@ public class RecipeCraftingContext {
                 }
             }
             perTickRequirement.resetIOTick(this);
-
         }
+
+        this.recipe.getCommandContainer().runTickCommands(this.commandSender, currentTick);
+
         return CraftingCheckResult.SUCCESS;
     }
 
@@ -150,6 +155,8 @@ public class RecipeCraftingContext {
             }
             requirement.endRequirementCheck();
         }
+
+        this.recipe.getCommandContainer().runStartCommands(this.commandSender);
     }
 
     public void finishCrafting() {
@@ -170,6 +177,8 @@ public class RecipeCraftingContext {
             }
             requirement.endRequirementCheck();
         }
+
+        this.recipe.getCommandContainer().runFinishCommands(this.commandSender);
     }
 
     public CraftingCheckResult canStartCrafting() {

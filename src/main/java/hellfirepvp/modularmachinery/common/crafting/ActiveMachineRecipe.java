@@ -49,7 +49,7 @@ public class ActiveMachineRecipe {
     @Nonnull
     public TileMachineController.CraftingStatus tick(RecipeCraftingContext context) {
         RecipeCraftingContext.CraftingCheckResult check;
-        if(!(check = context.ioTick()).isFailure()) {
+        if(!(check = context.ioTick(tick)).isFailure()) {
             this.tick++;
             return TileMachineController.CraftingStatus.working();
         } else {
