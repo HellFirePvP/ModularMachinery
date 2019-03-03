@@ -17,6 +17,7 @@ import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
+import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.client.resources.I18n;
@@ -109,11 +110,11 @@ public class DynamicMachine {
         return RecipeRegistry.getRegistry().getRecipesFor(this);
     }
 
-    public RecipeCraftingContext createContext(MachineRecipe recipe, Collection<MachineComponent> components, Collection<ModifierReplacement> modifiers) {
+    public RecipeCraftingContext createContext(MachineRecipe recipe, TileMachineController controller, Collection<MachineComponent> components, Collection<ModifierReplacement> modifiers) {
         if(!recipe.getOwningMachineIdentifier().equals(getRegistryName())) {
             throw new IllegalArgumentException("Tried to create context for a recipe that doesn't belong to the referenced machine!");
         }
-        RecipeCraftingContext context = new RecipeCraftingContext(recipe);
+        RecipeCraftingContext context = new RecipeCraftingContext(recipe, controller);
         components.forEach(context::addComponent);
         modifiers.forEach(context::addModifier);
         return context;

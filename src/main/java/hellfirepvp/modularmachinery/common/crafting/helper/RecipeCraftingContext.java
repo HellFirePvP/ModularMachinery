@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
+import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
 
 import javax.annotation.Nonnull;
@@ -33,14 +34,21 @@ public class RecipeCraftingContext {
     private static final Random RAND = new Random();
 
     private final MachineRecipe recipe;
+    private final TileMachineController machineController;
+
     private int currentCraftingTick = 0;
     private Map<String, Map<MachineComponent<?>, Object>> typeComponents = new HashMap<>();
     private Map<String, List<RecipeModifier>> modifiers = new HashMap<>();
 
     private List<ComponentOutputRestrictor> currentRestrictions = Lists.newArrayList();
 
-    public RecipeCraftingContext(MachineRecipe recipe) {
+    public RecipeCraftingContext(MachineRecipe recipe, TileMachineController controller) {
         this.recipe = recipe;
+        this.machineController = controller;
+    }
+
+    public TileMachineController getMachineController() {
+        return machineController;
     }
 
     public MachineRecipe getParentRecipe() {

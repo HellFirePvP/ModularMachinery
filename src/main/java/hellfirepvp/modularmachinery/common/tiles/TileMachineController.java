@@ -110,12 +110,12 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         markForUpdate();
                     }
                 } else {
-                    RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
+                    RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
                     this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
                     if(this.activeRecipe.isCompleted(this, context)) {
                         this.activeRecipe.complete(context);
                         this.activeRecipe.reset();
-                        context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
+                        context = this.foundMachine.createContext(this.activeRecipe.getRecipe(), this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
                         RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
 
                         if (result.isFailure()) {
@@ -143,7 +143,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
         float validity = 0F;
 
         for (MachineRecipe recipe : availableRecipes) {
-            RecipeCraftingContext context = this.foundMachine.createContext(recipe, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
+            RecipeCraftingContext context = this.foundMachine.createContext(recipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
             RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
             if (!result.isFailure()) {
                 this.activeRecipe = new ActiveMachineRecipe(recipe);
