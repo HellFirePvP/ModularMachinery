@@ -86,7 +86,7 @@ public enum FluidHatchSize implements IStringSerializable {
         return name().toLowerCase();
     }
 
-    public static void loadSizeFromConfig(Configuration cfg) {
+    public static void loadFromConfig(Configuration cfg) {
         for (FluidHatchSize size : values()) {
             size.size = cfg.getInt("size", "fluidhatch." + size.name().toUpperCase(), size.defaultConfigurationValue, 1, Integer.MAX_VALUE, "Defines the tank size for the size-type of fluid hatch.");
         }

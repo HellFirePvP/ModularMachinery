@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.client.util.EnergyDisplayUtil;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
@@ -73,18 +74,22 @@ public class BlockEnergyInputHatch extends BlockMachineComponent implements Bloc
     @SideOnly(Side.CLIENT)
     public void addInformation(ItemStack stack, @Nullable World player, List<String> tooltip, ITooltipFlag advanced) {
         EnergyHatchSize size = EnergyHatchSize.values()[MathHelper.clamp(stack.getMetadata(), 0, EnergyHatchSize.values().length - 1)];
-        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.storage", size.maxEnergy));
-        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.in.accept", size.transferLimit));
-        if(Mods.IC2.isPresent()) {
+        if (EnergyDisplayUtil.displayFETooltip) {
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.storage", size.maxEnergy));
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.in.accept", size.transferLimit));
             tooltip.add("");
+        }
+        if(Mods.IC2.isPresent() && EnergyDisplayUtil.displayIC2EUTooltip) {
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.voltage",
                     TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any")));
             tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.ic2.in.transfer",
-                    TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any"), TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.powerrate")));
-        }
-        if (Mods.GREGTECH.isPresent()) {
+                    TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.any"),
+                    TextFormatting.BLUE + I18n.format("tooltip.energyhatch.ic2.powerrate")));
             tooltip.add("");
+        }
+        if (Mods.GREGTECH.isPresent() && EnergyDisplayUtil.displayGTEUTooltip) {
             addGTTooltip(tooltip, size);
+            tooltip.add("");
         }
     }
 
@@ -95,6 +100,8 @@ public class BlockEnergyInputHatch extends BlockMachineComponent implements Bloc
                 size.getUnlocalizedGTEnergyTier()));
         tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.amperage",
                 String.valueOf(size.getGtAmperage())));
+        tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.energyhatch.gregtech.storage",
+                String.valueOf(EnergyDisplayUtil.EnergyType.GT_EU.formatEnergyForDisplay(size.maxEnergy))));
     }
 
     @Override

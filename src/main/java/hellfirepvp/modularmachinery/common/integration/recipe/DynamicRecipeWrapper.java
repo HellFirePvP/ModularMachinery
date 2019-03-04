@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.integration.recipe;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
+import hellfirepvp.modularmachinery.client.util.EnergyDisplayUtil;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
@@ -125,11 +126,15 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
                 .forEach(part -> ((RecipeLayoutPart.Energy) part).drawEnergy(minecraft, finalTotalEnergyOut));
         GlStateManager.color(1F, 1F, 1F, 1F);
 
+        String energyType = I18n.format(EnergyDisplayUtil.type.getUnlocalizedFormat());
+
         if(totalEnergyIn > 0) {
+            long energyIn = EnergyDisplayUtil.type.formatEnergyForDisplay(totalEnergyIn);
+
             GlStateManager.color(1F, 1F, 1F, 1F);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", totalEnergyIn), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", totalEnergyIn * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", energyIn, energyType), 8,  offsetY + 20, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", energyIn * this.recipe.getRecipeTotalTickTime(), energyType), 8,  offsetY + 30, 0x222222);
             GlStateManager.color(1F, 1F, 1F, 1F);
             offsetY += 36;
         }
@@ -143,10 +148,12 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         }
 
         if(totalEnergyOut > 0) {
+            long energyOut = EnergyDisplayUtil.type.formatEnergyForDisplay(totalEnergyOut);
+
             GlStateManager.color(1F, 1F, 1F, 1F);
             minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", totalEnergyOut), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", totalEnergyOut * this.recipe.getRecipeTotalTickTime()), 8,  offsetY + 30, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", energyOut, energyType), 8,  offsetY + 20, 0x222222);
+            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", energyOut * this.recipe.getRecipeTotalTickTime(), energyType), 8,  offsetY + 30, 0x222222);
             GlStateManager.color(1F, 1F, 1F, 1F);
             offsetY += 36;
         }

@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.client.gui;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.client.util.EnergyDisplayUtil;
 import hellfirepvp.modularmachinery.common.container.ContainerEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import net.minecraft.client.Minecraft;
@@ -51,8 +52,14 @@ public class GuiContainerEnergyHatch extends GuiContainerBase<ContainerEnergyHat
         int offsetZ = (this.height - this.ySize) / 2;
 
         if(x >= 15 + offsetX && x <= 35 + offsetX && z >= 10 + offsetZ && z <= 71 + offsetZ) {
+            long currentEnergy = EnergyDisplayUtil.type.formatEnergyForDisplay(energyHatch.getCurrentEnergy());
+            long maxEnergy = EnergyDisplayUtil.type.formatEnergyForDisplay(energyHatch.getMaxEnergy());
+
             List<String> text = Lists.newArrayList();
-            text.add(I18n.format("tooltip.energyhatch.charge", String.valueOf(energyHatch.getCurrentEnergy()), String.valueOf(energyHatch.getMaxEnergy())));
+            text.add(I18n.format("tooltip.energyhatch.charge",
+                    String.valueOf(currentEnergy),
+                    String.valueOf(maxEnergy),
+                    I18n.format(EnergyDisplayUtil.type.getUnlocalizedFormat())));
 
             FontRenderer font = Minecraft.getMinecraft().fontRenderer;
             drawHoveringText(text, x, z, (font == null ? fontRenderer : font));
