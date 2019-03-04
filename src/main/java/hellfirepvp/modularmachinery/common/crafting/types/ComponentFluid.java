@@ -65,7 +65,7 @@ public class ComponentFluid extends ComponentType<RequirementFluid> {
         }
         mbAmount = Math.max(0, mbAmount);
         FluidStack fluidStack = new FluidStack(f, mbAmount);
-        req = new RequirementFluid(ComponentType.Registry.getComponent("fluid"), machineIoType, fluidStack);
+        req = new RequirementFluid(machineIoType, fluidStack);
 
         if(requirement.has("chance")) {
             if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {

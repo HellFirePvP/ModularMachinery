@@ -185,7 +185,7 @@ public class RecipePrimer implements PreparedRecipe {
         if(stack.getTag() != null) {
             mcFluid.tag = CraftTweakerMC.getNBTCompound(stack.getTag());
         }
-        RequirementFluid rf = new RequirementFluid(ComponentType.Registry.getComponent("fluid"), ioType, mcFluid);
+        RequirementFluid rf = new RequirementFluid(ioType, mcFluid);
         appendComponent(rf);
     }
 
@@ -198,7 +198,7 @@ public class RecipePrimer implements PreparedRecipe {
         }
         amount = Math.max(0, amount);
         GasStack gasStack = new GasStack(gas, amount);
-        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(ComponentType.Registry.getComponent("gas"), ioType, gasStack);
+        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(ComponentType.Registry.COMPONENT_GAS, ioType, gasStack);
         appendComponent(req);
     }
 

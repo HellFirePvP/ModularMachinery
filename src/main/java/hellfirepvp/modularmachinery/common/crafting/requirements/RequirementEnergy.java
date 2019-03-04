@@ -36,7 +36,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     private long activeIO;
 
     public RequirementEnergy(MachineComponent.IOType ioType, long requirementPerTick) {
-        super(ComponentType.Registry.getComponent("energy"), ioType);
+        super(ComponentType.Registry.COMPONENT_ENERGY, ioType);
         this.requirementPerTick = requirementPerTick;
         this.activeIO = this.requirementPerTick;
     }

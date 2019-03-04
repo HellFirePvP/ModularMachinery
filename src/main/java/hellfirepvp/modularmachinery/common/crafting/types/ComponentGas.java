@@ -68,7 +68,7 @@ public class ComponentGas extends ComponentType {
         }
         mbAmount = Math.max(0, mbAmount);
         GasStack gasStack = new GasStack(gas, mbAmount);
-        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(ComponentType.Registry.getComponent("gas"), machineIoType, gasStack);
+        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(Registry.COMPONENT_GAS, machineIoType, gasStack);
 
         if(requirement.has("chance")) {
             if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {

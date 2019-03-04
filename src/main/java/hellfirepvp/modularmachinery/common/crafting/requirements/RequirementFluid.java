@@ -51,10 +51,8 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     private NBTTagCompound tagMatch = null, tagDisplay = null;
 
-    public RequirementFluid(ComponentType<?> type, MachineComponent.IOType ioType, FluidStack fluid) {
-        super(type, ioType);
-        this.required = new HybridFluid(fluid);
-        this.requirementCheck = this.required.copy();
+    public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
+        this(ComponentType.Registry.COMPONENT_FLUID, ioType, new HybridFluid(fluid));
     }
 
     private RequirementFluid(ComponentType<?> type, MachineComponent.IOType ioType, HybridFluid required) {

@@ -51,7 +51,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     public float chance = 1F;
 
     public RequirementItem(MachineComponent.IOType ioType, ItemStack item) {
-        super(ComponentType.Registry.getComponent("item"), ioType);
+        super(ComponentType.Registry.COMPONENT_ITEM, ioType);
         this.requirementType = ItemRequirementType.ITEMSTACKS;
         this.required = item.copy();
         this.oreDictName = null;
@@ -60,7 +60,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     public RequirementItem(MachineComponent.IOType ioType, String oreDictName, int oreDictAmount) {
-        super(ComponentType.Registry.getComponent("item"), ioType);
+        super(ComponentType.Registry.COMPONENT_ITEM, ioType);
         this.requirementType = ItemRequirementType.OREDICT;
         this.oreDictName = oreDictName;
         this.oreDictItemAmount = oreDictAmount;
@@ -69,7 +69,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     public RequirementItem(MachineComponent.IOType actionType, int fuelBurntime) {
-        super(ComponentType.Registry.getComponent("item"), actionType);
+        super(ComponentType.Registry.COMPONENT_ITEM, actionType);
         this.requirementType = ItemRequirementType.FUEL;
         this.fuelBurntime = fuelBurntime;
         this.oreDictName = null;
@@ -211,12 +211,19 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
                     }
                 }
 
-                ItemStack stack;
+                ItemStack stack = ItemStack.EMPTY;
                 if(oreDictName != null) {
-                    stack = Iterables.getFirst(OreDictionary.getOres(oreDictName), ItemStack.EMPTY);
-                    stack = ItemUtils.copyStackWithSize(stack, this.countIOBuffer);
+                    for (ItemStack oreInstance : OreDictionary.getOres(oreDictName)) {
+                        if (!oreInstance.isEmpty()) {
+                            stack = ItemUtils.copyStackWithSize(oreInstance, this.countIOBuffer);
 
-                    if(stack.isEmpty()) {
+                            if (!stack.isEmpty()) { //Try all options first..
+                                break;
+                            }
+                        }
+                    }
+
+                    if (this.countIOBuffer > 0 && stack.isEmpty()) {
                         throw new IllegalArgumentException("Unknown ItemStack: Cannot find an item in oredict '" + oreDictName + "'!");
                     }
                 } else {

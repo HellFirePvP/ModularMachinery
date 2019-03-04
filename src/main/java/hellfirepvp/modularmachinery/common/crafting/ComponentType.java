@@ -73,6 +73,11 @@ public abstract class ComponentType<R extends ComponentRequirement> {
 
     public static class Registry {
 
+        public static ComponentItem   COMPONENT_ITEM = new ComponentItem();
+        public static ComponentFluid  COMPONENT_FLUID = new ComponentFluid();
+        public static ComponentEnergy COMPONENT_ENERGY = new ComponentEnergy();
+        public static ComponentGas    COMPONENT_GAS = new ComponentGas();
+
         private static boolean initialized = false;
         private static Map<String, ComponentType> components = new HashMap<>();
 
@@ -90,10 +95,10 @@ public abstract class ComponentType<R extends ComponentRequirement> {
         public static void initialize() {
             if(initialized) return;
 
-            register(new ComponentItem());
-            register(new ComponentFluid());
-            register(new ComponentEnergy());
-            register(new ComponentGas());
+            register(COMPONENT_ITEM);
+            register(COMPONENT_FLUID);
+            register(COMPONENT_ENERGY);
+            register(COMPONENT_GAS);
 
             MinecraftForge.EVENT_BUS.post(new ComponentRegistryEvent());
 
