@@ -19,6 +19,7 @@ import net.minecraft.nbt.NBTTagCompound;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -31,10 +32,10 @@ import java.util.List;
 public class ModifierReplacement {
 
     private final BlockArray.BlockInformation info;
-    private final RecipeModifier modifier;
+    private final List<RecipeModifier> modifier;
     private final List<String> description;
 
-    public ModifierReplacement(BlockArray.BlockInformation info, RecipeModifier modifier, String description) {
+    public ModifierReplacement(BlockArray.BlockInformation info, List<RecipeModifier> modifier, String description) {
         this.info = info;
         this.modifier = modifier;
         this.description = description.isEmpty() ? Lists.newArrayList() : MiscUtils.splitStringBy(description, "\n");
@@ -44,8 +45,8 @@ public class ModifierReplacement {
         return info;
     }
 
-    public RecipeModifier getModifier() {
-        return modifier;
+    public List<RecipeModifier> getModifiers() {
+        return Collections.unmodifiableList(modifier);
     }
 
     public List<String> getDescriptionLines() {
@@ -113,11 +114,29 @@ public class ModifierReplacement {
                 throw new JsonParseException("'elements' has to either be a blockstate description, variable or array of blockstate descriptions!");
             }
 
-            if(!part.has("modifier") || !part.get("modifier").isJsonObject()) {
-                throw new JsonParseException("'modifier' tag not found or not a json-object!");
+            if (!part.has("modifier") && !part.has("modifiers")) {
+                throw new JsonParseException("'modifiers' tag not found!");
             }
+            JsonElement elementModifiers = part.has("modifier") ? part.get("modifier") : part.get("modifiers");
+            List<RecipeModifier> modifiers = Lists.newArrayList();
+            if (elementModifiers.isJsonObject()) {
+                modifiers.add(context.deserialize(elementModifiers, RecipeModifier.class));
+
+            } else if (elementModifiers.isJsonArray()) {
+                JsonArray modifierArray = elementModifiers.getAsJsonArray();
+                for (JsonElement modifierElement : modifierArray) {
+                    if (!modifierElement.isJsonObject()) {
+                        throw new JsonParseException("'modifiers' array needs to consist of json objects, each a modifier object!");
+                    }
+                    modifiers.add(context.deserialize(modifierElement, RecipeModifier.class));
+                }
+            } else {
+                throw new JsonParseException("'modifiers' tag needs to be either a single modifier object or an array of modifier objects!");
+            }
+
+            
             String description = part.has("description") ? part.getAsJsonPrimitive("description").getAsString() : "";
-            return new ModifierReplacement(blockInfo, context.deserialize(part.get("modifier"), RecipeModifier.class), description);
+            return new ModifierReplacement(blockInfo, modifiers, description);
         }
 
     }

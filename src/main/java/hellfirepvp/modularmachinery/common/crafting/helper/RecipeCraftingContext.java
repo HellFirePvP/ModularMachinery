@@ -229,8 +229,10 @@ public class RecipeCraftingContext {
     }
 
     public void addModifier(ModifierReplacement modifier) {
-        RecipeModifier mod = modifier.getModifier();
-        this.modifiers.computeIfAbsent(mod.getTarget(), target -> new LinkedList<>()).add(mod);
+        List<RecipeModifier> modifiers = modifier.getModifiers();
+        for (RecipeModifier mod : modifiers) {
+            this.modifiers.computeIfAbsent(mod.getTarget(), target -> new LinkedList<>()).add(mod);
+        }
     }
 
     @Nullable
