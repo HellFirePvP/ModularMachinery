@@ -28,6 +28,11 @@ public class NBTComparableLong extends NBTTagLong implements NBTComparableNumber
     }
 
     @Override
+    public NBTComparableLong copy() {
+        return new NBTComparableLong(this.comparisonMode, this.getLong());
+    }
+
+    @Override
     public boolean test(NBTPrimitive nbtPrimitive) {
         return nbtPrimitive instanceof NBTTagLong && comparisonMode.testLong(this.getLong(), nbtPrimitive.getLong());
     }

@@ -28,6 +28,11 @@ public class NBTComparableShort extends NBTTagShort implements NBTComparableNumb
     }
 
     @Override
+    public NBTComparableShort copy() {
+        return new NBTComparableShort(this.comparisonMode, this.getShort());
+    }
+
+    @Override
     public boolean test(NBTPrimitive nbtPrimitive) {
         return nbtPrimitive instanceof NBTTagShort && comparisonMode.testShort(this.getShort(), nbtPrimitive.getShort());
     }

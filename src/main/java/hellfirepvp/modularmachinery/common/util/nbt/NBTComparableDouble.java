@@ -28,6 +28,11 @@ public class NBTComparableDouble extends NBTTagDouble implements NBTComparableNu
     }
 
     @Override
+    public NBTComparableDouble copy() {
+        return new NBTComparableDouble(this.comparisonMode, this.getDouble());
+    }
+
+    @Override
     public boolean test(NBTPrimitive nbtPrimitive) {
         return nbtPrimitive instanceof NBTTagDouble && comparisonMode.testDouble(this.getDouble(), nbtPrimitive.getDouble());
     }

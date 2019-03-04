@@ -28,6 +28,11 @@ public class NBTComparableFloat extends NBTTagFloat implements NBTComparableNumb
     }
 
     @Override
+    public NBTComparableFloat copy() {
+        return new NBTComparableFloat(this.comparisonMode, this.getFloat());
+    }
+
+    @Override
     public boolean test(NBTPrimitive nbtPrimitive) {
         return nbtPrimitive instanceof NBTTagFloat && comparisonMode.testFloat(this.getFloat(), nbtPrimitive.getFloat());
     }

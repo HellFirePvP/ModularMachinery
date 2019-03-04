@@ -24,8 +24,17 @@ public class NBTPatternString extends NBTTagString {
     private final Pattern strPattern;
 
     public NBTPatternString(String data) {
+        this(data, Pattern.compile(data, Pattern.CASE_INSENSITIVE));
+    }
+
+    private NBTPatternString(String data, Pattern strPattern) {
         super(data);
-        this.strPattern = Pattern.compile(data, Pattern.CASE_INSENSITIVE);
+        this.strPattern = strPattern;
+    }
+
+    @Override
+    public NBTPatternString copy() {
+        return new NBTPatternString(this.getString(), this.strPattern);
     }
 
     public boolean testString(String toTest) {

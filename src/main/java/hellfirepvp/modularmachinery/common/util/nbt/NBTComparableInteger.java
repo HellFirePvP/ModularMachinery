@@ -28,6 +28,11 @@ public class NBTComparableInteger extends NBTTagInt implements NBTComparableNumb
     }
 
     @Override
+    public NBTComparableInteger copy() {
+        return new NBTComparableInteger(this.comparisonMode, this.getInt());
+    }
+
+    @Override
     public boolean test(NBTPrimitive nbtPrimitive) {
         return nbtPrimitive instanceof NBTTagInt && comparisonMode.testInt(this.getInt(), nbtPrimitive.getInt());
     }
