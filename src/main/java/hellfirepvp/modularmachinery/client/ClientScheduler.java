@@ -33,6 +33,10 @@ public class ClientScheduler {
 
     @SubscribeEvent
     public void tick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            return;
+        }
+
         clientTick++;
         ClientProxy.renderHelper.tick();
 

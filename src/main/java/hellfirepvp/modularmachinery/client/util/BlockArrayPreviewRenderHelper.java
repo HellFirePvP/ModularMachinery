@@ -25,6 +25,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.math.*;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.world.IBlockAccess;
+import net.minecraft.world.World;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
@@ -41,8 +42,12 @@ import java.util.Optional;
 public class BlockArrayPreviewRenderHelper {
 
     private BlockArrayRenderHelper renderHelper = null;
-    private BlockPos attachedPosition = null;
+    private Vec3i renderHelperOffset = null;
     private DynamicMachine machine = null;
+
+    private BlockPos attachedPosition = null;
+
+    private int renderedLayer = -1;
 
     private static int hash = -1;
     private static int batchDList = -1;
@@ -51,6 +56,7 @@ public class BlockArrayPreviewRenderHelper {
         if(currentContext.getShiftSnap() != -1) {
             this.renderHelper = currentContext.getRender();
             this.renderHelper.sampleSnap = currentContext.getShiftSnap(); //Just for good measure
+            this.renderHelperOffset = currentContext.getMoveOffset();
             this.machine = currentContext.getDisplayedMachine();
             this.attachedPosition = null;
             if(Minecraft.getMinecraft().player != null) {
@@ -66,8 +72,9 @@ public class BlockArrayPreviewRenderHelper {
 
         if(player != null && this.renderHelper != null && this.attachedPosition == null) {
             RayTraceResult lookBlock = getLookBlock(player, false, true, 20);
-            if(lookBlock != null) {
-                attachedPosition = lookBlock.getBlockPos();
+            if(lookBlock != null && lookBlock.typeOfHit == RayTraceResult.Type.BLOCK) {
+                attachedPosition = lookBlock.getBlockPos().offset(lookBlock.sideHit);
+                updateLayers();
                 return true;
             }
         }
@@ -80,10 +87,17 @@ public class BlockArrayPreviewRenderHelper {
                     Minecraft.getMinecraft().player.getDistanceSqToCenter(attachedPosition) >= 1024) {
                 clearSelection();
             }
-            if(Minecraft.getMinecraft().world != null &&
-                    renderHelper != null &&
-                    renderHelper.getBlocks().matches(Minecraft.getMinecraft().world, this.attachedPosition, true, this.machine.getModifiersAsMatchingReplacements())) {
-                clearSelection();
+
+            if(Minecraft.getMinecraft().world != null && renderHelper != null) {
+                if (hasLowerLayer() && !doesPlacedLayerMatch(this.renderedLayer - 1)) {
+                    updateLayers();
+                } else if (doesPlacedLayerMatch(this.renderedLayer)) {
+                    if (!renderHelper.getBlocks().matches(Minecraft.getMinecraft().world, this.attachedPosition, true, this.machine.getModifiersAsMatchingReplacements())) {
+                        updateLayers();
+                    } else {
+                        clearSelection();
+                    }
+                }
             }
         }
     }
@@ -114,10 +128,13 @@ public class BlockArrayPreviewRenderHelper {
                 hash = currentHash;
             }
         }
+        GlStateManager.disableDepth();
         GlStateManager.enableBlend();
         Blending.ALPHA.applyStateManager();
         GlStateManager.callList(batchDList);
         Blending.DEFAULT.applyStateManager();
+        GlStateManager.enableDepth();
+
         GlStateManager.popMatrix();
 
         //Color desync on block rendering - prevent that, resync
@@ -128,18 +145,15 @@ public class BlockArrayPreviewRenderHelper {
     private int hashBlocks() {
         int hash = 80238287;
         if(this.renderHelper != null && Minecraft.getMinecraft().player != null) {
-            Vec3i move = this.attachedPosition;
-            if(move == null) {
-                RayTraceResult res = getLookBlock(Minecraft.getMinecraft().player, false, true, 20);
-                if(res != null) {
-                    move = res.getBlockPos();
-                }
-            }
+            Vec3i move = getRenderOffset();
             if(move != null) {
                 BlockArray render = new BlockArray(renderHelper.getBlocks(), move);
                 for (Map.Entry<BlockPos, BlockArray.BlockInformation> entry : render.getPattern().entrySet()) {
-                    if(Minecraft.getMinecraft().world != null &&
-                            entry.getValue().matches(Minecraft.getMinecraft().world, entry.getKey(), false)) {
+                    if(Minecraft.getMinecraft().world != null && entry.getValue().matches(Minecraft.getMinecraft().world, entry.getKey(), false)) {
+                        continue;
+                    }
+                    int layer = entry.getKey().subtract(move).getY();
+                    if (this.attachedPosition != null && this.renderedLayer != layer) {
                         continue;
                     }
                     hash = (hash << 4) ^ (hash >> 28) ^ (entry.getKey().getX() * 5449 % 130651);
@@ -153,13 +167,7 @@ public class BlockArrayPreviewRenderHelper {
     }
 
     private void batchBlocks() {
-        Vec3i move = this.attachedPosition;
-        if(move == null) {
-            RayTraceResult res = getLookBlock(Minecraft.getMinecraft().player, false, true, 20);
-            if(res != null) {
-                move = res.getBlockPos();
-            }
-        }
+        Vec3i move = getRenderOffset();
         if(move == null || this.renderHelper == null) {
             batchDList = GLAllocation.generateDisplayLists(1);
             GlStateManager.glNewList(batchDList, GL11.GL_COMPILE);
@@ -167,8 +175,6 @@ public class BlockArrayPreviewRenderHelper {
             return;
         }
         batchDList = GLAllocation.generateDisplayLists(1);
-        GlStateManager.enableBlend();
-        Blending.DEFAULT.applyStateManager();
         GlStateManager.glNewList(batchDList, GL11.GL_COMPILE);
         Tessellator tes = Tessellator.getInstance();
         BufferBuilder vb = tes.getBuffer();
@@ -177,9 +183,13 @@ public class BlockArrayPreviewRenderHelper {
         BlockRendererDispatcher brd = Minecraft.getMinecraft().getBlockRendererDispatcher();
         VertexFormat blockFormat = DefaultVertexFormats.BLOCK;
 
-        vb.begin(GL11.GL_QUADS, blockFormat);
         for (Map.Entry<BlockPos, BlockArrayRenderHelper.BakedBlockData> data : access.blockRenderData.entrySet()) {
             BlockPos offset = data.getKey();
+            int layer = offset.subtract(move).getY();
+            if (this.attachedPosition != null && this.renderedLayer != layer) {
+                continue;
+            }
+
             BlockArrayRenderHelper.BakedBlockData renderData = data.getValue();
             BlockArrayRenderHelper.SampleRenderState state = renderData.getSampleState();
 
@@ -195,16 +205,28 @@ public class BlockArrayPreviewRenderHelper {
                 }
                 IBlockState actRenderState = state.state;
                 actRenderState = actRenderState.getBlock().getActualState(actRenderState, access, offset);
-                brd.renderBlock(actRenderState, offset, access, vb);
+                GlStateManager.pushMatrix();
+                GlStateManager.translate(offset.getX(), offset.getY(), offset.getZ());
+                GlStateManager.translate(0.125, 0.125, 0.125);
+                GlStateManager.scale(0.75, 0.75, 0.75);
+                vb.begin(GL11.GL_QUADS, blockFormat);
+                brd.renderBlock(actRenderState, BlockPos.ORIGIN, access, vb);
+                tes.draw();
+                GlStateManager.popMatrix();
             }
         }
-        vb.sortVertexData(
-                (float) TileEntityRendererDispatcher.staticPlayerX,
-                (float) TileEntityRendererDispatcher.staticPlayerY,
-                (float) TileEntityRendererDispatcher.staticPlayerZ);
-        tes.draw();
         GlStateManager.glEndList();
-        Blending.DEFAULT.applyStateManager();
+    }
+
+    private Vec3i getRenderOffset() {
+        Vec3i move = this.attachedPosition;
+        if(move == null) {
+            RayTraceResult res = getLookBlock(Minecraft.getMinecraft().player, false, true, 20);
+            if(res != null && res.typeOfHit == RayTraceResult.Type.BLOCK) {
+                move = res.getBlockPos().offset(res.sideHit);
+            }
+        }
+        return move;
     }
 
     @Nullable
@@ -226,8 +248,61 @@ public class BlockArrayPreviewRenderHelper {
         return rtr;
     }
 
+    private boolean doesPlacedLayerMatch(int slice) {
+        if (this.attachedPosition != null) {
+            BlockArray matchingArray = this.renderHelper.getBlocks();
+            World world = Minecraft.getMinecraft().world;
+            if (world != null) {
+                DynamicMachine.ModifierReplacementMap replacements = this.machine.getModifiersAsMatchingReplacements();
+                Map<BlockPos, BlockArray.BlockInformation> patternSlice = matchingArray.getPatternSlice(slice);
+                lblMatching:
+                for (Map.Entry<BlockPos, BlockArray.BlockInformation> data : patternSlice.entrySet()) {
+                    BlockPos offset = data.getKey();
+                    BlockPos actualPosition = offset.add(this.attachedPosition);
+                    BlockArray.BlockInformation info = matchingArray.getPattern().get(offset);
+                    if (info.matches(world, actualPosition, false)) {
+                        continue;
+                    }
+                    if(replacements.containsKey(offset)) {
+                        for (BlockArray.BlockInformation bi : replacements.get(offset)) {
+                            if (bi.matches(world, actualPosition, false)) {
+                                continue lblMatching;
+                            }
+                        }
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean hasLowerLayer() {
+        if (this.attachedPosition != null) {
+            return (this.renderHelper.getBlocks().getMin().getY() + this.renderHelperOffset.getY()) <= this.renderedLayer - 1;
+        }
+        return false;
+    }
+
+    private void updateLayers() {
+        this.renderedLayer = -1;
+        if (this.attachedPosition != null) {
+            BlockArray matchingArray = this.renderHelper.getBlocks();
+            int lowestSlice = matchingArray.getMin().getY() + this.renderHelperOffset.getY();
+            int maxSlice = matchingArray.getMax().getY() + this.renderHelperOffset.getY();
+            for (int y = lowestSlice; y <= maxSlice; y++) {
+                if (!doesPlacedLayerMatch(y)) {
+                    this.renderedLayer = y;
+                    return;
+                }
+            }
+        }
+    }
+
     private void clearSelection() {
         this.renderHelper = null;
+        this.renderHelperOffset = null;
         this.attachedPosition = null;
         this.machine = null;
     }

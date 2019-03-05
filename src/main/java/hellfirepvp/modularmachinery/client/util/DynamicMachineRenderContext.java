@@ -41,6 +41,7 @@ public class DynamicMachineRenderContext {
 
     private final DynamicMachine machine;
     private final BlockArrayRenderHelper render;
+    private final Vec3i moveOffset;
 
     private boolean render3D = true;
     private int renderSlice = 0;
@@ -50,8 +51,15 @@ public class DynamicMachineRenderContext {
 
     private DynamicMachineRenderContext(DynamicMachine machine) {
         this.machine = machine;
-        BlockArray copy = new BlockArray(machine.getPattern());
-        copy.getPattern().put(BlockPos.ORIGIN,
+        BlockArray pattern = machine.getPattern();
+        Vec3i min = pattern.getMin();
+        Vec3i max = pattern.getMax();
+        this.moveOffset = new Vec3i(
+                (min.getX() + (max.getX() - min.getX()) / 2) * -1,
+                -min.getY(),
+                (min.getZ() + (max.getZ() - min.getZ()) / 2) * -1);
+        BlockArray copy = new BlockArray(pattern, this.moveOffset);
+        copy.addBlock(new BlockPos(this.moveOffset),
                 new BlockArray.BlockInformation(
                         Lists.newArrayList(
                                 new BlockArray.IBlockStateDescriptor(
@@ -61,6 +69,10 @@ public class DynamicMachineRenderContext {
 
     BlockArrayRenderHelper getRender() {
         return render;
+    }
+
+    public Vec3i getMoveOffset() {
+        return moveOffset;
     }
 
     public long getShiftSnap() {
@@ -133,11 +145,11 @@ public class DynamicMachineRenderContext {
     }
 
     public boolean hasSliceDown() {
-        return render.getBlocks().getMin().getY() <= renderSlice - 1;
+        return render.getBlocks().getMin().getY() - this.moveOffset.getY() < renderSlice - 1;
     }
 
     public boolean hasSliceUp() {
-        return render.getBlocks().getMax().getY() >= renderSlice + 1;
+        return render.getBlocks().getMax().getY() + this.moveOffset.getY() > renderSlice + 1;
     }
 
     public void sliceUp() {
@@ -174,7 +186,7 @@ public class DynamicMachineRenderContext {
         if(render3D) {
             render.render3DGUI(x, z, scale, partialTicks);
         } else {
-            render.render3DGUI(x, z, scale, partialTicks, Optional.of(renderSlice));
+            render.render3DGUI(x, z, scale, partialTicks, Optional.of(renderSlice + this.moveOffset.getY()));
         }
     }
 

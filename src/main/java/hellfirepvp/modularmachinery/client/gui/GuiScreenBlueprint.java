@@ -201,8 +201,8 @@ public class GuiScreenBlueprint extends GuiScreen {
             slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
         }
         for (BlockPos pos : slice.keySet()) {
-            int xMod = pos.getX() + 1;
-            int zMod = pos.getZ() + 1;
+            int xMod = pos.getX() + 1 + this.renderContext.getMoveOffset().getX();
+            int zMod = pos.getZ() + 1 + this.renderContext.getMoveOffset().getZ();
             Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
             if(rct.contains(mouseX, mouseY)) {
                 IBlockState state = slice.get(pos).getSampleState(renderContext.getShiftSnap() == -1 ? Optional.empty() : Optional.of(renderContext.getShiftSnap()));

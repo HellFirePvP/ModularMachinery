@@ -74,6 +74,7 @@ public class DynamicMachine {
         return modifiers;
     }
 
+    @Nonnull
     public ModifierReplacementMap getModifiersAsMatchingReplacements() {
         ModifierReplacementMap infoMap = new ModifierReplacementMap();
         for (BlockPos pos : modifiers.keySet()) {
