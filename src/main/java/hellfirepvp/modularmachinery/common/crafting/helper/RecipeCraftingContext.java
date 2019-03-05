@@ -203,6 +203,8 @@ public class RecipeCraftingContext {
 
             Iterable<ProcessingComponent<?>> components = getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag());
             if (!Iterables.isEmpty(components)) {
+
+                List<String> errorMessages = Lists.newArrayList();
                 for (ProcessingComponent<?> component : components) {
                     CraftCheck check = requirement.canStartCrafting(component.getComponent(), this, this.currentRestrictions);
 
@@ -211,10 +213,12 @@ public class RecipeCraftingContext {
                         successfulRequirements += 1;
                         continue lblRequirements;
                     }
+
                     if (!check.isInvalid() && !check.getUnlocalizedMessage().isEmpty()) {
-                        result.addError(check.getUnlocalizedMessage());
+                        errorMessages.add(check.getUnlocalizedMessage());
                     }
                 }
+                errorMessages.forEach(result::addError);
             } else {
                 // No component found that would apply for the given requirement
                 result.addError(requirement.getRequiredComponentType()
