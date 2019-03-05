@@ -18,6 +18,7 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.PreparedRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
@@ -70,6 +71,15 @@ public class RecipePrimer implements PreparedRecipe {
         }
         return this;
     }
+
+    @ZenMethod
+    public RecipePrimer setTag(String selectorTag) {
+        if(lastComponent != null) {
+            lastComponent.setTag(new ComponentSelectorTag(selectorTag));
+        }
+        return this;
+    }
+
     //----------------------------------------------------------------------------------------------
     // Energy input & output
     //----------------------------------------------------------------------------------------------
