@@ -274,8 +274,8 @@ public class StructurePreviewWrapper implements IRecipeWrapper {
                 slice.put(BlockPos.ORIGIN, new BlockArray.BlockInformation(Lists.newArrayList(new BlockArray.IBlockStateDescriptor(BlocksMM.blockController.getDefaultState()))));
             }
             for (BlockPos pos : slice.keySet()) {
-                int xMod = pos.getX() + 1;
-                int zMod = pos.getZ() + 1;
+                int xMod = pos.getX() + 1 + this.dynamnicContext.getMoveOffset().getX();
+                int zMod = pos.getZ() + 1 + this.dynamnicContext.getMoveOffset().getZ();
                 Rectangle.Double rct = new Rectangle2D.Double(offset.x - xMod * scaleJump, offset.y - zMod * scaleJump, scaleJump, scaleJump);
                 if(rct.contains(mouseX, mouseY)) {
                     BlockArray.BlockInformation bi = slice.get(pos);
