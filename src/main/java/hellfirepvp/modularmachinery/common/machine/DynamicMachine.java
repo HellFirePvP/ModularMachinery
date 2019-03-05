@@ -14,6 +14,7 @@ import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
@@ -25,6 +26,7 @@ import net.minecraft.nbt.NBTException;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Tuple;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -46,7 +48,7 @@ public class DynamicMachine {
     @Nonnull
     private final ResourceLocation registryName;
     private String localizedName = null;
-    private BlockArray pattern = new BlockArray();
+    private TaggedPositionBlockArray pattern = new TaggedPositionBlockArray();
     private int definedColor = Config.machineColor;
     private Map<BlockPos, List<ModifierReplacement>> modifiers = new HashMap<>();
 
@@ -64,7 +66,7 @@ public class DynamicMachine {
         return requiresBlueprint;
     }
 
-    public BlockArray getPattern() {
+    public TaggedPositionBlockArray getPattern() {
         return pattern;
     }
 
@@ -110,12 +112,15 @@ public class DynamicMachine {
         return RecipeRegistry.getRegistry().getRecipesFor(this);
     }
 
-    public RecipeCraftingContext createContext(MachineRecipe recipe, TileMachineController controller, Collection<MachineComponent> components, Collection<ModifierReplacement> modifiers) {
+    public RecipeCraftingContext createContext(MachineRecipe recipe,
+                                               TileMachineController controller,
+                                               Collection<Tuple<MachineComponent<?>, ComponentSelectorTag>> taggedComponents,
+                                               Collection<ModifierReplacement> modifiers) {
         if(!recipe.getOwningMachineIdentifier().equals(getRegistryName())) {
             throw new IllegalArgumentException("Tried to create context for a recipe that doesn't belong to the referenced machine!");
         }
         RecipeCraftingContext context = new RecipeCraftingContext(recipe, controller);
-        components.forEach(context::addComponent);
+        taggedComponents.forEach(tpl -> context.addComponent(tpl.getFirst(), tpl.getSecond()));
         modifiers.forEach(context::addModifier);
         return context;
     }
@@ -285,7 +290,7 @@ public class DynamicMachine {
             }
         }
 
-        private void addDescriptorWithPattern(BlockArray pattern, BlockArray.BlockInformation information, JsonObject part) throws JsonParseException {
+        private void addDescriptorWithPattern(TaggedPositionBlockArray pattern, BlockArray.BlockInformation information, JsonObject part) throws JsonParseException {
             List<Integer> avX = new ArrayList<>();
             List<Integer> avY = new ArrayList<>();
             List<Integer> avZ = new ArrayList<>();
@@ -293,11 +298,25 @@ public class DynamicMachine {
             addCoordinates("y", part, avY);
             addCoordinates("z", part, avZ);
 
+            String tag = null;
+            if (part.has("selector-tag")) {
+                JsonElement strTag = part.get("selector-tag");
+                if (!strTag.isJsonPrimitive()) {
+                    throw new JsonParseException("The 'selector-tag' in an element must be a string!");
+                }
+                tag = strTag.getAsString();
+            }
+            ComponentSelectorTag selector = tag != null && !tag.isEmpty() ? new ComponentSelectorTag(tag) : null;
+
             for (BlockPos permutation : buildPermutations(avX, avY, avZ)) {
                 if(permutation.getX() == 0 && permutation.getY() == 0 && permutation.getZ() == 0) {
                     continue; //We're not going to overwrite the controller.
                 }
                 pattern.addBlock(permutation, information);
+
+                if (tag != null && !tag.isEmpty()) {
+                    pattern.setTag(permutation, selector);
+                }
             }
         }
 

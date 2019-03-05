@@ -32,6 +32,8 @@ public abstract class ComponentRequirement<T> {
     private final ComponentType componentType;
     private final MachineComponent.IOType actionType;
 
+    private ComponentSelectorTag tag = null;
+
     public ComponentRequirement(ComponentType componentType, MachineComponent.IOType actionType) {
         this.componentType = componentType;
         this.actionType = actionType;
@@ -43,6 +45,14 @@ public abstract class ComponentRequirement<T> {
 
     public final MachineComponent.IOType getActionType() {
         return actionType;
+    }
+
+    public final void setTag(ComponentSelectorTag tag) {
+        this.tag = tag;
+    }
+
+    public final ComponentSelectorTag getTag() {
+        return tag;
     }
 
     //True, if the requirement could be fulfilled by the given component

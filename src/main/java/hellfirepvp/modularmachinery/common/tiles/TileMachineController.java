@@ -16,6 +16,7 @@ import hellfirepvp.modularmachinery.common.block.BlockController;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
@@ -23,11 +24,11 @@ import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
+import hellfirepvp.modularmachinery.common.machine.TaggedPositionBlockArray;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
-import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTHelper;
@@ -67,14 +68,14 @@ public class TileMachineController extends TileEntityRestrictedTick {
     private CraftingStatus craftingStatus = CraftingStatus.MISSING_STRUCTURE;
 
     private DynamicMachine foundMachine = null;
-    private BlockArray foundPattern = null;
+    private TaggedPositionBlockArray foundPattern = null;
     private EnumFacing patternRotation = null;
     private DynamicMachine.ModifierReplacementMap foundReplacements = null;
     private IOInventory inventory;
 
     private ActiveMachineRecipe activeRecipe = null;
 
-    private List<MachineComponent> foundComponents = Lists.newArrayList();
+    private List<Tuple<MachineComponent<?>, ComponentSelectorTag>> foundComponents = Lists.newArrayList();
     private Map<BlockPos, List<ModifierReplacement>> foundModifiers = new HashMap<>();
 
     public TileMachineController() {
@@ -237,14 +238,14 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
     private void tryColorize(BlockPos pos, int color) {
         TileEntity te = this.getWorld().getTileEntity(pos);
-        if(te != null && te instanceof TileColorableMachineComponent) {
+        if(te instanceof TileColorableMachineComponent) {
             ((TileColorableMachineComponent) te).definedColor = color;
             ((TileColorableMachineComponent) te).markForUpdate();
             getWorld().addBlockEvent(pos, getWorld().getBlockState(pos).getBlock(), 1, 1);
         }
     }
 
-    private boolean matchesRotation(BlockArray pattern, DynamicMachine machine) {
+    private boolean matchesRotation(TaggedPositionBlockArray pattern, DynamicMachine machine) {
         EnumFacing face = EnumFacing.NORTH;
         DynamicMachine.ModifierReplacementMap replacements = machine.getModifiersAsMatchingReplacements();
         do {
@@ -270,6 +271,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
         if(this.foundMachine == null || this.foundPattern == null || this.patternRotation == null || this.foundReplacements == null) {
             this.foundComponents.clear();
             this.foundModifiers.clear();
+
             this.foundMachine = null;
             this.foundPattern = null;
             this.patternRotation = null;
@@ -282,9 +284,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
                 BlockPos realPos = getPos().add(potentialPosition);
                 TileEntity te = getWorld().getTileEntity(realPos);
                 if(te instanceof MachineComponentTile) {
-                    MachineComponent component = ((MachineComponentTile) te).provideComponent();
+                    ComponentSelectorTag tag = this.foundPattern.getTag(potentialPosition);
+                    MachineComponent<?> component = ((MachineComponentTile) te).provideComponent();
                     if(component != null) {
-                        this.foundComponents.add(component);
+                        this.foundComponents.add(new Tuple<>(component, tag));
                     }
                 }
             }
@@ -381,7 +384,7 @@ public class TileMachineController extends TileEntityRestrictedTick {
             } else {
                 EnumFacing rot = EnumFacing.getHorizontal(compound.getInteger("rotation"));
                 EnumFacing offset = EnumFacing.NORTH;
-                BlockArray pattern = machine.getPattern();
+                TaggedPositionBlockArray pattern = machine.getPattern();
                 DynamicMachine.ModifierReplacementMap replacements = machine.getModifiersAsMatchingReplacements();
                 while (offset != rot) {
                     replacements = replacements.rotateYCCW();

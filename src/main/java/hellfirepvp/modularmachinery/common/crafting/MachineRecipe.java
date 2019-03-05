@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.command.RecipeCommandContainer;
 import hellfirepvp.modularmachinery.common.crafting.command.RecipeRunnableCommand;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
 import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -343,7 +344,19 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             if(machineIoType == null) {
                 throw new JsonParseException("'" + ioType + "' is not a valid IOType!");
             }
-            return componentType.provideComponent(machineIoType, requirement);
+            ComponentRequirement<?> req = componentType.provideComponent(machineIoType, requirement);
+
+            if (requirement.has("selector-tag")) {
+                JsonElement strTag = requirement.get("selector-tag");
+                if (!strTag.isJsonPrimitive()) {
+                    throw new JsonParseException("The 'selector-tag' in an requirement must be a string!");
+                }
+                if (!strTag.getAsString().isEmpty()) {
+                    req.setTag(new ComponentSelectorTag(strTag.getAsString()));
+                }
+            }
+
+            return req;
         }
 
     }
