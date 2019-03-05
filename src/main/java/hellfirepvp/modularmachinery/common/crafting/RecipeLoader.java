@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterAccessor;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import hellfirepvp.modularmachinery.common.crafting.command.RecipeRunnableCommand;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.JsonUtils;
 
@@ -35,6 +36,7 @@ public class RecipeLoader {
 
     private static final Gson GSON = new GsonBuilder()
             .registerTypeHierarchyAdapter(MachineRecipe.MachineRecipeContainer.class, new MachineRecipe.Deserializer())
+            .registerTypeHierarchyAdapter(ComponentRequirement.class, new MachineRecipe.ComponentDeserializer())
             .registerTypeHierarchyAdapter(RecipeAdapterAccessor.class, new RecipeAdapterAccessor.Deserializer())
             .registerTypeHierarchyAdapter(RecipeModifier.class, new RecipeModifier.Deserializer())
             .registerTypeHierarchyAdapter(RecipeRunnableCommand.class, new RecipeRunnableCommand.Deserializer())

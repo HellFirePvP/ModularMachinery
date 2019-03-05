@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
@@ -39,15 +40,21 @@ public class DynamicMachineRecipeAdapter extends RecipeAdapter {
 
     @Nonnull
     @Override
-    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName, List<RecipeModifier> modifiers) {
+    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName,
+                                                      List<RecipeModifier> modifiers,
+                                                      List<ComponentRequirement<?>> additionalRequirements) {
         String newIdentifier = owningMachineName.getResourceDomain() + "." + owningMachineName.getResourcePath();
 
         List<MachineRecipe> recipesNew = new ArrayList<>();
         for (MachineRecipe recipe : RecipeRegistry.getRegistry().getRecipesFor(this.originalMachine)) {
-            recipesNew.add(recipe.copy(
+            MachineRecipe newRecipe = recipe.copy(
                     (res) -> new ResourceLocation(ModularMachinery.MODID, res.getResourcePath() + ".copy." + newIdentifier),
                     owningMachineName,
-                    modifiers));
+                    modifiers);
+            for (ComponentRequirement<?> additionalRequirement : additionalRequirements) {
+                newRecipe.addRequirement(additionalRequirement.deepCopy());
+            }
+            recipesNew.add(newRecipe);
         }
         return recipesNew;
     }

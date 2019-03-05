@@ -56,7 +56,6 @@ import java.util.function.Function;
 public class MachineRecipe implements Comparable<MachineRecipe> {
 
     private static int counter = 0;
-    private static boolean frozen = false;
     private static final int PRIORITY_WEIGHT_ENERGY = 50_000_000;
     private static final int PRIORITY_WEIGHT_FLUID  = 100;
     private static final int PRIORITY_WEIGHT_ITEM   = 50_000;
@@ -100,9 +99,6 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     }
 
     public void addRequirement(ComponentRequirement requirement) {
-        if(frozen) {
-            throw new IllegalStateException("Tried to add Requirement after recipes have been registered!");
-        }
         if(requirement instanceof RequirementEnergy) {
             for (ComponentRequirement req : this.recipeRequirements) {
                 if(req instanceof RequirementEnergy && req.getActionType() == requirement.getActionType()) {
@@ -129,11 +125,6 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     public MachineRecipe copy(Function<ResourceLocation, ResourceLocation> registryNameChange,
                               ResourceLocation newOwningMachineIdentifier,
                               List<RecipeModifier> modifiers) {
-        boolean freeze = false;
-        if (isFrozen()) {
-            freeze = true;
-            unfreeze();
-        }
         MachineRecipe copy = new MachineRecipe(this.getRecipeFilePath(),
                 registryNameChange.apply(this.getRegistryName()),
                 newOwningMachineIdentifier,
@@ -143,23 +134,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         for (ComponentRequirement<?> requirement : this.getCraftingRequirements()) {
             copy.addRequirement(requirement.deepCopyModified(modifiers));
         }
-
-        if (freeze) {
-            freezeChanges();
-        }
         return copy;
-    }
-
-    static boolean isFrozen() {
-        return frozen;
-    }
-
-    static void freezeChanges() {
-        frozen = true;
-    }
-
-    static void unfreeze() {
-        frozen = false;
     }
 
     @Override
@@ -297,7 +272,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 if(!elementRequirement.isJsonObject()) {
                     throw new JsonParseException("Each element in the 'requirements' array needs to be a fully defined requirement-object!");
                 }
-                recipe.recipeRequirements.add(deserializeRequirement(elementRequirement.getAsJsonObject()));
+                recipe.recipeRequirements.add(context.deserialize(elementRequirement, ComponentRequirement.class));
             }
             if(recipe.recipeRequirements.isEmpty()) {
                 throw new JsonParseException("A recipe needs to have at least 1 requirement!");
@@ -323,8 +298,17 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             }
         }
 
-        @Nonnull
-        private ComponentRequirement deserializeRequirement(JsonObject requirement) throws JsonParseException {
+    }
+
+    public static class ComponentDeserializer implements JsonDeserializer<ComponentRequirement> {
+
+        @Override
+        public ComponentRequirement<?> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+            if(!json.isJsonObject()) {
+                throw new JsonParseException("Component Requirements have to be objects!");
+            }
+            JsonObject requirement = json.getAsJsonObject();
+
             if(!requirement.has("type") || !requirement.get("type").isJsonPrimitive() ||
                     !requirement.get("type").getAsJsonPrimitive().isString()) {
                 throw new JsonParseException("'type' of a requirement is missing or isn't a string!");
@@ -358,7 +342,6 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
 
             return req;
         }
-
     }
 
 }

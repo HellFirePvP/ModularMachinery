@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
+import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
@@ -33,12 +34,15 @@ public class RecipeAdapterRegistry {
     private static IForgeRegistry<RecipeAdapter> ADAPTER_REGISTRY = null;
 
     @Nullable
-    public static Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachine, ResourceLocation adapterKey, List<RecipeModifier> modifiers) {
+    public static Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachine,
+                                                             ResourceLocation adapterKey,
+                                                             List<RecipeModifier> modifiers,
+                                                             List<ComponentRequirement<?>> additionalRequirements) {
         RecipeAdapter adapter = ADAPTER_REGISTRY.getValue(adapterKey);
         if(adapter == null) {
             return null;
         }
-        return adapter.createRecipesFor(owningMachine, modifiers);
+        return adapter.createRecipesFor(owningMachine, modifiers, additionalRequirements);
     }
 
     public static void registerAdapter(RecipeAdapter adapter) {

@@ -40,7 +40,9 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
 
     @Nonnull
     @Override
-    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName, List<RecipeModifier> modifiers) {
+    public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName,
+                                                      List<RecipeModifier> modifiers,
+                                                      List<ComponentRequirement<?>> additionalRequirements) {
         Map<ItemStack, ItemStack> inputOutputMap = FurnaceRecipes.instance().getSmeltingList();
         List<MachineRecipe> smeltingRecipes = new ArrayList<>(inputOutputMap.size());
         int incId = 0;
@@ -66,6 +68,11 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
             if (inEnergy > 0) {
                 recipe.addRequirement(new RequirementEnergy(MachineComponent.IOType.INPUT, inEnergy));
             }
+
+            for (ComponentRequirement<?> additionalRequirement : additionalRequirements) {
+                recipe.addRequirement(additionalRequirement.deepCopy());
+            }
+
             smeltingRecipes.add(recipe);
             incId++;
         }

@@ -85,11 +85,6 @@ public class RecipeRegistry {
         barRecipes.step("Discovering Files");
         DataLoadProfiler profiler = new DataLoadProfiler();
 
-        boolean frozen = MachineRecipe.isFrozen();
-        if(frozen) {
-            MachineRecipe.unfreeze();
-        }
-
         Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
         barRecipes.step("Loading Recipes");
 
@@ -116,9 +111,6 @@ public class RecipeRegistry {
 
         profiler.printLines(player);
         ProgressManager.pop(barRecipes);
-        if(frozen) {
-            MachineRecipe.freezeChanges();
-        }
         return validRecipes;
     }
 
@@ -126,11 +118,6 @@ public class RecipeRegistry {
         ProgressManager.ProgressBar barRecipes = ProgressManager.push("RecipeRegistry - Adapters", 3);
         barRecipes.step("Discovering Adapter-Files");
         DataLoadProfiler profiler = new DataLoadProfiler();
-
-        boolean frozen = MachineRecipe.isFrozen();
-        if(frozen) {
-            MachineRecipe.unfreeze();
-        }
 
         Map<RecipeLoader.FileType, List<File>> potentialRecipes = RecipeLoader.discoverDirectory(CommonProxy.dataHolder.getRecipeDirectory());
         barRecipes.step("Loading Adapters");
@@ -158,9 +145,6 @@ public class RecipeRegistry {
 
         profiler.printLines(player);
         ProgressManager.pop(barRecipes);
-        if(frozen) {
-            MachineRecipe.freezeChanges();
-        }
         return validRecipes;
     }
 
@@ -217,7 +201,6 @@ public class RecipeRegistry {
                 recipeSet.add(recipe);
             }
         }
-        MachineRecipe.freezeChanges();
     }
 
     public void registerRecipeEarly(PreparedRecipe recipe) {
@@ -225,11 +208,6 @@ public class RecipeRegistry {
     }
 
     public void reloadAdapters() {
-        boolean frozen = MachineRecipe.isFrozen();
-        if(frozen) {
-            MachineRecipe.unfreeze();
-        }
-
         for (RecipeAdapterAccessor accessor : RecipeLoader.recipeAdapters) {
             Map<Integer, TreeSet<MachineRecipe>> machineRecipeList = REGISTRY_RECIPE_BY_MACHINE.get(accessor.getOwningMachine());
             for (MachineRecipe cached : accessor.getCachedRecipes()) {
@@ -250,10 +228,6 @@ public class RecipeRegistry {
                 TreeSet<MachineRecipe> recipeSet = recipeList.computeIfAbsent(recipe.getConfiguredPriority(), inte -> new TreeSet<>());
                 recipeSet.add(recipe);
             }
-        }
-
-        if(frozen) {
-            MachineRecipe.freezeChanges();
         }
     }
 
