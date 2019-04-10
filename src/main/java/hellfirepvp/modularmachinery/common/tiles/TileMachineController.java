@@ -402,10 +402,12 @@ public class TileMachineController extends TileEntityRestrictedTick {
                         NBTTagCompound posTag = list.getCompoundTagAt(i);
                         BlockPos modOffset = NBTUtil.getPosFromTag(posTag.getCompoundTag("position"));
                         IBlockState state = NBTHelper.getBlockState(posTag, "state");
-                        for (ModifierReplacement mod : this.foundMachine.getModifiers().getOrDefault(modOffset, Lists.newArrayList())) {
-                            if (mod.getBlockInformation().matchesState(state)) {
-                                this.foundModifiers.putIfAbsent(modOffset, Lists.newArrayList());
-                                this.foundModifiers.get(modOffset).add(mod);
+                        if (state != null) {
+                            for (ModifierReplacement mod : this.foundMachine.getModifiers().getOrDefault(modOffset, Lists.newArrayList())) {
+                                if (mod.getBlockInformation().matchesState(state)) {
+                                    this.foundModifiers.putIfAbsent(modOffset, Lists.newArrayList());
+                                    this.foundModifiers.get(modOffset).add(mod);
+                                }
                             }
                         }
                     }
