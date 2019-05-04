@@ -92,11 +92,9 @@ public class DynamicMachine {
 
     @SideOnly(Side.CLIENT)
     public String getLocalizedName() {
-        if (localizedName != null) {
-            return localizedName;
-        }
         String localizationKey = registryName.getResourceDomain() + "." + registryName.getResourcePath();
-        return I18n.hasKey(localizationKey) ? I18n.format(localizationKey) : localizationKey;
+        return I18n.hasKey(localizationKey) ? I18n.format(localizationKey) : 
+                localizedName != null ? localizedName : localizationKey;
     }
 
     public int getMachineColor() {
