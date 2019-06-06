@@ -8,6 +8,7 @@
 
 package hellfirepvp.modularmachinery.common.registry;
 
+import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraftforge.event.RegistryEvent;
@@ -21,6 +22,11 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
  * Date: 26.06.2017 / 21:12
  */
 public class RegistrationBus {
+
+    @SubscribeEvent
+    public void registerRegistries(RegistryEvent.NewRegistry event) {
+        RecipeAdapterRegistry.createRegistry();
+    }
 
     @SubscribeEvent
     public void registerItems(RegistryEvent.Register<Item> event) {

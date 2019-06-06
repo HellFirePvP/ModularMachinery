@@ -15,6 +15,7 @@ import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.RegistryBuilder;
 
@@ -45,18 +46,24 @@ public class RecipeAdapterRegistry {
         return adapter.createRecipesFor(owningMachine, modifiers, additionalRequirements);
     }
 
-    public static void registerAdapter(RecipeAdapter adapter) {
-        ADAPTER_REGISTRY.register(adapter);
-    }
+    public static void createRegistry() {
+        if (ADAPTER_REGISTRY != null) {
+            return;
+        }
 
-    public static void initDefaultAdapters() {
         ADAPTER_REGISTRY = new RegistryBuilder<RecipeAdapter>()
                 .setName(new ResourceLocation(ModularMachinery.MODID, "recipeadapters"))
                 .setType(RecipeAdapter.class)
                 .disableSaving()
                 .setMaxID(Short.MAX_VALUE)
-        .create();
+                .create();
+    }
 
+    public static void registerAdapter(RecipeAdapter adapter) {
+        ADAPTER_REGISTRY.register(adapter);
+    }
+
+    public static void initDefaultAdapters() {
         registerAdapter(new AdapterMinecraftFurnace());
     }
 
