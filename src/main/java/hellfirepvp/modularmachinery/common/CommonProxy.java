@@ -79,7 +79,6 @@ public class CommonProxy implements IGuiHandler {
 
         MachineRegistry.getRegistry().buildRegistry();
         RecipeRegistry.getRegistry().buildRegistry();
-        MinecraftForge.EVENT_BUS.register(new RegistrationBus());
 
         RegistryBlocks.initialize();
         RegistryItems.initialize();

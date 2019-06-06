@@ -14,8 +14,10 @@ import hellfirepvp.modularmachinery.common.command.CommandSyntax;
 import hellfirepvp.modularmachinery.common.network.PktCopyToClipboard;
 import hellfirepvp.modularmachinery.common.network.PktInteractFluidTankGui;
 import hellfirepvp.modularmachinery.common.network.PktSyncSelection;
+import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.nbt.JsonToNBT;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
@@ -63,6 +65,11 @@ public class ModularMachinery {
 
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
     public static CommonProxy proxy;
+
+    public ModularMachinery() {
+        //Thanks forge
+        MinecraftForge.EVENT_BUS.register(new RegistrationBus());
+    }
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {
