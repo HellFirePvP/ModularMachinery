@@ -34,14 +34,6 @@ import javax.annotation.Nullable;
  */
 public class RequirementTypeItem extends RequirementType<ItemStack, RequirementItem> {
 
-    public RequirementTypeItem() {
-        this(ComponentTypesMM.COMPONENT_ITEM);
-    }
-
-    protected RequirementTypeItem(@Nullable ComponentType requiredType) {
-        super(requiredType);
-    }
-
     @Override
     public RequirementItem createRequirement(IOType type, JsonObject jsonObject) {
         RequirementItem req;

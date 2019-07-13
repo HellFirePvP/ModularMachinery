@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.helper.*;
 import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponentEnergy;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeEnergy;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
 import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -87,7 +88,7 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long, Requir
     @Override
     public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
         MachineComponent<?> cmp = component.getComponent();
-        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+        return cmp.getComponentType().equals(ComponentTypesMM.COMPONENT_ENERGY) &&
                 cmp instanceof MachineComponent.EnergyHatch &&
                 cmp.getIOType() == this.getActionType();
     }

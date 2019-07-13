@@ -14,6 +14,7 @@ import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponent
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
 import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -150,7 +151,7 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid, Requirem
     @Override
     public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
         MachineComponent<?> cmp = component.getComponent();
-        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+        return (cmp.getComponentType().equals(ComponentTypesMM.COMPONENT_FLUID) || cmp.getComponentType().equals(ComponentTypesMM.COMPONENT_GAS)) &&
                 cmp instanceof MachineComponent.FluidHatch &&
                 cmp.getIOType() == this.getActionType();
     }

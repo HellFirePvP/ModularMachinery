@@ -31,10 +31,6 @@ import javax.annotation.Nullable;
  */
 public class RequirementTypeGas extends RequirementTypeFluid {
 
-    public RequirementTypeGas() {
-        super(ComponentTypesMM.COMPONENT_GAS);
-    }
-
     @Nullable
     @Override
     public String requiresModid() {

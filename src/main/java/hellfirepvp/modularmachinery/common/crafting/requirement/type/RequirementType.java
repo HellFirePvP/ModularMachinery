@@ -26,17 +26,6 @@ import javax.annotation.Nullable;
  */
 public abstract class RequirementType<T, V extends ComponentRequirement<T, ? extends RequirementType<T, V>>> extends IForgeRegistryEntry.Impl<RequirementType<?, ?>> {
 
-    private final ComponentType componentType;
-
-    public RequirementType(@Nullable ComponentType requiredType) {
-        this.componentType = requiredType;
-    }
-
-    @Nullable
-    public ComponentType getComponentType() {
-        return componentType;
-    }
-
     public abstract ComponentRequirement<T, ? extends RequirementType<T, V>> createRequirement(IOType type, JsonObject jsonObject);
 
     @Nullable

@@ -12,6 +12,7 @@ import com.google.common.collect.Iterables;
 import hellfirepvp.modularmachinery.common.crafting.helper.*;
 import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponentItem;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeItem;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
 import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
@@ -182,7 +183,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack, Requirement
     @Override
     public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
         MachineComponent<?> cmp = component.getComponent();
-        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+        return cmp.getComponentType().equals(ComponentTypesMM.COMPONENT_ITEM) &&
                 cmp instanceof MachineComponent.ItemBus &&
                 cmp.getIOType() == getActionType();
     }

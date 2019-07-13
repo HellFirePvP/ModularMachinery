@@ -22,10 +22,6 @@ import hellfirepvp.modularmachinery.common.machine.IOType;
 //This is actually only a helper type for recipe modifiers
 public class RequirementDuration extends RequirementType<Object, ComponentRequirement<Object, RequirementDuration>> {
 
-    public RequirementDuration() {
-        super(null);
-    }
-
     @Override
     public ComponentRequirement<Object, ? extends RequirementType<Object, ComponentRequirement<Object, RequirementDuration>>> createRequirement(IOType type, JsonObject jsonObject) {
         throw new UnsupportedOperationException("Cannot instantiate requirement for duration!");

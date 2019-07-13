@@ -32,14 +32,6 @@ import javax.annotation.Nullable;
  */
 public class RequirementTypeFluid extends RequirementType<HybridFluid, RequirementFluid> {
 
-    public RequirementTypeFluid() {
-        this(ComponentTypesMM.COMPONENT_FLUID);
-    }
-
-    protected RequirementTypeFluid(@Nullable ComponentType requiredType) {
-        super(requiredType);
-    }
-
     @Override
     public RequirementFluid createRequirement(IOType type, JsonObject requirement) {
         RequirementFluid req;

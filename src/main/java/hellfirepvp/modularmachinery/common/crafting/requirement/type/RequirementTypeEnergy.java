@@ -26,14 +26,6 @@ import javax.annotation.Nullable;
  */
 public class RequirementTypeEnergy extends RequirementType<Long, RequirementEnergy> {
 
-    public RequirementTypeEnergy() {
-        this(ComponentTypesMM.COMPONENT_ENERGY);
-    }
-
-    protected RequirementTypeEnergy(@Nullable ComponentType requiredType) {
-        super(requiredType);
-    }
-
     @Override
     public RequirementEnergy createRequirement(IOType type, JsonObject requirement) {
         if(!requirement.has("energyPerTick") || !requirement.get("energyPerTick").isJsonPrimitive() ||
