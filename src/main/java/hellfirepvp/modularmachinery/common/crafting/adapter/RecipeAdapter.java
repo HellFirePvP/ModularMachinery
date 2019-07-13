@@ -54,7 +54,7 @@ public abstract class RecipeAdapter implements IForgeRegistryEntry<RecipeAdapter
     @Nonnull
     public abstract Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName,
                                                                List<RecipeModifier> modifiers,
-                                                               List<ComponentRequirement<?>> additionalRequirements);
+                                                               List<ComponentRequirement<?, ?>> additionalRequirements);
 
     @Nonnull
     public MachineRecipe createRecipeShell(ResourceLocation uniqueRecipeName, ResourceLocation owningMachineName, int tickTime, int priority) {

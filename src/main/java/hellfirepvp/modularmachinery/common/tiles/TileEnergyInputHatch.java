@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.tiles;
 
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -37,7 +38,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     public TileEnergyInputHatch() {}
 
     public TileEnergyInputHatch(EnergyHatchSize size) {
-        super(size, MachineComponent.IOType.INPUT);
+        super(size, IOType.INPUT);
     }
 
     @Override
@@ -90,7 +91,7 @@ public class TileEnergyInputHatch extends TileEnergyHatch implements IEnergySink
     @Nullable
     @Override
     public MachineComponent provideComponent() {
-        return new MachineComponent.EnergyHatch(MachineComponent.IOType.INPUT) {
+        return new MachineComponent.EnergyHatch(IOType.INPUT) {
             @Override
             public IEnergyHandler getContainerProvider() {
                 return TileEnergyInputHatch.this;

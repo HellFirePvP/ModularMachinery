@@ -10,9 +10,10 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;
 import net.minecraft.item.ItemStack;
@@ -42,34 +43,34 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
     @Override
     public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName,
                                                       List<RecipeModifier> modifiers,
-                                                      List<ComponentRequirement<?>> additionalRequirements) {
+                                                      List<ComponentRequirement<?, ?>> additionalRequirements) {
         Map<ItemStack, ItemStack> inputOutputMap = FurnaceRecipes.instance().getSmeltingList();
         List<MachineRecipe> smeltingRecipes = new ArrayList<>(inputOutputMap.size());
         int incId = 0;
         for (Map.Entry<ItemStack, ItemStack> smelting : inputOutputMap.entrySet()) {
-            int tickTime = Math.round(Math.max(1, RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_DURATION, null, 120, false)));
+            int tickTime = Math.round(Math.max(1, RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_DURATION, null, 120, false)));
 
             MachineRecipe recipe = createRecipeShell(
                     new ResourceLocation("minecraft", "smelting_recipe_" + incId),
                     owningMachineName,
                     tickTime, 0);
 
-            int inAmount = Math.round(RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_ITEM, MachineComponent.IOType.INPUT, smelting.getKey().getCount(), false));
+            int inAmount = Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_ITEM, IOType.INPUT, smelting.getKey().getCount(), false));
             if (inAmount > 0) {
-                recipe.addRequirement(new RequirementItem(MachineComponent.IOType.INPUT, ItemUtils.copyStackWithSize(smelting.getKey(), inAmount)));
+                recipe.addRequirement(new RequirementItem(IOType.INPUT, ItemUtils.copyStackWithSize(smelting.getKey(), inAmount)));
             }
 
-            int outAmount = Math.round(RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_ITEM, MachineComponent.IOType.OUTPUT, smelting.getKey().getCount(), false));
+            int outAmount = Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_ITEM, IOType.OUTPUT, smelting.getKey().getCount(), false));
             if (outAmount > 0) {
-                recipe.addRequirement(new RequirementItem(MachineComponent.IOType.OUTPUT, ItemUtils.copyStackWithSize(smelting.getValue(), outAmount)));
+                recipe.addRequirement(new RequirementItem(IOType.OUTPUT, ItemUtils.copyStackWithSize(smelting.getValue(), outAmount)));
             }
 
-            int inEnergy = Math.round(RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_ENERGY, MachineComponent.IOType.INPUT, 20, false));
+            int inEnergy = Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_ENERGY, IOType.INPUT, 20, false));
             if (inEnergy > 0) {
-                recipe.addRequirement(new RequirementEnergy(MachineComponent.IOType.INPUT, inEnergy));
+                recipe.addRequirement(new RequirementEnergy(IOType.INPUT, inEnergy));
             }
 
-            for (ComponentRequirement<?> additionalRequirement : additionalRequirements) {
+            for (ComponentRequirement<?, ?> additionalRequirement : additionalRequirements) {
                 recipe.addRequirement(additionalRequirement.deepCopy());
             }
 

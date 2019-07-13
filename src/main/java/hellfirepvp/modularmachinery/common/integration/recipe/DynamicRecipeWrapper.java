@@ -9,15 +9,18 @@
 package hellfirepvp.modularmachinery.common.integration.recipe;
 
 import com.google.common.collect.Lists;
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.client.util.EnergyDisplayUtil;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.machine.IOType;
+import mezz.jei.Internal;
 import mezz.jei.api.ingredients.IIngredients;
+import mezz.jei.api.recipe.IIngredientType;
 import mezz.jei.api.recipe.IRecipeWrapper;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GlStateManager;
@@ -39,15 +42,15 @@ import java.util.stream.Collectors;
 public class DynamicRecipeWrapper implements IRecipeWrapper {
 
     private final MachineRecipe recipe;
-    public final Map<MachineComponent.IOType, Map<Class<?>, List<ComponentRequirement<?>>>> finalOrderedComponents = new HashMap<>();
+    public final Map<IOType, Map<Class<?>, List<ComponentRequirement<?, ?>>>> finalOrderedComponents = new HashMap<>();
 
     public DynamicRecipeWrapper(MachineRecipe recipe) {
         this.recipe = recipe;
 
-        for (MachineComponent.IOType type : MachineComponent.IOType.values()) {
+        for (IOType type : IOType.values()) {
             finalOrderedComponents.put(type, new HashMap<>());
         }
-        for (ComponentRequirement<?> req : recipe.getCraftingRequirements()) {
+        for (ComponentRequirement<?, ?> req : recipe.getCraftingRequirements()) {
             ComponentRequirement.JEIComponent<?> comp = req.provideJEIComponent();
             finalOrderedComponents.get(req.getActionType())
                     .computeIfAbsent(comp.getJEIRequirementClass(), clazz -> new LinkedList<>()).add(req);
@@ -85,7 +88,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         long totalEnergyIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                         .filter(r -> r instanceof RequirementEnergy)
-                        .filter(r -> r.getActionType() == MachineComponent.IOType.INPUT).collect(Collectors.toList())) {
+                        .filter(r -> r.getActionType() == IOType.INPUT).collect(Collectors.toList())) {
             totalEnergyIn += ((RequirementEnergy) req).getRequiredEnergyPerTick();
         }
         if(totalEnergyIn > 0) {
@@ -95,7 +98,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         long totalEnergyOut = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                 .filter(r -> r instanceof RequirementEnergy)
-                .filter(r -> r.getActionType() == MachineComponent.IOType.OUTPUT).collect(Collectors.toList())) {
+                .filter(r -> r.getActionType() == IOType.OUTPUT).collect(Collectors.toList())) {
             totalEnergyOut += ((RequirementEnergy) req).getRequiredEnergyPerTick();
         }
         if(totalEnergyOut > 0) {
@@ -105,7 +108,7 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
         int totalFuelIn = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                 .filter(c -> c instanceof RequirementItem)
-                .filter(c -> c.getActionType() == MachineComponent.IOType.INPUT)
+                .filter(c -> c.getActionType() == IOType.INPUT)
                 .filter(c -> ((RequirementItem) c).requirementType == RequirementItem.ItemRequirementType.FUEL)
                 .collect(Collectors.toList())) {
             totalFuelIn += ((RequirementItem) req).fuelBurntime;
@@ -162,29 +165,30 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
     @Override
     public void getIngredients(@Nonnull IIngredients ingredients) {
-        Map<Class<?>, Map<MachineComponent.IOType, List<ComponentRequirement<?>>>> componentMap = new HashMap<>();
-        for (ComponentRequirement req : this.recipe.getCraftingRequirements()) {
+        Map<IIngredientType, Map<IOType, List<ComponentRequirement>>> componentMap = new HashMap<>();
+        for (ComponentRequirement<?, ?> req : this.recipe.getCraftingRequirements()) {
             if(req instanceof RequirementEnergy) continue; //Ignore. They're handled differently.
 
             ComponentRequirement.JEIComponent<?> comp = req.provideJEIComponent();
-            componentMap.computeIfAbsent(comp.getJEIRequirementClass(), clazz -> new HashMap<>())
-                    .computeIfAbsent(req.getActionType(), type -> new LinkedList<>()).add(req);
+            IIngredientType type = Internal.getIngredientRegistry().getIngredientType(comp.getJEIRequirementClass());
+            componentMap.computeIfAbsent(type, t -> new HashMap<>())
+                    .computeIfAbsent(req.getActionType(), tt -> new LinkedList<>()).add(req);
         }
 
-        for (Class<?> clazz : componentMap.keySet()) {
-            Map<MachineComponent.IOType, List<ComponentRequirement<?>>> ioGroup = componentMap.get(clazz);
-            for (MachineComponent.IOType ioType : ioGroup.keySet()) {
-                List<ComponentRequirement<?>> components = ioGroup.get(ioType);
+        for (IIngredientType type : componentMap.keySet()) {
+            Map<IOType, List<ComponentRequirement>> ioGroup = componentMap.get(type);
+            for (IOType ioType : ioGroup.keySet()) {
+                List<ComponentRequirement> components = ioGroup.get(ioType);
                 List<List<Object>> componentObjects = new ArrayList<>(components.size());
                 for (ComponentRequirement req : components) {
                     componentObjects.add(req.provideJEIComponent().getJEIIORequirements());
                 }
                 switch (ioType) {
                     case INPUT:
-                        ingredients.setInputLists(clazz, componentObjects);
+                        ingredients.setInputLists(type, componentObjects);
                         break;
                     case OUTPUT:
-                        ingredients.setOutputLists(clazz, componentObjects);
+                        ingredients.setOutputLists(type, componentObjects);
                         break;
                 }
             }

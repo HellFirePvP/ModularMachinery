@@ -8,9 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.tiles.base;
 
-import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.FluidHatchSize;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.util.HybridGasTank;
 import hellfirepvp.modularmachinery.common.util.HybridTank;
@@ -22,9 +22,7 @@ import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.fluids.FluidTank;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -43,13 +41,13 @@ import javax.annotation.Nullable;
 public abstract class TileFluidTank extends TileColorableMachineComponent implements MachineComponentTile, IGasHandler, ITubeConnection {
 
     private HybridTank tank;
-    private MachineComponent.IOType ioType;
+    private IOType ioType;
     private FluidHatchSize hatchSize;
 
     public TileFluidTank() {}
 
-    public TileFluidTank(FluidHatchSize size, MachineComponent.IOType type) {
-        this.tank = size.buildTank(this, type == MachineComponent.IOType.INPUT, type == MachineComponent.IOType.OUTPUT);
+    public TileFluidTank(FluidHatchSize size, IOType type) {
+        this.tank = size.buildTank(this, type == IOType.INPUT, type == IOType.OUTPUT);
         this.hatchSize = size;
         this.ioType = type;
     }
@@ -101,9 +99,9 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     public void readCustomNBT(NBTTagCompound compound) {
         super.readCustomNBT(compound);
 
-        this.ioType = compound.getBoolean("input") ? MachineComponent.IOType.INPUT : MachineComponent.IOType.OUTPUT;
+        this.ioType = compound.getBoolean("input") ? IOType.INPUT : IOType.OUTPUT;
         this.hatchSize = FluidHatchSize.values()[MathHelper.clamp(compound.getInteger("size"), 0, FluidHatchSize.values().length - 1)];
-        HybridTank newTank = hatchSize.buildTank(this, ioType == MachineComponent.IOType.INPUT, ioType == MachineComponent.IOType.OUTPUT);
+        HybridTank newTank = hatchSize.buildTank(this, ioType == IOType.INPUT, ioType == IOType.OUTPUT);
         NBTTagCompound tankTag = compound.getCompoundTag("tank");
         newTank.readFromNBT(tankTag);
         this.tank = newTank;
@@ -116,7 +114,7 @@ public abstract class TileFluidTank extends TileColorableMachineComponent implem
     public void writeCustomNBT(NBTTagCompound compound) {
         super.writeCustomNBT(compound);
 
-        compound.setBoolean("input", ioType == MachineComponent.IOType.INPUT);
+        compound.setBoolean("input", ioType == IOType.INPUT);
         compound.setInteger("size", this.hatchSize.ordinal());
         NBTTagCompound tankTag = new NBTTagCompound();
         this.tank.writeToNBT(tankTag);

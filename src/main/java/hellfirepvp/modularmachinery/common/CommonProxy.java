@@ -14,22 +14,18 @@ import hellfirepvp.modularmachinery.common.container.ContainerController;
 import hellfirepvp.modularmachinery.common.container.ContainerEnergyHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerFluidHatch;
 import hellfirepvp.modularmachinery.common.container.ContainerItemBus;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.crafting.IntegrationTypeHelper;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import hellfirepvp.modularmachinery.common.data.ModDataHolder;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationCrafttweaker;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
-import hellfirepvp.modularmachinery.common.lib.ItemsMM;
-import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
-import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
-import hellfirepvp.modularmachinery.common.registry.RegistryBlocks;
-import hellfirepvp.modularmachinery.common.registry.RegistryItems;
+import hellfirepvp.modularmachinery.common.registry.internal.InternalRegistryPrimer;
+import hellfirepvp.modularmachinery.common.registry.internal.PrimerEventHandler;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.tiles.base.TileFluidTank;
-import hellfirepvp.modularmachinery.common.tiles.base.TileInventory;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
 import net.minecraft.block.Block;
@@ -42,8 +38,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.ProgressManager;
 import net.minecraftforge.fml.common.network.IGuiHandler;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 
@@ -62,11 +56,18 @@ public class CommonProxy implements IGuiHandler {
     public static CreativeTabs creativeTabModularMachinery;
     public static ModDataHolder dataHolder = new ModDataHolder();
 
+    public static InternalRegistryPrimer registryPrimer;
+
     public void loadModData(File configDir) {
         dataHolder.setup(configDir);
         if(dataHolder.requiresDefaultMachinery()) {
             dataHolder.copyDefaultMachinery();
         }
+    }
+
+    public CommonProxy() {
+        registryPrimer = new InternalRegistryPrimer();
+        MinecraftForge.EVENT_BUS.register(new PrimerEventHandler(registryPrimer));
     }
 
     public void preInit() {
@@ -77,13 +78,6 @@ public class CommonProxy implements IGuiHandler {
             }
         };
 
-        MachineRegistry.getRegistry().buildRegistry();
-        RecipeRegistry.getRegistry().buildRegistry();
-
-        RegistryBlocks.initialize();
-        RegistryItems.initialize();
-        ComponentType.Registry.initialize();
-
         NetworkRegistry.INSTANCE.registerGuiHandler(ModularMachinery.MODID, this);
 
         if(Mods.CRAFTTWEAKER.isPresent()) {
@@ -93,10 +87,11 @@ public class CommonProxy implements IGuiHandler {
 
     public void init() {
         FuelItemHelper.initialize();
-        RecipeAdapterRegistry.initDefaultAdapters();
+        IntegrationTypeHelper.filterModIdComponents();
+        IntegrationTypeHelper.filterModIdRequirementTypes();
 
         MachineRegistry.getRegistry().registerMachines(MachineRegistry.getRegistry().loadMachines(null));
-        RecipeAdapterRegistry.registerMachineAdapters();
+        RecipeAdapterRegistry.registerDynamicMachineAdapters();
 
         RecipeRegistry.getRegistry().loadRecipeRegistry(null, true);
     }

@@ -14,15 +14,16 @@ import crafttweaker.api.item.IItemStack;
 import crafttweaker.api.liquid.ILiquidStack;
 import crafttweaker.api.minecraft.CraftTweakerMC;
 import crafttweaker.api.oredict.IOreDictEntry;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.PreparedRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementFluid;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import mekanism.api.gas.Gas;
 import mekanism.api.gas.GasRegistry;
 import mekanism.api.gas.GasStack;
@@ -85,13 +86,13 @@ public class RecipePrimer implements PreparedRecipe {
     //----------------------------------------------------------------------------------------------
     @ZenMethod
     public RecipePrimer addEnergyPerTickInput(int perTick) {
-        requireEnergy(MachineComponent.IOType.INPUT, perTick);
+        requireEnergy(IOType.INPUT, perTick);
         return this;
     }
 
     @ZenMethod
     public RecipePrimer addEnergyPerTickOutput(int perTick) {
-        requireEnergy(MachineComponent.IOType.OUTPUT, perTick);
+        requireEnergy(IOType.OUTPUT, perTick);
         return this;
     }
 
@@ -100,13 +101,13 @@ public class RecipePrimer implements PreparedRecipe {
     //----------------------------------------------------------------------------------------------
     @ZenMethod
     public RecipePrimer addFluidInput(ILiquidStack stack) {
-        requireFluid(MachineComponent.IOType.INPUT, stack);
+        requireFluid(IOType.INPUT, stack);
         return this;
     }
 
     @ZenMethod
     public RecipePrimer addFluidOutput(ILiquidStack stack) {
-        requireFluid(MachineComponent.IOType.OUTPUT, stack);
+        requireFluid(IOType.OUTPUT, stack);
         return this;
     }
 
@@ -116,14 +117,14 @@ public class RecipePrimer implements PreparedRecipe {
     @ZenMethod
     @Optional.Method(modid = "mekanism")
     public RecipePrimer addGasInput(String gasName, int amount) {
-        requireGas(MachineComponent.IOType.INPUT, gasName, amount);
+        requireGas(IOType.INPUT, gasName, amount);
         return this;
     }
 
     @ZenMethod
     @Optional.Method(modid = "mekanism")
     public RecipePrimer addGasOutput(String gasName, int amount) {
-        requireGas(MachineComponent.IOType.OUTPUT, gasName, amount);
+        requireGas(IOType.OUTPUT, gasName, amount);
         return this;
     }
 
@@ -132,7 +133,7 @@ public class RecipePrimer implements PreparedRecipe {
     //----------------------------------------------------------------------------------------------
     @ZenMethod
     public RecipePrimer addItemInput(IItemStack stack) {
-        requireItem(MachineComponent.IOType.INPUT, stack);
+        requireItem(IOType.INPUT, stack);
         return this;
     }
 
@@ -143,7 +144,7 @@ public class RecipePrimer implements PreparedRecipe {
 
     @ZenMethod
     public RecipePrimer addItemInput(IOreDictEntry oreDict, int amount) {
-        requireItem(MachineComponent.IOType.INPUT, oreDict.getName(), amount);
+        requireItem(IOType.INPUT, oreDict.getName(), amount);
         return this;
     }
 
@@ -155,7 +156,7 @@ public class RecipePrimer implements PreparedRecipe {
 
     @ZenMethod
     public RecipePrimer addFuelItemInput(int requiredTotalBurnTime) {
-        requireItem(MachineComponent.IOType.INPUT, requiredTotalBurnTime);
+        requireItem(IOType.INPUT, requiredTotalBurnTime);
         return this;
     }
 
@@ -164,7 +165,7 @@ public class RecipePrimer implements PreparedRecipe {
     //----------------------------------------------------------------------------------------------
     @ZenMethod
     public RecipePrimer addItemOutput(IItemStack stack) {
-        requireItem(MachineComponent.IOType.OUTPUT, stack);
+        requireItem(IOType.OUTPUT, stack);
         return this;
     }
 
@@ -175,18 +176,18 @@ public class RecipePrimer implements PreparedRecipe {
 
     @ZenMethod
     public RecipePrimer addItemOutput(IOreDictEntry oreDict, int amount) {
-        requireItem(MachineComponent.IOType.OUTPUT, oreDict.getName(), amount);
+        requireItem(IOType.OUTPUT, oreDict.getName(), amount);
         return this;
     }
 
     //----------------------------------------------------------------------------------------------
     // Internals
     //----------------------------------------------------------------------------------------------
-    private void requireEnergy(MachineComponent.IOType ioType, long perTick) {
+    private void requireEnergy(IOType ioType, long perTick) {
         appendComponent(new RequirementEnergy(ioType, perTick));
     }
 
-    private void requireFluid(MachineComponent.IOType ioType, ILiquidStack stack) {
+    private void requireFluid(IOType ioType, ILiquidStack stack) {
         FluidStack mcFluid = CraftTweakerMC.getLiquidStack(stack);
         if(mcFluid == null) {
             CraftTweakerAPI.logError("FluidStack not found/unknown fluid: " + stack.toString());
@@ -200,7 +201,7 @@ public class RecipePrimer implements PreparedRecipe {
     }
 
     @Optional.Method(modid = "mekanism")
-    private void requireGas(MachineComponent.IOType ioType, String gasName, int amount) {
+    private void requireGas(IOType ioType, String gasName, int amount) {
         Gas gas = GasRegistry.getGas(gasName);
         if (gas == null) {
             CraftTweakerAPI.logError("GasStack not found/unknown gas: " + gasName);
@@ -208,15 +209,15 @@ public class RecipePrimer implements PreparedRecipe {
         }
         amount = Math.max(0, amount);
         GasStack gasStack = new GasStack(gas, amount);
-        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(ComponentType.Registry.COMPONENT_GAS, ioType, gasStack);
+        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(RequirementTypesMM.REQUIREMENT_GAS, ioType, gasStack);
         appendComponent(req);
     }
 
-    private void requireItem(MachineComponent.IOType ioType, int requiredTotalBurnTime) {
+    private void requireItem(IOType ioType, int requiredTotalBurnTime) {
         appendComponent(new RequirementItem(ioType, requiredTotalBurnTime));
     }
 
-    private void requireItem(MachineComponent.IOType ioType, IItemStack stack) {
+    private void requireItem(IOType ioType, IItemStack stack) {
         ItemStack mcStack = CraftTweakerMC.getItemStack(stack);
         if(mcStack.isEmpty()) {
             CraftTweakerAPI.logError("ItemStack not found/unknown item: " + stack.toString());
@@ -230,7 +231,7 @@ public class RecipePrimer implements PreparedRecipe {
         appendComponent(ri);
     }
 
-    private void requireItem(MachineComponent.IOType ioType, String oreDictName, int amount) {
+    private void requireItem(IOType ioType, String oreDictName, int amount) {
         appendComponent(new RequirementItem(ioType, oreDictName, amount));
     }
 

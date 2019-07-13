@@ -9,16 +9,20 @@
 package hellfirepvp.modularmachinery.common.modifier;
 
 import com.google.gson.*;
+import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.crafting.IntegrationTypeHelper;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
+import hellfirepvp.modularmachinery.common.lib.RegistriesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
+import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -30,25 +34,20 @@ import java.util.stream.Collectors;
  */
 public class RecipeModifier {
 
-    public static final String TARGET_ITEM = "item";
-    public static final String TARGET_FLUID = "fluid";
-    public static final String TARGET_ENERGY = "energy";
-    public static final String TARGET_GAS = "gas";
-    public static final String TARGET_DURATION = "duration";
-
     public static final String IO_INPUT = "input";
     public static final String IO_OUTPUT = "output";
 
     public static final int OPERATION_ADD = 0;
     public static final int OPERATION_MULTIPLY = 1;
 
-    protected final String target;
-    protected final MachineComponent.IOType ioTarget;
+    @Nullable
+    protected final RequirementType<?, ?> target;
+    protected final IOType ioTarget;
     protected final float modifier;
     protected final int operation;
     protected final boolean chance;
 
-    public RecipeModifier(String target, MachineComponent.IOType ioTarget, float modifier, int operation, boolean affectsChance) {
+    public RecipeModifier(@Nullable RequirementType<?, ?> target, IOType ioTarget, float modifier, int operation, boolean affectsChance) {
         this.target = target;
         this.ioTarget = ioTarget;
         this.modifier = modifier;
@@ -56,11 +55,12 @@ public class RecipeModifier {
         this.chance = affectsChance;
     }
 
-    public String getTarget() {
+    @Nullable
+    public RequirementType<?, ?> getTarget() {
         return target;
     }
 
-    public MachineComponent.IOType getIOTarget() {
+    public IOType getIOTarget() {
         return ioTarget;
     }
 
@@ -76,21 +76,21 @@ public class RecipeModifier {
         return operation;
     }
 
-    public static float applyModifiers(RecipeCraftingContext context, ComponentRequirement<?> in, float value, boolean isChance) {
-        String target = in.getRequiredComponentType().getRegistryName();
+    public static float applyModifiers(RecipeCraftingContext context, ComponentRequirement<?, ?> in, float value, boolean isChance) {
+        RequirementType<?, ?> target = in.getRequirementType();
         return applyModifiers(context.getModifiers(target), target, in.getActionType(), value, isChance);
     }
 
-    public static float applyModifiers(Collection<RecipeModifier> modifiers, ComponentRequirement<?> in, float value, boolean isChance) {
-        return applyModifiers(modifiers, in.getRequiredComponentType().getRegistryName(), in.getActionType(), value, isChance);
+    public static float applyModifiers(Collection<RecipeModifier> modifiers, ComponentRequirement<?, ?> in, float value, boolean isChance) {
+        return applyModifiers(modifiers, in.getRequirementType(), in.getActionType(), value, isChance);
     }
 
-    public static float applyModifiers(Collection<RecipeModifier> modifiers, String target, MachineComponent.IOType ioType, float value, boolean isChance) {
+    public static float applyModifiers(Collection<RecipeModifier> modifiers, RequirementType<?, ?> target, IOType ioType, float value, boolean isChance) {
         List<RecipeModifier> applicable = modifiers
                 .stream()
-                .filter(mod -> mod.getTarget().equals(target) &&
-                        (ioType == null || mod.getIOTarget() == ioType) &&
-                        mod.affectsChance() == isChance)
+                .filter(mod -> mod.getTarget().equals(target))
+                .filter(mod -> ioType == null || mod.getIOTarget() == ioType)
+                .filter(mod -> mod.affectsChance() == isChance)
                 .collect(Collectors.toList());
         float add = 0F;
         float mul = 1F;
@@ -115,18 +115,20 @@ public class RecipeModifier {
                 throw new JsonParseException("'io' string-tag not found when deserializing recipemodifier!");
             }
             String ioTarget = part.getAsJsonPrimitive("io").getAsString();
-            MachineComponent.IOType ioType = MachineComponent.IOType.getByString(ioTarget);
+            IOType ioType = IOType.getByString(ioTarget);
             if(ioType == null) {
                 throw new JsonParseException("Unknown machine iotype: " + ioTarget);
             }
             if(!part.has("target") || !part.get("target").isJsonPrimitive() || !part.getAsJsonPrimitive("target").isString()) {
                 throw new JsonParseException("'target' string-tag not found when deserializing recipemodifier!");
             }
-            String target = part.getAsJsonPrimitive("target").getAsString();
-            if(!target.equalsIgnoreCase("duration")) {
-                ComponentType<?> type = ComponentType.Registry.getComponent(target);
-                if(type == null) {
-                    throw new JsonParseException("'target' has to be a recipe-component! Unknown component: " + target);
+            String targetStr = part.getAsJsonPrimitive("target").getAsString();
+            RequirementType<?, ?> target = RegistriesMM.REQUIREMENT_TYPE_REGISTRY.getValue(new ResourceLocation(targetStr));
+            if (target == null) {
+                target = IntegrationTypeHelper.searchRequirementType(targetStr);
+                if (target != null) {
+                    ModularMachinery.log.info("[Modular Machinery]: Deprecated requirement name '"
+                            + targetStr + "'! Consider using " + target.getRegistryName().toString());
                 }
             }
             if(!part.has("multiplier") || !part.get("multiplier").isJsonPrimitive() || !part.getAsJsonPrimitive("multiplier").isNumber()) {
@@ -138,7 +140,7 @@ public class RecipeModifier {
             }
             int operation = part.getAsJsonPrimitive("operation").getAsInt();
             if(operation < 0 || operation > 1) {
-                throw new JsonParseException("There are currently only operation 0 and 1 available (add and multiply operations)! Found: " + operation);
+                throw new JsonParseException("There are currently only operation 0 and 1 available (add and multiply)! Found: " + operation);
             }
             boolean affectsChance = false;
             if(part.has("affectChance")) {

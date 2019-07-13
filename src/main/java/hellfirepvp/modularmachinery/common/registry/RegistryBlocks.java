@@ -10,6 +10,7 @@ package hellfirepvp.modularmachinery.common.registry;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.block.*;
 import hellfirepvp.modularmachinery.common.item.ItemBlockCustomName;
 import hellfirepvp.modularmachinery.common.item.ItemBlockMachineComponent;
@@ -39,7 +40,7 @@ import static hellfirepvp.modularmachinery.common.lib.BlocksMM.*;
  */
 public class RegistryBlocks {
 
-    static List<Block> blocksToRegister = Lists.newArrayList();
+    private static List<Block> blockModelRegister = Lists.newArrayList();
     public static List<BlockDynamicColor> pendingIBlockColorBlocks = new LinkedList<>();
 
     public static void initialize() {
@@ -85,7 +86,7 @@ public class RegistryBlocks {
     }
 
     private static void registerBlockModels() {
-        for (Block block : blocksToRegister) {
+        for (Block block : blockModelRegister) {
             ModularMachinery.proxy.registerBlockModel(block);
         }
     }
@@ -117,27 +118,19 @@ public class RegistryBlocks {
     private static <T extends ItemBlock> T prepareItemBlockRegister(T item) {
         String name = item.getBlock().getClass().getSimpleName().toLowerCase();
         item.setRegistryName(name).setUnlocalizedName(ModularMachinery.MODID + '.' + name);
-        RegistryItems.itemsToRegister.add(item);
-        if(item instanceof ItemDynamicColor) {
-            RegistryItems.pendingDynamicColorItems.add((ItemDynamicColor) item);
-        }
+        RegistryItems.itemBlocks.add(item);
         return item;
     }
 
     private static <T extends Block> T prepareRegister(T block) {
         String name = block.getClass().getSimpleName().toLowerCase();
         block.setRegistryName(name).setUnlocalizedName(ModularMachinery.MODID + '.' + name);
-        blocksToRegister.add(block);
+        blockModelRegister.add(block);
+        CommonProxy.registryPrimer.register(block);
         if(block instanceof BlockDynamicColor) {
             pendingIBlockColorBlocks.add((BlockDynamicColor) block);
         }
         return block;
-    }
-
-    public static void register(IForgeRegistry<Block> registry) {
-        for (Block i : blocksToRegister) {
-            registry.register(i);
-        }
     }
 
 }

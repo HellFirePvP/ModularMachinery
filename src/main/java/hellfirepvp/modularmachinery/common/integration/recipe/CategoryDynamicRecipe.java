@@ -13,27 +13,15 @@ import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
-import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidRenderer;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import mezz.jei.api.gui.*;
-import mezz.jei.api.ingredients.IIngredientRenderer;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeCategory;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.I18n;
-import net.minecraft.item.ItemStack;
-import net.minecraft.tileentity.TileEntityFurnace;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.text.TextFormatting;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Optional;
 
 import java.awt.*;
 import java.util.*;
@@ -74,7 +62,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
     private Point buildRecipeComponents() {
         Iterable<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(this.machine);
-        Map<MachineComponent.IOType, Map<Class<?>, Integer>> componentCounts = new HashMap<>();
+        Map<IOType, Map<Class<?>, Integer>> componentCounts = new HashMap<>();
         Map<Class<?>, ComponentRequirement.JEIComponent<?>> componentsFound = new HashMap<>();
         int offsetX = 8;
         int offsetY = 0;
@@ -84,8 +72,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         boolean fuelItemIn = false;
 
         for (MachineRecipe recipe : recipes) {
-            Map<MachineComponent.IOType, Map<Class<?>, Integer>> tempComp = new HashMap<>();
-            for (ComponentRequirement<?> req : recipe.getCraftingRequirements()) {
+            Map<IOType, Map<Class<?>, Integer>> tempComp = new HashMap<>();
+            for (ComponentRequirement<?, ?> req : recipe.getCraftingRequirements()) {
                 ComponentRequirement.JEIComponent<?> jeiComp = req.provideJEIComponent();
                 int amt = tempComp.computeIfAbsent(req.getActionType(), ioType -> new HashMap<>())
                         .computeIfAbsent(jeiComp.getJEIRequirementClass(), clazz -> 0);
@@ -98,18 +86,18 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 }
 
                 if(req instanceof RequirementEnergy) {
-                    if(req.getActionType() == MachineComponent.IOType.INPUT) {
+                    if(req.getActionType() == IOType.INPUT) {
                         hasEnergyIn = true;
-                    } else if(req.getActionType() == MachineComponent.IOType.OUTPUT) {
+                    } else if(req.getActionType() == IOType.OUTPUT) {
                         hasEnergyOut = true;
                     }
                 }
-                if(req instanceof RequirementItem && req.getActionType() == MachineComponent.IOType.INPUT &&
+                if(req instanceof RequirementItem && req.getActionType() == IOType.INPUT &&
                         ((RequirementItem) req).requirementType == RequirementItem.ItemRequirementType.FUEL) {
                     fuelItemIn = true;
                 }
             }
-            for (Map.Entry<MachineComponent.IOType, Map<Class<?>, Integer>> cmpEntry : tempComp.entrySet()) {
+            for (Map.Entry<IOType, Map<Class<?>, Integer>> cmpEntry : tempComp.entrySet()) {
                 for (Map.Entry<Class<?>, Integer> cntEntry : cmpEntry.getValue().entrySet()) {
                     int current = componentCounts.computeIfAbsent(cmpEntry.getKey(), ioType -> new HashMap<>())
                             .computeIfAbsent(cntEntry.getKey(), clazz -> 0);
@@ -128,7 +116,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         });
 
         for (Class<?> clazz : classes) {
-            Map<Class<?>, Integer> compMap = componentCounts.get(MachineComponent.IOType.INPUT);
+            Map<Class<?>, Integer> compMap = componentCounts.get(IOType.INPUT);
             if(compMap != null && compMap.containsKey(clazz)) {
                 ComponentRequirement.JEIComponent<?> component = componentsFound.get(clazz);
                 RecipeLayoutPart<?> layoutHelper = component.getLayoutPart(new Point(0, 0));
@@ -167,7 +155,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         });
 
         for (Class<?> clazz : classes) {
-            Map<Class<?>, Integer> compMap = componentCounts.get(MachineComponent.IOType.OUTPUT);
+            Map<Class<?>, Integer> compMap = componentCounts.get(IOType.OUTPUT);
             if(compMap != null && compMap.containsKey(clazz)) {
                 ComponentRequirement.JEIComponent<?> component = componentsFound.get(clazz);
                 RecipeLayoutPart<?> layoutHelper = component.getLayoutPart(new Point(0, 0));
@@ -247,7 +235,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
     @Override
     public void setRecipe(IRecipeLayout recipeLayout, DynamicRecipeWrapper recipeWrapper, IIngredients ingredients) {
         List<Class<?>> foundClasses = new LinkedList<>();
-        for (MachineComponent.IOType type : MachineComponent.IOType.values()) {
+        for (IOType type : IOType.values()) {
             for (Class<?> clazz : recipeWrapper.finalOrderedComponents.get(type).keySet()) {
                 if(clazz.equals(Long.class)) { //Nope nope nope, fck you, Energy-component.
                     continue;
@@ -300,10 +288,10 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             int finalAmtInputs = amtCompInputs;
 
             clazzGroup.addTooltipCallback((slotIndex, input, ingredient, tooltip) -> {
-                Map<Class<?>, List<ComponentRequirement<?>>> components = recipeWrapper.finalOrderedComponents
-                        .get(input ? MachineComponent.IOType.INPUT : MachineComponent.IOType.OUTPUT);
+                Map<Class<?>, List<ComponentRequirement<?, ?>>> components = recipeWrapper.finalOrderedComponents
+                        .get(input ? IOType.INPUT : IOType.OUTPUT);
                 if(components != null) {
-                    List<ComponentRequirement<?>> compList = components.get(clazz);
+                    List<ComponentRequirement<?, ?>> compList = components.get(clazz);
 
                     int index = input ? slotIndex : slotIndex - finalAmtInputs;
                     if(index < 0 || index >= compList.size()) {

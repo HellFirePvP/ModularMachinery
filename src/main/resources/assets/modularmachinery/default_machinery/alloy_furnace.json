@@ -9,8 +9,8 @@
             "z": 0,
             "description": "Replace block above controller with machine vent\nfor double item output!",
             "modifier": {
+                "target": "modularmachinery:item",
                 "io": "output",
-                "target": "item",
                 "operation": 1,
                 "multiplier": 2.0
             }

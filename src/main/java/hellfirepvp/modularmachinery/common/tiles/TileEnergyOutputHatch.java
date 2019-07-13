@@ -18,6 +18,7 @@ import gregtech.api.capability.IEnergyContainer;
 import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
 import hellfirepvp.modularmachinery.common.integration.IntegrationIC2EventHandlerHelper;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEnergyHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -53,7 +54,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     public TileEnergyOutputHatch() {}
 
     public TileEnergyOutputHatch(EnergyHatchSize size) {
-        super(size, MachineComponent.IOType.OUTPUT);
+        super(size, IOType.OUTPUT);
     }
 
     @Override
@@ -257,7 +258,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Nullable
     @Override
     public MachineComponent provideComponent() {
-        return new MachineComponent.EnergyHatch(MachineComponent.IOType.OUTPUT) {
+        return new MachineComponent.EnergyHatch(IOType.OUTPUT) {
             @Override
             public IEnergyHandler getContainerProvider() {
                 return TileEnergyOutputHatch.this;

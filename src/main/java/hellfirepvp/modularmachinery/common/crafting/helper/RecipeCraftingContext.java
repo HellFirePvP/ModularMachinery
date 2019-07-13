@@ -11,20 +11,25 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
+import com.google.gson.JsonObject;
+import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.command.ControllerCommandSender;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.util.PriorityProvider;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
+import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -38,18 +43,18 @@ public class RecipeCraftingContext {
 
     private static final Random RAND = new Random();
 
-    private final MachineRecipe recipe;
+    private final ActiveMachineRecipe activeRecipe;
     private final TileMachineController machineController;
     private final ControllerCommandSender commandSender;
 
     private int currentCraftingTick = 0;
-    private Map<String, Map<MachineComponent<?>, ProcessingComponent<?>>> typeComponents = new HashMap<>();
-    private Map<String, List<RecipeModifier>> modifiers = new HashMap<>();
+    private List<ProcessingComponent<?>> typeComponents = new LinkedList<>();
+    private Map<RequirementType<?, ?>, List<RecipeModifier>> modifiers = new HashMap<>();
 
     private List<ComponentOutputRestrictor> currentRestrictions = Lists.newArrayList();
 
-    public RecipeCraftingContext(MachineRecipe recipe, TileMachineController controller) {
-        this.recipe = recipe;
+    public RecipeCraftingContext(ActiveMachineRecipe activeRecipe, TileMachineController controller) {
+        this.activeRecipe = activeRecipe;
         this.machineController = controller;
         this.commandSender = new ControllerCommandSender(machineController);
     }
@@ -59,7 +64,11 @@ public class RecipeCraftingContext {
     }
 
     public MachineRecipe getParentRecipe() {
-        return recipe;
+        return activeRecipe.getRecipe();
+    }
+
+    public ActiveMachineRecipe getActiveRecipe() {
+        return activeRecipe;
     }
 
     public void setCurrentCraftingTick(int currentCraftingTick) {
@@ -71,13 +80,13 @@ public class RecipeCraftingContext {
     }
 
     @Nonnull
-    public List<RecipeModifier> getModifiers(String target) {
+    public List<RecipeModifier> getModifiers(RequirementType<?, ?> target) {
         return modifiers.computeIfAbsent(target, t -> new LinkedList<>());
     }
 
     public float getDurationMultiplier() {
-        float dur = this.recipe.getRecipeTotalTickTime();
-        float result = RecipeModifier.applyModifiers(getModifiers(RecipeModifier.TARGET_DURATION), RecipeModifier.TARGET_DURATION, null, dur, false);
+        float dur = this.getParentRecipe().getRecipeTotalTickTime();
+        float result = RecipeModifier.applyModifiers(getModifiers(RequirementTypesMM.REQUIREMENT_DURATION), RequirementTypesMM.REQUIREMENT_DURATION, null, dur, false);
         return dur / result;
     }
 
@@ -85,32 +94,30 @@ public class RecipeCraftingContext {
         this.currentRestrictions.add(restrictor);
     }
 
-    public Iterable<ProcessingComponent<?>> getComponentsFor(ComponentType type, @Nullable ComponentSelectorTag tag) {
-        String key = type.getRegistryName();
-        if(key.equalsIgnoreCase("gas")) {
-            key = "fluid";
-        }
-        Collection<ProcessingComponent<?>> components = this.typeComponents.computeIfAbsent(key, s -> new HashMap<>()).values();
+    public Iterable<ProcessingComponent<?>> getComponentsFor(ComponentRequirement<?, ?> requirement, @Nullable ComponentSelectorTag tag) {
+        List<ProcessingComponent<?>> validComponents = this.typeComponents.stream()
+                .filter(comp -> requirement.isValidComponent(comp, this))
+                .collect(Collectors.toList());
         if (tag == null) {
-            return components;
+            return Collections.unmodifiableList(validComponents);
         } else {
-            return new PriorityProvider<>(components, compList -> Iterators.tryFind(compList.iterator(), comp -> tag.equals(comp.getTag())).orNull());
+            return new PriorityProvider<>(validComponents, compList -> Iterators.tryFind(compList.iterator(), comp -> tag.equals(comp.getTag())).orNull());
         }
     }
 
     public CraftingCheckResult ioTick(int currentTick) {
         float durMultiplier = this.getDurationMultiplier();
 
-        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
             if(!(requirement instanceof ComponentRequirement.PerTick) ||
-                    requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
-            ComponentRequirement.PerTick perTickRequirement = (ComponentRequirement.PerTick) requirement;
+                    requirement.getActionType() == IOType.OUTPUT) continue;
+            ComponentRequirement.PerTick<?, ?> perTickRequirement = (ComponentRequirement.PerTick<?, ?>) requirement;
 
             perTickRequirement.resetIOTick(this);
             perTickRequirement.startIOTick(this, durMultiplier);
 
-            for (ProcessingComponent<?> component : getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag())) {
-                CraftCheck result = perTickRequirement.doIOTick(component.getComponent(), this);
+            for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
+                CraftCheck result = perTickRequirement.doIOTick(component, this);
                 if (result.isSuccess()) {
                     break;
                 }
@@ -124,16 +131,16 @@ public class RecipeCraftingContext {
             }
         }
 
-        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
+        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
             if(!(requirement instanceof ComponentRequirement.PerTick) ||
-                    requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
-            ComponentRequirement.PerTick perTickRequirement = (ComponentRequirement.PerTick) requirement;
+                    requirement.getActionType() == IOType.INPUT) continue;
+            ComponentRequirement.PerTick<?, ?> perTickRequirement = (ComponentRequirement.PerTick<?, ?>) requirement;
 
             perTickRequirement.resetIOTick(this);
             perTickRequirement.startIOTick(this, durMultiplier);
 
-            for (ProcessingComponent<?> component : getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag())) {
-                CraftCheck result = perTickRequirement.doIOTick(component.getComponent(), this);
+            for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
+                CraftCheck result = perTickRequirement.doIOTick(component, this);
                 if (result.isSuccess()) {
                     break;
                 }
@@ -141,7 +148,7 @@ public class RecipeCraftingContext {
             perTickRequirement.resetIOTick(this);
         }
 
-        this.recipe.getCommandContainer().runTickCommands(this.commandSender, currentTick);
+        this.getParentRecipe().getCommandContainer().runTickCommands(this.commandSender, currentTick);
 
         return CraftingCheckResult.SUCCESS;
     }
@@ -152,12 +159,12 @@ public class RecipeCraftingContext {
 
     public void startCrafting(long seed) {
         ResultChance chance = new ResultChance(seed);
-        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
-            if(requirement.getActionType() == MachineComponent.IOType.OUTPUT) continue;
+        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
+            if(requirement.getActionType() == IOType.OUTPUT) continue;
 
             requirement.startRequirementCheck(chance, this);
-            for (ProcessingComponent<?> component : getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag())) {
-                if(requirement.startCrafting(component.getComponent(), this, chance)) {
+            for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
+                if(requirement.startCrafting(component, this, chance)) {
                     requirement.endRequirementCheck();
                     break;
                 }
@@ -165,7 +172,7 @@ public class RecipeCraftingContext {
             requirement.endRequirementCheck();
         }
 
-        this.recipe.getCommandContainer().runStartCommands(this.commandSender);
+        this.getParentRecipe().getCommandContainer().runStartCommands(this.commandSender);
     }
 
     public void finishCrafting() {
@@ -174,12 +181,12 @@ public class RecipeCraftingContext {
 
     public void finishCrafting(long seed) {
         ResultChance chance = new ResultChance(seed);
-        for (ComponentRequirement requirement : this.recipe.getCraftingRequirements()) {
-            if(requirement.getActionType() == MachineComponent.IOType.INPUT) continue;
+        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
+            if(requirement.getActionType() == IOType.INPUT) continue;
 
             requirement.startRequirementCheck(chance, this);
-            for (ProcessingComponent<?> component : getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag())) {
-                if(requirement.finishCrafting(component.getComponent(), this, chance)) {
+            for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
+                if(requirement.finishCrafting(component, this, chance)) {
                     requirement.endRequirementCheck();
                     break;
                 }
@@ -187,26 +194,25 @@ public class RecipeCraftingContext {
             requirement.endRequirementCheck();
         }
 
-        this.recipe.getCommandContainer().runFinishCommands(this.commandSender);
+        this.getParentRecipe().getCommandContainer().runFinishCommands(this.commandSender);
     }
 
     public CraftingCheckResult canStartCrafting() {
         currentRestrictions.clear();
         CraftingCheckResult result = new CraftingCheckResult();
         float successfulRequirements = 0;
-        float requirements = recipe.getCraftingRequirements().size();
+        float requirements = this.getParentRecipe().getCraftingRequirements().size();
 
         lblRequirements:
-        for (ComponentRequirement requirement : recipe.getCraftingRequirements()) {
-
+        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
             requirement.startRequirementCheck(ResultChance.GUARANTEED, this);
 
-            Iterable<ProcessingComponent<?>> components = getComponentsFor(requirement.getRequiredComponentType(), requirement.getTag());
+            Iterable<ProcessingComponent<?>> components = getComponentsFor(requirement, requirement.getTag());
             if (!Iterables.isEmpty(components)) {
 
                 List<String> errorMessages = Lists.newArrayList();
                 for (ProcessingComponent<?> component : components) {
-                    CraftCheck check = requirement.canStartCrafting(component.getComponent(), this, this.currentRestrictions);
+                    CraftCheck check = requirement.canStartCrafting(component, this, this.currentRestrictions);
 
                     if (check.isSuccess()) {
                         requirement.endRequirementCheck();
@@ -221,8 +227,7 @@ public class RecipeCraftingContext {
                 errorMessages.forEach(result::addError);
             } else {
                 // No component found that would apply for the given requirement
-                result.addError(requirement.getRequiredComponentType()
-                        .getMissingComponentErrorMessage(requirement.getActionType()));
+                result.addError(requirement.getMissingComponentErrorMessage(requirement.getActionType()));
             }
 
             requirement.endRequirementCheck();
@@ -234,26 +239,18 @@ public class RecipeCraftingContext {
     }
 
     public <T> void addComponent(MachineComponent<T> component, @Nullable ComponentSelectorTag tag) {
-        Map<MachineComponent<?>, ProcessingComponent<?>> components = this.typeComponents
-                .computeIfAbsent(component.getComponentType().getRegistryName(), (s) -> new HashMap<>());
-
-        components.put(component, new ProcessingComponent<>(component, component.getContainerProvider(), tag));
+        this.typeComponents.add(new ProcessingComponent<>(component, component.getContainerProvider(), tag));
     }
 
     public void addModifier(ModifierReplacement modifier) {
         List<RecipeModifier> modifiers = modifier.getModifiers();
         for (RecipeModifier mod : modifiers) {
-            this.modifiers.computeIfAbsent(mod.getTarget(), target -> new LinkedList<>()).add(mod);
+            RequirementType<?, ?> target = mod.getTarget();
+            if (target == null) {
+                target = RequirementTypesMM.REQUIREMENT_DURATION;
+            }
+            this.modifiers.computeIfAbsent(target, t -> new LinkedList<>()).add(mod);
         }
-    }
-
-    @Nullable
-    public Object getProvidedCraftingComponent(MachineComponent component) {
-        Map<MachineComponent<?>, ProcessingComponent<?>> components = this.typeComponents
-                .computeIfAbsent(component.getComponentType().getRegistryName(), (s) -> new HashMap<>());
-
-        ProcessingComponent<?> processingComponent = components.getOrDefault(component, null);
-        return processingComponent != null ? processingComponent.getProvidedComponent() : null;
     }
 
     public static class CraftingCheckResult {

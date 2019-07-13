@@ -88,7 +88,7 @@ public class ModIntegrationJEI implements IModPlugin {
     @Override
     public void registerIngredients(IModIngredientRegistration registry) {
         try {
-            registry.register(HybridFluid.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
+            registry.register(() -> HybridFluid.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
             if(Mods.MEKANISM.isPresent()) {
                 registerHybridGas(registry);
             }
@@ -101,7 +101,7 @@ public class ModIntegrationJEI implements IModPlugin {
 
     @Optional.Method(modid = "mekanism")
     private void registerHybridGas(IModIngredientRegistration registry) {
-        registry.register(HybridFluidGas.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
+        registry.register(() -> HybridFluidGas.class, Lists.newArrayList(), new HybridStackHelper<>(), new HybridFluidRenderer<>());
     }
 
     @Override

@@ -6,20 +6,20 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.requirements;
+package hellfirepvp.modularmachinery.common.crafting.requirement;
 
 import com.google.common.collect.Iterables;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
-import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
-import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentItem;
+import hellfirepvp.modularmachinery.common.crafting.helper.*;
+import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponentItem;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeItem;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.*;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.oredict.OreDictionary;
 
 import javax.annotation.Nonnull;
@@ -32,7 +32,7 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:35
  */
-public class RequirementItem extends ComponentRequirement<ItemStack> implements ComponentRequirement.ChancedRequirement {
+public class RequirementItem extends ComponentRequirement<ItemStack, RequirementTypeItem> implements ComponentRequirement.ChancedRequirement {
 
     public final ItemRequirementType requirementType;
 
@@ -50,8 +50,8 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
 
     public float chance = 1F;
 
-    public RequirementItem(MachineComponent.IOType ioType, ItemStack item) {
-        super(ComponentType.Registry.COMPONENT_ITEM, ioType);
+    public RequirementItem(IOType ioType, ItemStack item) {
+        super(RequirementTypesMM.REQUIREMENT_ITEM, ioType);
         this.requirementType = ItemRequirementType.ITEMSTACKS;
         this.required = item.copy();
         this.oreDictName = null;
@@ -59,8 +59,8 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
         this.fuelBurntime = 0;
     }
 
-    public RequirementItem(MachineComponent.IOType ioType, String oreDictName, int oreDictAmount) {
-        super(ComponentType.Registry.COMPONENT_ITEM, ioType);
+    public RequirementItem(IOType ioType, String oreDictName, int oreDictAmount) {
+        super(RequirementTypesMM.REQUIREMENT_ITEM, ioType);
         this.requirementType = ItemRequirementType.OREDICT;
         this.oreDictName = oreDictName;
         this.oreDictItemAmount = oreDictAmount;
@@ -68,8 +68,8 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
         this.fuelBurntime = 0;
     }
 
-    public RequirementItem(MachineComponent.IOType actionType, int fuelBurntime) {
-        super(ComponentType.Registry.COMPONENT_ITEM, actionType);
+    public RequirementItem(IOType actionType, int fuelBurntime) {
+        super(RequirementTypesMM.REQUIREMENT_ITEM, actionType);
         this.requirementType = ItemRequirementType.FUEL;
         this.fuelBurntime = fuelBurntime;
         this.oreDictName = null;
@@ -78,7 +78,12 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public ComponentRequirement<ItemStack> deepCopy() {
+    public int getSortingWeight() {
+        return PRIORITY_WEIGHT_ITEM;
+    }
+
+    @Override
+    public ComponentRequirement<ItemStack, RequirementTypeItem> deepCopy() {
         RequirementItem item;
         switch (this.requirementType) {
             case OREDICT:
@@ -105,7 +110,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public ComponentRequirement<ItemStack> deepCopyModified(List<RecipeModifier> modifiers) {
+    public ComponentRequirement<ItemStack, RequirementTypeItem> deepCopyModified(List<RecipeModifier> modifiers) {
         RequirementItem item;
         switch (this.requirementType) {
             case OREDICT:
@@ -168,11 +173,24 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
 
     @Nonnull
     @Override
-    public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
-                !(component instanceof MachineComponent.ItemBus) ||
-                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
-        IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
+    public String getMissingComponentErrorMessage(IOType ioType) {
+        ResourceLocation compKey = this.getRequirementType().getRegistryName();
+        return String.format("component.missing.%s.%s.%s",
+                compKey.getResourceDomain(), compKey.getResourcePath(), ioType.name().toLowerCase());
+    }
+
+    @Override
+    public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
+        MachineComponent<?> cmp = component.getComponent();
+        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+                cmp instanceof MachineComponent.ItemBus &&
+                cmp.getIOType() == getActionType();
+    }
+
+    @Nonnull
+    @Override
+    public CraftCheck canStartCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        IOInventory handler = (IOInventory) component.getProvidedComponent();
         switch (getActionType()) {
             case INPUT:
                 switch (this.requirementType) {
@@ -247,11 +265,8 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
-                !(component instanceof MachineComponent.ItemBus) ||
-                component.getIOType() != getActionType()) return false;
-        IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
+    public boolean startCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+        IOInventory handler = (IOInventory) component.getProvidedComponent();
         float productionChance = RecipeModifier.applyModifiers(context, this, this.chance, true);
         switch (getActionType()) {
             case INPUT:
@@ -286,15 +301,11 @@ public class RequirementItem extends ComponentRequirement<ItemStack> implements 
     }
 
     @Override
-    public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
-                !(component instanceof MachineComponent.ItemBus) ||
-                component.getIOType() != getActionType()) return false;
-
+    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
         if(fuelBurntime > 0 && oreDictName == null && required.isEmpty()) {
             throw new IllegalStateException("Invalid item output!");
         }
-        IOInventory handler = (IOInventory) context.getProvidedCraftingComponent(component);
+        IOInventory handler = (IOInventory) component.getProvidedComponent();
         switch (getActionType()) {
             case OUTPUT:
                 ItemStack stack;

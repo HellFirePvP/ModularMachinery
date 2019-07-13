@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.*;
 import hellfirepvp.modularmachinery.ModularMachinery;
+import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
@@ -111,14 +112,14 @@ public class DynamicMachine {
         return RecipeRegistry.getRegistry().getRecipesFor(this);
     }
 
-    public RecipeCraftingContext createContext(MachineRecipe recipe,
+    public RecipeCraftingContext createContext(ActiveMachineRecipe activeRecipe,
                                                TileMachineController controller,
                                                Collection<Tuple<MachineComponent<?>, ComponentSelectorTag>> taggedComponents,
                                                Collection<ModifierReplacement> modifiers) {
-        if(!recipe.getOwningMachineIdentifier().equals(getRegistryName())) {
+        if (!activeRecipe.getRecipe().getOwningMachineIdentifier().equals(getRegistryName())) {
             throw new IllegalArgumentException("Tried to create context for a recipe that doesn't belong to the referenced machine!");
         }
-        RecipeCraftingContext context = new RecipeCraftingContext(recipe, controller);
+        RecipeCraftingContext context = new RecipeCraftingContext(activeRecipe, controller);
         taggedComponents.forEach(tpl -> context.addComponent(tpl.getFirst(), tpl.getSecond()));
         modifiers.forEach(context::addModifier);
         return context;

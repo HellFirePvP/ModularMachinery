@@ -6,14 +6,14 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.types;
+package hellfirepvp.modularmachinery.common.crafting.requirement.type;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementFluid;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import mekanism.api.gas.Gas;
 import mekanism.api.gas.GasRegistry;
 import mekanism.api.gas.GasStack;
@@ -23,18 +23,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Modular Machinery Mod
+ * This class is part of the Astral Sorcery Mod
  * The complete source code for this mod can be found on github.
- * Class: ComponentGas
+ * Class: RequirementTypeGas
  * Created by HellFirePvP
- * Date: 24.02.2018 / 12:10
+ * Date: 13.07.2019 / 11:11
  */
-public class ComponentGas extends ComponentType {
+public class RequirementTypeGas extends RequirementTypeFluid {
 
-    @Nonnull
-    @Override
-    public String getRegistryName() {
-        return "gas";
+    public RequirementTypeGas() {
+        super(ComponentTypesMM.COMPONENT_GAS);
     }
 
     @Nullable
@@ -43,15 +41,14 @@ public class ComponentGas extends ComponentType {
         return "mekanism";
     }
 
-    @Nonnull
     @Override
-    public ComponentRequirement provideComponent(MachineComponent.IOType machineIoType, JsonObject jsonObject) {
-        return provideMekGasComponent(machineIoType, jsonObject);
+    public RequirementFluid createRequirement(IOType type, JsonObject requirement) {
+        return this.provideMekGasComponent(type, requirement);
     }
 
     @Nonnull
     @Optional.Method(modid = "mekanism")
-    private ComponentRequirement provideMekGasComponent(MachineComponent.IOType machineIoType, JsonObject requirement) {
+    private RequirementFluid provideMekGasComponent(IOType machineIoType, JsonObject requirement) {
         if(!requirement.has("gas") || !requirement.get("gas").isJsonPrimitive() ||
                 !requirement.get("gas").getAsJsonPrimitive().isString()) {
             throw new JsonParseException("The ComponentType 'gas' expects an 'gas'-entry that defines the type of gas!");
@@ -68,7 +65,7 @@ public class ComponentGas extends ComponentType {
         }
         mbAmount = Math.max(0, mbAmount);
         GasStack gasStack = new GasStack(gas, mbAmount);
-        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(Registry.COMPONENT_GAS, machineIoType, gasStack);
+        RequirementFluid req = RequirementFluid.createMekanismGasRequirement(RequirementTypesMM.REQUIREMENT_GAS, machineIoType, gasStack);
 
         if(requirement.has("chance")) {
             if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
@@ -81,5 +78,4 @@ public class ComponentGas extends ComponentType {
         }
         return req;
     }
-
 }

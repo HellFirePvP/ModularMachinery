@@ -8,8 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.crafting.helper;
 
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.*;
@@ -27,23 +28,27 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 28.06.2017 / 10:34
  */
-public abstract class ComponentRequirement<T> {
+public abstract class ComponentRequirement<T, V extends RequirementType<T, ? extends ComponentRequirement<T, V>>> {
 
-    private final ComponentType componentType;
-    private final MachineComponent.IOType actionType;
+    public static final int PRIORITY_WEIGHT_ENERGY = 50_000_000;
+    public static final int PRIORITY_WEIGHT_FLUID  = 100;
+    public static final int PRIORITY_WEIGHT_ITEM   = 50_000;
+
+    private final IOType actionType;
+    private final V requirementType;
 
     private ComponentSelectorTag tag = null;
 
-    public ComponentRequirement(ComponentType componentType, MachineComponent.IOType actionType) {
-        this.componentType = componentType;
+    public ComponentRequirement(V requirementType, IOType actionType) {
+        this.requirementType = requirementType;
         this.actionType = actionType;
     }
 
-    public final ComponentType getRequiredComponentType() {
-        return componentType;
+    public final V getRequirementType() {
+        return requirementType;
     }
 
-    public final MachineComponent.IOType getActionType() {
+    public final IOType getActionType() {
         return actionType;
     }
 
@@ -55,25 +60,51 @@ public abstract class ComponentRequirement<T> {
         return tag;
     }
 
-    //True, if the requirement could be fulfilled by the given component
-    public abstract boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
+    public int getSortingWeight() {
+        return 0;
+    }
+
+    /**
+     * Return true here to indicate the passed {@link ProcessingComponent} is valid for the methods:
+     * - {@link #startCrafting(ProcessingComponent, RecipeCraftingContext, ResultChance)}
+     * - {@link #finishCrafting(ProcessingComponent, RecipeCraftingContext, ResultChance)}
+     * - {@link #canStartCrafting(ProcessingComponent, RecipeCraftingContext, List)}
+     *
+     * and for {@link PerTick} instances:
+     * - {@link PerTick#doIOTick(ProcessingComponent, RecipeCraftingContext)}
+     *
+     * @param component The component to test
+     * @param ctx The context to test in
+     * @return true, if the component is valid for further processing by the specified methods, false otherwise
+     */
+    public abstract boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx);
 
     //True, if the requirement could be fulfilled by the given component
-    public abstract boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance);
+    public abstract boolean startCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance);
+
+    //True, if the requirement could be fulfilled by the given component
+    public abstract boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance);
 
     @Nonnull
-    public abstract CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
+    public abstract CraftCheck canStartCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
 
     //Creates an exact copy of the current requirement
-    public abstract ComponentRequirement<T> deepCopy();
+    public abstract ComponentRequirement<T, V> deepCopy();
 
     //Creates a copy of the current requirement and applies all modifiers to the requirement.
     //Supplying an empty list should behave identical to deepCopy
-    public abstract ComponentRequirement<T> deepCopyModified(List<RecipeModifier> modifiers);
+    public abstract ComponentRequirement<T, V> deepCopyModified(List<RecipeModifier> modifiers);
 
     public abstract void startRequirementCheck(ResultChance contextChance, RecipeCraftingContext context);
 
     public abstract void endRequirementCheck();
+
+    //Previously in ComponentType.getMissingComponentErrorMessage
+    //Should return an unlocalized error message to display if no component for the given io-type was found
+    //i.e. a recipe has an item output, but there's no item output bus on the machine at all.
+    //Overwrite this if necessary at all
+    @Nonnull
+    public abstract String getMissingComponentErrorMessage(IOType ioType);
 
     //Be sure, that if you specify a new object here as type that you register that along with a helper and renderer
     //in the JEI Integration! Otherwise JEI will complain about not having proper handling for this
@@ -94,10 +125,10 @@ public abstract class ComponentRequirement<T> {
 
     }
 
-    public static abstract class PerTick<T> extends ComponentRequirement<T> {
+    public static abstract class PerTick<T, V extends RequirementType<T, ? extends PerTick<T, V>>> extends ComponentRequirement<T, V> {
 
-        public PerTick(ComponentType componentType, MachineComponent.IOType actionType) {
-            super(componentType, actionType);
+        public PerTick(V requirementType, IOType actionType) {
+            super(requirementType, actionType);
         }
 
         //Multiplier is passed into this to adjust 'production' or 'consumption' accordingly if the recipe has a longer or shorter duration
@@ -112,7 +143,7 @@ public abstract class ComponentRequirement<T> {
         // Return value indicates whether the IO tick requirement was already successful
         // or if more components need to be checked.
         @Nonnull
-        public abstract CraftCheck doIOTick(MachineComponent component, RecipeCraftingContext context);
+        public abstract CraftCheck doIOTick(ProcessingComponent<?> component, RecipeCraftingContext context);
 
     }
 

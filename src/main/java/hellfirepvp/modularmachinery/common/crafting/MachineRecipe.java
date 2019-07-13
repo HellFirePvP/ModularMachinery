@@ -16,28 +16,16 @@ import hellfirepvp.modularmachinery.common.crafting.command.RecipeCommandContain
 import hellfirepvp.modularmachinery.common.crafting.command.RecipeRunnableCommand;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
+import hellfirepvp.modularmachinery.common.lib.RegistriesMM;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
-import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
-import mekanism.api.gas.Gas;
-import mekanism.api.gas.GasRegistry;
-import mekanism.api.gas.GasStack;
-import net.minecraft.init.Items;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTException;
 import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.math.MathHelper;
-import net.minecraftforge.fluids.Fluid;
-import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fml.common.Optional;
-import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -56,9 +44,6 @@ import java.util.function.Function;
 public class MachineRecipe implements Comparable<MachineRecipe> {
 
     private static int counter = 0;
-    private static final int PRIORITY_WEIGHT_ENERGY = 50_000_000;
-    private static final int PRIORITY_WEIGHT_FLUID  = 100;
-    private static final int PRIORITY_WEIGHT_ITEM   = 50_000;
 
     private final int sortId;
     private final String recipeFilePath;
@@ -128,10 +113,10 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         MachineRecipe copy = new MachineRecipe(this.getRecipeFilePath(),
                 registryNameChange.apply(this.getRegistryName()),
                 newOwningMachineIdentifier,
-                Math.round(RecipeModifier.applyModifiers(modifiers, RecipeModifier.TARGET_DURATION, null, this.getRecipeTotalTickTime(), false)),
+                Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_DURATION, null, this.getRecipeTotalTickTime(), false)),
                 this.getConfiguredPriority());
 
-        for (ComponentRequirement<?> requirement : this.getCraftingRequirements()) {
+        for (ComponentRequirement<?, ?> requirement : this.getCraftingRequirements()) {
             copy.addRequirement(requirement.deepCopyModified(modifiers));
         }
         return copy;
@@ -145,18 +130,10 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     private int buildWeight() {
         int weightOut = sortId;
         for (ComponentRequirement req : this.recipeRequirements) {
-            if(req.getActionType() == MachineComponent.IOType.OUTPUT) continue;
-            switch (req.getRequiredComponentType().getRegistryName().toLowerCase()) {
-                case "item":
-                    weightOut -= PRIORITY_WEIGHT_ITEM;
-                    break;
-                case "fluid":
-                    weightOut -= PRIORITY_WEIGHT_FLUID;
-                    break;
-                case "energy":
-                    weightOut -= PRIORITY_WEIGHT_ENERGY;
-                    break;
+            if (req.getActionType() == IOType.OUTPUT) {
+                continue;
             }
+            weightOut -= req.getSortingWeight();
         }
         return weightOut;
     }
@@ -303,7 +280,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     public static class ComponentDeserializer implements JsonDeserializer<ComponentRequirement> {
 
         @Override
-        public ComponentRequirement<?> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
+        public ComponentRequirement<?, ?> deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException {
             if(!json.isJsonObject()) {
                 throw new JsonParseException("Component Requirements have to be objects!");
             }
@@ -320,15 +297,22 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             }
             String ioType = requirement.getAsJsonPrimitive("io-type").getAsString();
 
-            ComponentType<?> componentType = ComponentType.Registry.getComponent(type);
-            if(componentType == null) {
-                throw new JsonParseException("'" + type + "' is not a valid ComponentType!");
+            RequirementType<?, ?> requirementType = RegistriesMM.REQUIREMENT_TYPE_REGISTRY.getValue(new ResourceLocation(type));
+            if (requirementType == null) {
+                requirementType = IntegrationTypeHelper.searchRequirementType(type);
+                if (requirementType != null) {
+                    ModularMachinery.log.info("[Modular Machinery]: Deprecated requirement name '"
+                            + type + "'! Consider using " + requirementType.getRegistryName().toString());
+                }
             }
-            MachineComponent.IOType machineIoType = MachineComponent.IOType.getByString(ioType);
+            if (requirementType == null) {
+                throw new JsonParseException("'" + type + "' is not a valid RequirementType!");
+            }
+            IOType machineIoType = IOType.getByString(ioType);
             if(machineIoType == null) {
                 throw new JsonParseException("'" + ioType + "' is not a valid IOType!");
             }
-            ComponentRequirement<?> req = componentType.provideComponent(machineIoType, requirement);
+            ComponentRequirement<?, ?> req = requirementType.createRequirement(machineIoType, requirement);
 
             if (requirement.has("selector-tag")) {
                 JsonElement strTag = requirement.get("selector-tag");

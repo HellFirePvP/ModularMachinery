@@ -11,7 +11,7 @@ package hellfirepvp.modularmachinery.common.tiles.base;
 import gregtech.api.capability.IEnergyContainer;
 import gregtech.api.util.GTUtility;
 import gregtech.common.ConfigHolder;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.fml.common.Optional;
@@ -27,9 +27,9 @@ import net.minecraftforge.fml.common.Optional;
 public class GTEnergyContainer implements IEnergyContainer {
 
     private final TileEnergyHatch hatch;
-    private final MachineComponent.IOType ioType;
+    private final IOType ioType;
 
-    public GTEnergyContainer(TileEnergyHatch hatch, MachineComponent.IOType ioType) {
+    public GTEnergyContainer(TileEnergyHatch hatch, IOType ioType) {
         this.hatch = hatch;
         this.ioType = ioType;
     }
@@ -37,7 +37,7 @@ public class GTEnergyContainer implements IEnergyContainer {
     @Override
     @Optional.Method(modid = "gregtech")
     public long acceptEnergyFromNetwork(EnumFacing side, long voltage, long amperage) {
-        if (ioType == MachineComponent.IOType.INPUT && amperage > 0 && voltage > 0) {
+        if (ioType == IOType.INPUT && amperage > 0 && voltage > 0) {
             long availableSpace = hatch.getMaxEnergy() / 4L - hatch.getCurrentEnergy() / 4L;
             long maxAmperage = Math.min(getInputAmperage(), amperage);
 
@@ -66,13 +66,13 @@ public class GTEnergyContainer implements IEnergyContainer {
     @Override
     @Optional.Method(modid = "gregtech")
     public boolean inputsEnergy(EnumFacing side) {
-        return ioType == MachineComponent.IOType.INPUT;
+        return ioType == IOType.INPUT;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public boolean outputsEnergy(EnumFacing side) {
-        return ioType == MachineComponent.IOType.OUTPUT;
+        return ioType == IOType.OUTPUT;
     }
 
     @Override
@@ -104,24 +104,24 @@ public class GTEnergyContainer implements IEnergyContainer {
     @Override
     @Optional.Method(modid = "gregtech")
     public long getOutputAmperage() {
-        return ioType == MachineComponent.IOType.OUTPUT ? hatch.getTier().getGtAmperage() : 0L;
+        return ioType == IOType.OUTPUT ? hatch.getTier().getGtAmperage() : 0L;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public long getOutputVoltage() {
-        return ioType == MachineComponent.IOType.OUTPUT ? hatch.getTier().getGTEnergyTransferVoltage() : 0L;
+        return ioType == IOType.OUTPUT ? hatch.getTier().getGTEnergyTransferVoltage() : 0L;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public long getInputAmperage() {
-        return ioType == MachineComponent.IOType.INPUT ? hatch.getTier().getGtAmperage() : 0L;
+        return ioType == IOType.INPUT ? hatch.getTier().getGtAmperage() : 0L;
     }
 
     @Override
     @Optional.Method(modid = "gregtech")
     public long getInputVoltage() {
-        return ioType == MachineComponent.IOType.INPUT ? hatch.getTier().getGTEnergyTransferVoltage() : 0L;
+        return ioType == IOType.INPUT ? hatch.getTier().getGTEnergyTransferVoltage() : 0L;
     }
 }

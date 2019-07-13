@@ -42,7 +42,7 @@ public class DynamicMachineRecipeAdapter extends RecipeAdapter {
     @Override
     public Collection<MachineRecipe> createRecipesFor(ResourceLocation owningMachineName,
                                                       List<RecipeModifier> modifiers,
-                                                      List<ComponentRequirement<?>> additionalRequirements) {
+                                                      List<ComponentRequirement<?, ?>> additionalRequirements) {
         String newIdentifier = owningMachineName.getResourceDomain() + "." + owningMachineName.getResourcePath();
 
         List<MachineRecipe> recipesNew = new ArrayList<>();
@@ -51,7 +51,7 @@ public class DynamicMachineRecipeAdapter extends RecipeAdapter {
                     (res) -> new ResourceLocation(ModularMachinery.MODID, res.getResourcePath() + ".copy." + newIdentifier),
                     owningMachineName,
                     modifiers);
-            for (ComponentRequirement<?> additionalRequirement : additionalRequirements) {
+            for (ComponentRequirement<?, ?> additionalRequirement : additionalRequirements) {
                 newRecipe.addRequirement(additionalRequirement.deepCopy());
             }
             recipesNew.add(newRecipe);

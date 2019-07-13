@@ -11,7 +11,7 @@ package hellfirepvp.modularmachinery.common.tiles.base;
 import gregtech.api.capability.GregtechCapabilities;
 import hellfirepvp.modularmachinery.common.base.Mods;
 import hellfirepvp.modularmachinery.common.block.prop.EnergyHatchSize;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyInputHatch;
 import hellfirepvp.modularmachinery.common.tiles.TileEnergyOutputHatch;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
@@ -21,11 +21,9 @@ import net.minecraft.nbt.NBTPrimitive;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.ITickable;
-import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nullable;
@@ -47,7 +45,7 @@ public abstract class TileEnergyHatch extends TileColorableMachineComponent impl
 
     public TileEnergyHatch() {}
 
-    public TileEnergyHatch(EnergyHatchSize size, MachineComponent.IOType ioType) {
+    public TileEnergyHatch(EnergyHatchSize size, IOType ioType) {
         this.size = size;
         this.energyContainer = new GTEnergyContainer(this, ioType);
     }

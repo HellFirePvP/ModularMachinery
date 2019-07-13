@@ -14,12 +14,8 @@ import hellfirepvp.modularmachinery.common.command.CommandSyntax;
 import hellfirepvp.modularmachinery.common.network.PktCopyToClipboard;
 import hellfirepvp.modularmachinery.common.network.PktInteractFluidTankGui;
 import hellfirepvp.modularmachinery.common.network.PktSyncSelection;
-import hellfirepvp.modularmachinery.common.registry.RegistrationBus;
 import net.minecraft.launchwrapper.Launch;
-import net.minecraft.nbt.JsonToNBT;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fluids.FluidRegistry;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.SidedProxy;
 import net.minecraftforge.fml.common.event.FMLInitializationEvent;
@@ -29,10 +25,7 @@ import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
 import net.minecraftforge.fml.relauncher.Side;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.File;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -50,7 +43,7 @@ public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
     public static final String NAME = "Modular Machinery";
-    public static final String VERSION = "1.10.0";
+    public static final String VERSION = "1.11.0";
     public static final String CLIENT_PROXY = "hellfirepvp.modularmachinery.client.ClientProxy";
     public static final String COMMON_PROXY = "hellfirepvp.modularmachinery.common.CommonProxy";
 
@@ -65,11 +58,6 @@ public class ModularMachinery {
 
     @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
     public static CommonProxy proxy;
-
-    public ModularMachinery() {
-        //Thanks forge
-        MinecraftForge.EVENT_BUS.register(new RegistrationBus());
-    }
 
     @Mod.EventHandler
     public void preInit(FMLPreInitializationEvent event) {

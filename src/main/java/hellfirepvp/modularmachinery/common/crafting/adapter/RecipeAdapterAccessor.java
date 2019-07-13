@@ -33,7 +33,7 @@ public class RecipeAdapterAccessor {
 
     private final ResourceLocation owningMachine, adapterKey;
     private List<RecipeModifier> modifiers = new ArrayList<>();
-    private List<ComponentRequirement<?>> additionalRecipeRequirements = new ArrayList<>();
+    private List<ComponentRequirement<?, ?>> additionalRecipeRequirements = new ArrayList<>();
 
     private List<MachineRecipe> cacheLoaded = new LinkedList<>();
 
@@ -54,7 +54,7 @@ public class RecipeAdapterAccessor {
         this.modifiers.add(modifier);
     }
 
-    public void addRequirement(ComponentRequirement<?> requirement) {
+    public void addRequirement(ComponentRequirement<?, ?> requirement) {
         this.additionalRecipeRequirements.add(requirement);
     }
 

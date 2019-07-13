@@ -6,17 +6,16 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.requirements;
+package hellfirepvp.modularmachinery.common.crafting.requirement;
 
 import hellfirepvp.modularmachinery.common.base.Mods;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
-import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
-import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentHybridFluid;
+import hellfirepvp.modularmachinery.common.crafting.helper.*;
+import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponentHybridFluid;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
 import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluidGas;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.CopyHandlerHelper;
@@ -27,6 +26,7 @@ import hellfirepvp.modularmachinery.common.util.nbt.NBTMatchingHelper;
 import mekanism.api.gas.GasStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumFacing;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fluids.FluidStack;
 
 import javax.annotation.Nonnull;
@@ -41,7 +41,7 @@ import java.util.Optional;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:28
  */
-public class RequirementFluid extends ComponentRequirement<HybridFluid> implements ComponentRequirement.ChancedRequirement {
+public class RequirementFluid extends ComponentRequirement<HybridFluid, RequirementTypeFluid> implements ComponentRequirement.ChancedRequirement {
 
     public final HybridFluid required;
     public float chance = 1F;
@@ -51,24 +51,29 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     private NBTTagCompound tagMatch = null, tagDisplay = null;
 
-    public RequirementFluid(MachineComponent.IOType ioType, FluidStack fluid) {
-        this(ComponentType.Registry.COMPONENT_FLUID, ioType, new HybridFluid(fluid));
+    public RequirementFluid(IOType ioType, FluidStack fluid) {
+        this(RequirementTypesMM.REQUIREMENT_FLUID, ioType, new HybridFluid(fluid));
     }
 
-    private RequirementFluid(ComponentType<?> type, MachineComponent.IOType ioType, HybridFluid required) {
+    private RequirementFluid(RequirementTypeFluid type, IOType ioType, HybridFluid required) {
         super(type, ioType);
         this.required = required.copy();
         this.requirementCheck = this.required.copy();
     }
 
     @net.minecraftforge.fml.common.Optional.Method(modid = "mekanism")
-    public static RequirementFluid createMekanismGasRequirement(ComponentType<?> type, MachineComponent.IOType ioType, GasStack gasStack) {
+    public static RequirementFluid createMekanismGasRequirement(RequirementTypeFluid type, IOType ioType, GasStack gasStack) {
         return new RequirementFluid(type, ioType, new HybridFluidGas(gasStack));
     }
 
     @Override
-    public ComponentRequirement<HybridFluid> deepCopy() {
-        RequirementFluid fluid = new RequirementFluid(this.getRequiredComponentType(), this.getActionType(), this.required.copy());
+    public int getSortingWeight() {
+        return PRIORITY_WEIGHT_FLUID;
+    }
+
+    @Override
+    public ComponentRequirement<HybridFluid, RequirementTypeFluid> deepCopy() {
+        RequirementFluid fluid = new RequirementFluid(this.getRequirementType(), this.getActionType(), this.required.copy());
         fluid.chance = this.chance;
         fluid.tagMatch = getTagMatch();
         fluid.tagDisplay = getTagDisplay();
@@ -76,10 +81,10 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @Override
-    public ComponentRequirement<HybridFluid> deepCopyModified(List<RecipeModifier> modifiers) {
+    public ComponentRequirement<HybridFluid, RequirementTypeFluid> deepCopyModified(List<RecipeModifier> modifiers) {
         HybridFluid hybrid = this.required.copy();
         hybrid.setAmount(Math.round(RecipeModifier.applyModifiers(modifiers, this, hybrid.getAmount(), false)));
-        RequirementFluid fluid = new RequirementFluid(this.getRequiredComponentType(), this.getActionType(), hybrid);
+        RequirementFluid fluid = new RequirementFluid(this.getRequirementType(), this.getActionType(), hybrid);
 
         fluid.chance = RecipeModifier.applyModifiers(modifiers, this, this.chance, true);
         fluid.tagMatch = getTagMatch();
@@ -136,11 +141,24 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
 
     @Nonnull
     @Override
-    public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
-        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
-                !(component instanceof MachineComponent.FluidHatch) ||
-                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
-        HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
+    public String getMissingComponentErrorMessage(IOType ioType) {
+        ResourceLocation compKey = this.getRequirementType().getRegistryName();
+        return String.format("component.missing.%s.%s.%s",
+                compKey.getResourceDomain(), compKey.getResourcePath(), ioType.name().toLowerCase());
+    }
+
+    @Override
+    public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
+        MachineComponent<?> cmp = component.getComponent();
+        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+                cmp instanceof MachineComponent.FluidHatch &&
+                cmp.getIOType() == this.getActionType();
+    }
+
+    @Nonnull
+    @Override
+    public CraftCheck canStartCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        HybridTank handler = (HybridTank) component.getProvidedComponent();
 
         if(Mods.MEKANISM.isPresent()) {
             java.util.Optional<CraftCheck> check = checkStartCraftingWithMekanism(component, context, handler, restrictions);
@@ -190,8 +208,10 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @net.minecraftforge.fml.common.Optional.Method(modid = "mekanism")
-    private Optional<CraftCheck> checkStartCraftingWithMekanism(MachineComponent component, RecipeCraftingContext context,
-                                                                HybridTank handler, List<ComponentOutputRestrictor> restrictions) {
+    private Optional<CraftCheck> checkStartCraftingWithMekanism(ProcessingComponent<?> component,
+                                                                RecipeCraftingContext context,
+                                                                HybridTank handler,
+                                                                List<ComponentOutputRestrictor> restrictions) {
         if(handler instanceof HybridGasTank) {
             HybridGasTank gasTank = (HybridGasTank) handler;
             switch (getActionType()) {
@@ -241,11 +261,8 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @Override
-    public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
-                !(component instanceof MachineComponent.FluidHatch) ||
-                component.getIOType() != getActionType()) return false;
-        HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
+    public boolean startCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+        HybridTank handler = (HybridTank) component.getProvidedComponent();
         switch (getActionType()) {
             case INPUT:
                 if(Mods.MEKANISM.isPresent()) {
@@ -327,11 +344,8 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid> implemen
     }
 
     @Override
-    public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
-        if(!(component.getComponentType().getRegistryName().equals("fluid") || component.getComponentType().getRegistryName().equals("gas")) ||
-                !(component instanceof MachineComponent.FluidHatch) ||
-                component.getIOType() != getActionType()) return false;
-        HybridTank handler = (HybridTank) context.getProvidedCraftingComponent(component);
+    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+        HybridTank handler = (HybridTank) component.getProvidedComponent();
         switch (getActionType()) {
             case OUTPUT:
                 if(Mods.MEKANISM.isPresent()) {

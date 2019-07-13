@@ -6,47 +6,41 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.types;
+package hellfirepvp.modularmachinery.common.crafting.requirement.type;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementEnergy;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Modular Machinery Mod
+ * This class is part of the Astral Sorcery Mod
  * The complete source code for this mod can be found on github.
- * Class: ComponentEnergy
+ * Class: RequirementTypeEnergy
  * Created by HellFirePvP
- * Date: 24.02.2018 / 12:10
+ * Date: 13.07.2019 / 10:47
  */
-public class ComponentEnergy extends ComponentType<RequirementEnergy> {
+public class RequirementTypeEnergy extends RequirementType<Long, RequirementEnergy> {
 
-    @Nonnull
-    @Override
-    public String getRegistryName() {
-        return "energy";
+    public RequirementTypeEnergy() {
+        this(ComponentTypesMM.COMPONENT_ENERGY);
     }
 
-    @Nullable
-    @Override
-    public String requiresModid() {
-        return null;
+    protected RequirementTypeEnergy(@Nullable ComponentType requiredType) {
+        super(requiredType);
     }
 
-    @Nonnull
     @Override
-    public RequirementEnergy provideComponent(MachineComponent.IOType machineIoType, JsonObject requirement) {
+    public RequirementEnergy createRequirement(IOType type, JsonObject requirement) {
         if(!requirement.has("energyPerTick") || !requirement.get("energyPerTick").isJsonPrimitive() ||
                 !requirement.get("energyPerTick").getAsJsonPrimitive().isNumber()) {
             throw new JsonParseException("The ComponentType 'energy' expects an 'energyPerTick'-entry that defines the amount of energy per tick!");
         }
         long energyPerTick = requirement.getAsJsonPrimitive("energyPerTick").getAsLong();
-        return new RequirementEnergy(machineIoType, energyPerTick);
+        return new RequirementEnergy(type, energyPerTick);
     }
-
 }

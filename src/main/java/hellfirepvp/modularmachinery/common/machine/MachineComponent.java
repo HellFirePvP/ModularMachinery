@@ -9,15 +9,10 @@
 package hellfirepvp.modularmachinery.common.machine;
 
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
 import hellfirepvp.modularmachinery.common.util.HybridTank;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
-import net.minecraftforge.fluids.FluidTank;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.items.IItemHandlerModifiable;
-
-import javax.annotation.Nullable;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -42,22 +37,6 @@ public abstract class MachineComponent<T> {
 
     public abstract T getContainerProvider();
 
-    public static enum IOType {
-
-        INPUT,
-        OUTPUT;
-
-        @Nullable
-        public static IOType getByString(String name) {
-            for (IOType val : values()) {
-                if(val.name().equalsIgnoreCase(name)) {
-                    return val;
-                }
-            }
-            return null;
-        }
-    }
-
     public static abstract class ItemBus extends MachineComponent<IOInventory> {
 
         public ItemBus(IOType ioType) {
@@ -66,7 +45,7 @@ public abstract class MachineComponent<T> {
 
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.Registry.getComponent("item");
+            return ComponentTypesMM.COMPONENT_ITEM;
         }
 
     }
@@ -79,7 +58,7 @@ public abstract class MachineComponent<T> {
 
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.Registry.getComponent("fluid");
+            return ComponentTypesMM.COMPONENT_FLUID;
         }
 
     }
@@ -92,7 +71,7 @@ public abstract class MachineComponent<T> {
 
         @Override
         public ComponentType getComponentType() {
-            return ComponentType.Registry.getComponent("energy");
+            return ComponentTypesMM.COMPONENT_ENERGY;
         }
 
     }

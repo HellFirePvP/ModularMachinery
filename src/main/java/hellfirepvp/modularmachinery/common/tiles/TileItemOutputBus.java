@@ -9,12 +9,12 @@
 package hellfirepvp.modularmachinery.common.tiles;
 
 import hellfirepvp.modularmachinery.common.block.prop.ItemBusSize;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileInventory;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
-import net.minecraftforge.items.IItemHandlerModifiable;
 
 import javax.annotation.Nullable;
 
@@ -45,7 +45,7 @@ public class TileItemOutputBus extends TileItemBus implements MachineComponentTi
     @Nullable
     @Override
     public MachineComponent provideComponent() {
-        return new MachineComponent.ItemBus(MachineComponent.IOType.OUTPUT) {
+        return new MachineComponent.ItemBus(IOType.OUTPUT) {
             @Override
             public IOInventory getContainerProvider() {
                 return TileItemOutputBus.this.inventory;

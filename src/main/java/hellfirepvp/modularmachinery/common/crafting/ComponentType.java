@@ -8,23 +8,9 @@
 
 package hellfirepvp.modularmachinery.common.crafting;
 
-import com.google.gson.JsonObject;
-import hellfirepvp.modularmachinery.ModularMachinery;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.types.ComponentEnergy;
-import hellfirepvp.modularmachinery.common.crafting.types.ComponentFluid;
-import hellfirepvp.modularmachinery.common.crafting.types.ComponentGas;
-import hellfirepvp.modularmachinery.common.crafting.types.ComponentItem;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.common.Loader;
-import net.minecraftforge.fml.common.eventhandler.Event;
+import net.minecraftforge.registries.IForgeRegistryEntry;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -33,89 +19,25 @@ import java.util.Map;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 11:56
  */
-public abstract class ComponentType<R extends ComponentRequirement> {
-
-    //A unique registry key defining this component
-    @Nonnull
-    public abstract String getRegistryName();
+public abstract class ComponentType extends IForgeRegistryEntry.Impl<ComponentType> {
 
     //Should return the mod's modid if this component is dependent on some other mod
     //Return null if no other mod/only vanilla is required.
     @Nullable
     public abstract String requiresModid();
 
-    //Should return an unlocalized error message to display if no component for the given io-type was found
-    //i.e. a recipe has an item output, but there's no item output bus on the machine at all.
-    //Overwrite this if necessary at all
-    @Nonnull
-    public String getMissingComponentErrorMessage(MachineComponent.IOType ioType) {
-        return String.format("component.missing.%s.%s", getRegistryName(), ioType.name().toLowerCase());
-    }
-
-    //If parsing goes wrong, throw an appropiate exception instead. MM catches this and batches the information!
-    //Will also only be called if the appropriate mod is loaded, if specified!
-    @Nonnull
-    public abstract R provideComponent(MachineComponent.IOType machineIOType, JsonObject jsonObject);
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        ComponentType<?> that = (ComponentType<?>) o;
-        return getRegistryName().equalsIgnoreCase(that.getRegistryName());
+        ComponentType that = (ComponentType) o;
+        return getRegistryName().equals(that.getRegistryName());
     }
 
     @Override
     public int hashCode() {
         return getRegistryName().hashCode();
     }
-
-    public static class Registry {
-
-        public static ComponentItem   COMPONENT_ITEM = new ComponentItem();
-        public static ComponentFluid  COMPONENT_FLUID = new ComponentFluid();
-        public static ComponentEnergy COMPONENT_ENERGY = new ComponentEnergy();
-        public static ComponentGas    COMPONENT_GAS = new ComponentGas();
-
-        private static boolean initialized = false;
-        private static Map<String, ComponentType> components = new HashMap<>();
-
-        public static void register(ComponentType type) {
-            if(components.containsKey(type.getRegistryName())) {
-                throw new IllegalArgumentException("Component with registry name " + type.getRegistryName() + " already exists!");
-            }
-            if(type.requiresModid() != null && !Loader.isModLoaded(type.requiresModid())) {
-                ModularMachinery.log.info("[Modular Machinery] ignoring componenttype " + type.getRegistryName() + " because " + type.requiresModid() + " is not loaded!");
-                return;
-            }
-            components.put(type.getRegistryName(), type);
-        }
-
-        public static void initialize() {
-            if(initialized) return;
-
-            register(COMPONENT_ITEM);
-            register(COMPONENT_FLUID);
-            register(COMPONENT_ENERGY);
-            register(COMPONENT_GAS);
-
-            MinecraftForge.EVENT_BUS.post(new ComponentRegistryEvent());
-
-            initialized = true;
-        }
-
-        @Nullable
-        public static ComponentType getComponent(String name) {
-            for (String key : components.keySet()) {
-                if(key.equalsIgnoreCase(name)) {
-                    return components.get(key);
-                }
-            }
-            return null;
-        }
-    }
-
-    public static class ComponentRegistryEvent extends Event {}
 
 }

@@ -32,7 +32,7 @@ import java.util.*;
 public class MachineRegistry implements Iterable<DynamicMachine> {
 
     private static MachineRegistry INSTANCE = new MachineRegistry();
-    private static Map<ResourceLocation, DynamicMachine> REGISTRY_MACHINERY;
+    private static Map<ResourceLocation, DynamicMachine> REGISTRY_MACHINERY = new HashMap<>();
 
     private MachineRegistry() {}
 
@@ -49,10 +49,6 @@ public class MachineRegistry implements Iterable<DynamicMachine> {
     public DynamicMachine getMachine(@Nullable ResourceLocation name) {
         if(name == null) return null;
         return REGISTRY_MACHINERY.get(name);
-    }
-
-    public void buildRegistry() {
-        REGISTRY_MACHINERY = new HashMap<>();
     }
 
     public Collection<DynamicMachine> loadMachines(@Nullable EntityPlayer player) {

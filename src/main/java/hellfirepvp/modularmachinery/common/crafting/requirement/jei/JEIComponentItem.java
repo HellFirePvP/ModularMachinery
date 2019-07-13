@@ -6,11 +6,11 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.requirements.jei;
+package hellfirepvp.modularmachinery.common.crafting.requirement.jei;
 
 import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
 import hellfirepvp.modularmachinery.common.integration.recipe.RecipeLayoutPart;
 import hellfirepvp.modularmachinery.common.util.FuelItemHelper;
 import hellfirepvp.modularmachinery.common.util.ItemUtils;

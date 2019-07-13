@@ -6,19 +6,19 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.requirements;
+package hellfirepvp.modularmachinery.common.crafting.requirement;
 
 import com.google.common.collect.Lists;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentOutputRestrictor;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.helper.CraftCheck;
-import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext;
-import hellfirepvp.modularmachinery.common.crafting.requirements.jei.JEIComponentEnergy;
+import hellfirepvp.modularmachinery.common.crafting.helper.*;
+import hellfirepvp.modularmachinery.common.crafting.requirement.jei.JEIComponentEnergy;
+import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementTypeEnergy;
+import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.util.IEnergyHandler;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
+import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -30,26 +30,31 @@ import java.util.List;
  * Created by HellFirePvP
  * Date: 24.02.2018 / 12:26
  */
-public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
+public class RequirementEnergy extends ComponentRequirement.PerTick<Long, RequirementTypeEnergy> {
 
     public final long requirementPerTick;
     private long activeIO;
 
-    public RequirementEnergy(MachineComponent.IOType ioType, long requirementPerTick) {
-        super(ComponentType.Registry.COMPONENT_ENERGY, ioType);
+    public RequirementEnergy(IOType ioType, long requirementPerTick) {
+        super(RequirementTypesMM.REQUIREMENT_ENERGY, ioType);
         this.requirementPerTick = requirementPerTick;
         this.activeIO = this.requirementPerTick;
     }
 
     @Override
-    public ComponentRequirement<Long> deepCopy() {
+    public int getSortingWeight() {
+        return PRIORITY_WEIGHT_ENERGY;
+    }
+
+    @Override
+    public ComponentRequirement<Long, RequirementTypeEnergy> deepCopy() {
         RequirementEnergy energy = new RequirementEnergy(this.getActionType(), this.requirementPerTick);
         energy.activeIO = this.activeIO;
         return energy;
     }
 
     @Override
-    public ComponentRequirement<Long> deepCopyModified(List<RecipeModifier> modifiers) {
+    public ComponentRequirement<Long, RequirementTypeEnergy> deepCopyModified(List<RecipeModifier> modifiers) {
         int requirement = Math.round(RecipeModifier.applyModifiers(modifiers, this, this.requirementPerTick, false));
         RequirementEnergy energy = new RequirementEnergy(this.getActionType(), requirement);
         energy.activeIO = this.activeIO;
@@ -62,6 +67,14 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     @Override
     public void endRequirementCheck() {}
 
+    @Nonnull
+    @Override
+    public String getMissingComponentErrorMessage(IOType ioType) {
+        ResourceLocation compKey = this.getRequirementType().getRegistryName();
+        return String.format("component.missing.%s.%s.%s",
+                compKey.getResourceDomain(), compKey.getResourcePath(), ioType.name().toLowerCase());
+    }
+
     public long getRequiredEnergyPerTick() {
         return requirementPerTick;
     }
@@ -71,14 +84,18 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
         return new JEIComponentEnergy(this);
     }
 
+    @Override
+    public boolean isValidComponent(ProcessingComponent<?> component, RecipeCraftingContext ctx) {
+        MachineComponent<?> cmp = component.getComponent();
+        return cmp.getComponentType().equals(this.getRequirementType().getComponentType()) &&
+                cmp instanceof MachineComponent.EnergyHatch &&
+                cmp.getIOType() == this.getActionType();
+    }
+
     @Nonnull
     @Override
-    public CraftCheck canStartCrafting(MachineComponent component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
-                !(component instanceof MachineComponent.EnergyHatch) ||
-                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
-
-        IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
+    public CraftCheck canStartCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions) {
+        IEnergyHandler handler = (IEnergyHandler) component.getProvidedComponent();
         switch (getActionType()) {
             case INPUT:
                 if(handler.getCurrentEnergy() >= RecipeModifier.applyModifiers(context, this, this.requirementPerTick, false)) {
@@ -92,12 +109,12 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
     }
 
     @Override
-    public boolean startCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+    public boolean startCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
         return canStartCrafting(component, context, Lists.newArrayList()).isSuccess();
     }
 
     @Override
-    public boolean finishCrafting(MachineComponent component, RecipeCraftingContext context, ResultChance chance) {
+    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
         return true;
     }
 
@@ -116,11 +133,8 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long> {
 
     @Nonnull
     @Override
-    public CraftCheck doIOTick(MachineComponent component, RecipeCraftingContext context) {
-        if(!component.getComponentType().equals(this.getRequiredComponentType()) ||
-                !(component instanceof MachineComponent.EnergyHatch) ||
-                component.getIOType() != getActionType()) return CraftCheck.skipComponent();
-        IEnergyHandler handler = (IEnergyHandler) context.getProvidedCraftingComponent(component);
+    public CraftCheck doIOTick(ProcessingComponent<?> component, RecipeCraftingContext context) {
+        IEnergyHandler handler = (IEnergyHandler) component.getProvidedComponent();
         switch (getActionType()) {
             case INPUT:
                 if(handler.getCurrentEnergy() >= this.activeIO) {

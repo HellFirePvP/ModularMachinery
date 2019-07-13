@@ -6,14 +6,14 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.types;
+package hellfirepvp.modularmachinery.common.crafting.requirement.type;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementItem;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.init.Items;
 import net.minecraft.item.Item;
@@ -23,33 +23,27 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.MathHelper;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Modular Machinery Mod
+ * This class is part of the Astral Sorcery Mod
  * The complete source code for this mod can be found on github.
- * Class: ComponentItem
+ * Class: RequirementTypeItem
  * Created by HellFirePvP
- * Date: 24.02.2018 / 12:09
+ * Date: 13.07.2019 / 10:45
  */
-public class ComponentItem extends ComponentType<RequirementItem> {
+public class RequirementTypeItem extends RequirementType<ItemStack, RequirementItem> {
 
-    @Nonnull
-    @Override
-    public String getRegistryName() {
-        return "item";
+    public RequirementTypeItem() {
+        this(ComponentTypesMM.COMPONENT_ITEM);
     }
 
-    @Nullable
-    @Override
-    public String requiresModid() {
-        return null;
+    protected RequirementTypeItem(@Nullable ComponentType requiredType) {
+        super(requiredType);
     }
 
-    @Nonnull
     @Override
-    public RequirementItem provideComponent(MachineComponent.IOType machineIoType, JsonObject jsonObject) {
+    public RequirementItem createRequirement(IOType type, JsonObject jsonObject) {
         RequirementItem req;
 
         if(!jsonObject.has("item") || !jsonObject.get("item").isJsonPrimitive() ||
@@ -77,7 +71,7 @@ public class ComponentItem extends ComponentType<RequirementItem> {
 
         ResourceLocation res = new ResourceLocation(itemDefinition);
         if(res.getResourceDomain().equalsIgnoreCase("any") && res.getResourcePath().equalsIgnoreCase("fuel")) {
-            if(machineIoType == MachineComponent.IOType.OUTPUT) {
+            if(type == IOType.OUTPUT) {
                 throw new JsonParseException("You cannot define 'fuel' as item output! Offending item-output entry: " + res.toString());
             }
             if(!jsonObject.has("time") || !jsonObject.get("time").isJsonPrimitive() ||
@@ -85,9 +79,9 @@ public class ComponentItem extends ComponentType<RequirementItem> {
                 throw new JsonParseException("If you define any:fuel as item input, you have to define the burntime required in total in the 'time' entry alongside the 'item' entry!");
             }
             int burntime = jsonObject.getAsJsonPrimitive("time").getAsInt();
-            req = new RequirementItem(machineIoType, burntime);
+            req = new RequirementItem(type, burntime);
         } else if(res.getResourceDomain().equalsIgnoreCase("ore")) {
-            req = new RequirementItem(machineIoType, itemDefinition.substring(4), amount);
+            req = new RequirementItem(type, itemDefinition.substring(4), amount);
         } else {
             Item item = ForgeRegistries.ITEMS.getValue(res);
             if(item == null || item == Items.AIR) {
@@ -99,7 +93,7 @@ public class ComponentItem extends ComponentType<RequirementItem> {
             } else {
                 result = new ItemStack(item, amount);
             }
-            req = new RequirementItem(machineIoType, result);
+            req = new RequirementItem(type, result);
         }
         if(jsonObject.has("chance")) {
             if(!jsonObject.get("chance").isJsonPrimitive() || !jsonObject.getAsJsonPrimitive("chance").isNumber()) {

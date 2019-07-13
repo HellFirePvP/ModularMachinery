@@ -6,47 +6,42 @@
  * For further details, see the License file there.
  ******************************************************************************/
 
-package hellfirepvp.modularmachinery.common.crafting.types;
+package hellfirepvp.modularmachinery.common.crafting.requirement.type;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
-import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.crafting.requirements.RequirementFluid;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
+import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementFluid;
+import hellfirepvp.modularmachinery.common.integration.ingredient.HybridFluid;
+import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
+import hellfirepvp.modularmachinery.common.machine.IOType;
 import hellfirepvp.modularmachinery.common.util.nbt.NBTJsonDeserializer;
 import net.minecraft.nbt.NBTException;
 import net.minecraftforge.fluids.Fluid;
 import net.minecraftforge.fluids.FluidRegistry;
 import net.minecraftforge.fluids.FluidStack;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Modular Machinery Mod
+ * This class is part of the Astral Sorcery Mod
  * The complete source code for this mod can be found on github.
- * Class: ComponentFluid
+ * Class: RequirementTypeFluid
  * Created by HellFirePvP
- * Date: 24.02.2018 / 12:10
+ * Date: 13.07.2019 / 10:47
  */
-public class ComponentFluid extends ComponentType<RequirementFluid> {
+public class RequirementTypeFluid extends RequirementType<HybridFluid, RequirementFluid> {
 
-    @Nonnull
-    @Override
-    public String getRegistryName() {
-        return "fluid";
+    public RequirementTypeFluid() {
+        this(ComponentTypesMM.COMPONENT_FLUID);
     }
 
-    @Nullable
-    @Override
-    public String requiresModid() {
-        return null;
+    protected RequirementTypeFluid(@Nullable ComponentType requiredType) {
+        super(requiredType);
     }
 
-    @Nonnull
     @Override
-    public RequirementFluid provideComponent(MachineComponent.IOType machineIoType, JsonObject requirement) {
+    public RequirementFluid createRequirement(IOType type, JsonObject requirement) {
         RequirementFluid req;
 
         if(!requirement.has("fluid") || !requirement.get("fluid").isJsonPrimitive() ||
@@ -65,7 +60,7 @@ public class ComponentFluid extends ComponentType<RequirementFluid> {
         }
         mbAmount = Math.max(0, mbAmount);
         FluidStack fluidStack = new FluidStack(f, mbAmount);
-        req = new RequirementFluid(machineIoType, fluidStack);
+        req = new RequirementFluid(type, fluidStack);
 
         if(requirement.has("chance")) {
             if(!requirement.get("chance").isJsonPrimitive() || !requirement.getAsJsonPrimitive("chance").isNumber()) {
@@ -102,5 +97,4 @@ public class ComponentFluid extends ComponentType<RequirementFluid> {
         }
         return req;
     }
-
 }

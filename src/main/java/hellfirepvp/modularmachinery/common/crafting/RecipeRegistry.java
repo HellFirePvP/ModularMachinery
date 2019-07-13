@@ -37,8 +37,8 @@ import java.util.*;
 public class RecipeRegistry {
 
     private static RecipeRegistry INSTANCE = new RecipeRegistry();
-    private static Map<ResourceLocation, TreeMap<Integer, TreeSet<MachineRecipe>>> REGISTRY_RECIPE_BY_MACHINE;
-    private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY;
+    private static Map<ResourceLocation, TreeMap<Integer, TreeSet<MachineRecipe>>> REGISTRY_RECIPE_BY_MACHINE = new HashMap<>();
+    private static Map<ResourceLocation, MachineRecipe> RECIPE_REGISTRY = new HashMap<>();
 
     private List<PreparedRecipe> earlyRecipes = new LinkedList<>();
 
@@ -60,11 +60,6 @@ public class RecipeRegistry {
     @Nullable
     public MachineRecipe getRecipe(ResourceLocation key) {
         return RECIPE_REGISTRY.get(key);
-    }
-
-    public void buildRegistry() {
-        REGISTRY_RECIPE_BY_MACHINE = new HashMap<>();
-        RECIPE_REGISTRY = new HashMap<>();
     }
 
     public void loadRecipeRegistry(@Nullable EntityPlayer player, boolean doRegister) {
