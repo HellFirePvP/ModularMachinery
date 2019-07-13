@@ -24,7 +24,7 @@ import net.minecraftforge.fluids.FluidStack;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Astral Sorcery Mod
+ * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
  * Class: RequirementTypeFluid
  * Created by HellFirePvP

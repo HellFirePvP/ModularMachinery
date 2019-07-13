@@ -26,7 +26,7 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 import javax.annotation.Nullable;
 
 /**
- * This class is part of the Astral Sorcery Mod
+ * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
  * Class: RequirementTypeItem
  * Created by HellFirePvP

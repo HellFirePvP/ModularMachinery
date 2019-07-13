@@ -17,7 +17,7 @@ import net.minecraftforge.registries.*;
 import static hellfirepvp.modularmachinery.common.lib.RegistriesMM.*;
 
 /**
- * This class is part of the Astral Sorcery Mod
+ * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
  * Class: RegistryRegistries
  * Created by HellFirePvP

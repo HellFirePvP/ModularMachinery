@@ -16,7 +16,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.registries.IForgeRegistryModifiable;
 
 /**
- * This class is part of the Astral Sorcery Mod
+ * This class is part of the Modular Machinery Mod
  * The complete source code for this mod can be found on github.
  * Class: RegistriesMM
  * Created by HellFirePvP
