@@ -52,8 +52,9 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     private final List<ComponentRequirement> recipeRequirements = Lists.newArrayList();
     private final RecipeCommandContainer commandContainer = new RecipeCommandContainer();
     private final int configuredPriority;
+    private final boolean voidPerTickFailure;
 
-    public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority) {
+    public MachineRecipe(String path, ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority, boolean voidPerTickFailure) {
         this.sortId = counter;
         counter++;
         this.recipeFilePath = path;
@@ -61,6 +62,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         this.owningMachine = owningMachine;
         this.tickTime = tickTime;
         this.configuredPriority = configuredPriority;
+        this.voidPerTickFailure = voidPerTickFailure;
     }
 
     public String getRecipeFilePath() {
@@ -95,11 +97,15 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     }
 
     public int getRecipeTotalTickTime() {
-        return tickTime;
+        return this.tickTime;
     }
 
     public int getConfiguredPriority() {
-        return configuredPriority;
+        return this.configuredPriority;
+    }
+
+    public boolean doesCancelRecipeOnPerTickFailure() {
+        return this.voidPerTickFailure;
     }
 
     @Nullable
@@ -114,7 +120,8 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 registryNameChange.apply(this.getRegistryName()),
                 newOwningMachineIdentifier,
                 Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_DURATION, null, this.getRecipeTotalTickTime(), false)),
-                this.getConfiguredPriority());
+                this.getConfiguredPriority(),
+                this.doesCancelRecipeOnPerTickFailure());
 
         for (ComponentRequirement<?, ?> requirement : this.getCraftingRequirements()) {
             copy.addRequirement(requirement.deepCopyModified(modifiers));
@@ -153,7 +160,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 ResourceLocation location = recipeOwnerList.get(i);
                 MachineRecipe rec = new MachineRecipe(parent.recipeFilePath + "_sub_" + i,
                         new ResourceLocation(parent.registryName.getResourceDomain(), parent.registryName.getResourcePath() + "_sub_" + i),
-                        location, parent.tickTime, parent.configuredPriority);
+                        location, parent.tickTime, parent.configuredPriority, parent.voidPerTickFailure);
                 for (ComponentRequirement req : parent.recipeRequirements) {
                     rec.recipeRequirements.add(req.deepCopy());
                 }
@@ -213,12 +220,21 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
                 throw new JsonParseException("'recipeTime' has to be a number!");
             }
             int priority = 0;
-            if(root.has("priority")) {
+            if (root.has("priority")) {
                 JsonElement elementPriority = root.get("priority");
                 if(!elementPriority.isJsonPrimitive() || !elementPriority.getAsJsonPrimitive().isNumber()) {
                     throw new JsonParseException("'priority' has to be a number! (if specified)");
                 }
                 priority = elementPriority.getAsInt();
+            }
+
+            boolean voidPerTickFailure = false;
+            if (root.has("cancelIfPerTickFails")) {
+                JsonElement elementDeletePerTick = root.get("cancelIfPerTickFails");
+                if(!elementDeletePerTick.isJsonPrimitive() || !elementDeletePerTick.getAsJsonPrimitive().isBoolean()) {
+                    throw new JsonParseException("'cancelIfPerTickFails' has to be a boolean! (if specified)");
+                }
+                voidPerTickFailure = elementDeletePerTick.getAsBoolean();
             }
 
             ResourceLocation parentName = Iterables.getFirst(qualifiedMachineNames, null);
@@ -231,7 +247,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
             int recipeTime = elementTime.getAsJsonPrimitive().getAsInt();
             MachineRecipe recipe = new MachineRecipe(RecipeLoader.currentlyReadingPath,
                     new ResourceLocation(ModularMachinery.MODID, registryName),
-                    parentName, recipeTime, priority);
+                    parentName, recipeTime, priority, voidPerTickFailure);
 
             MachineRecipeContainer outContainer = new MachineRecipeContainer(recipe);
             outContainer.recipeOwnerList.addAll(qualifiedMachineNames);

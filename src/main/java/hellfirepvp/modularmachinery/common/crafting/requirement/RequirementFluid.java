@@ -345,7 +345,8 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid, Requirem
     }
 
     @Override
-    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+    @Nonnull
+    public CraftCheck finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
         HybridTank handler = (HybridTank) component.getProvidedComponent();
         switch (getActionType()) {
             case OUTPUT:
@@ -353,47 +354,66 @@ public class RequirementFluid extends ComponentRequirement<HybridFluid, Requirem
                     return finishWithMekanismHandling(handler, context, chance);
                 } else {
                     FluidStack outStack = this.requirementCheck.asFluidStack();
-                    if(outStack != null) {
+                    if (outStack != null) {
                         int fillableAmount = handler.fillInternal(outStack.copy(), false);
-                        if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
-                            return fillableAmount >= outStack.amount;
+                        if (chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
+                            if (fillableAmount >= outStack.amount) {
+                                return CraftCheck.success();
+                            }
+                            return CraftCheck.failure("craftcheck.failure.fluid.output.space");
                         }
                         FluidStack copyOut = outStack.copy();
-                        if(this.tagDisplay != null ){
+                        if (this.tagDisplay != null ){
                             copyOut.tag = this.tagDisplay.copy();
                         }
-                        return fillableAmount >= outStack.amount && handler.fillInternal(copyOut.copy(), true) >= copyOut.amount;
+                        if (fillableAmount >= outStack.amount && handler.fillInternal(copyOut.copy(), true) >= copyOut.amount) {
+                            return CraftCheck.success();
+                        }
+                        return CraftCheck.failure("craftcheck.failure.fluid.output.space");
                     }
                 }
         }
-        return false;
+        return CraftCheck.skipComponent();
     }
 
     @net.minecraftforge.fml.common.Optional.Method(modid = "mekanism")
-    private boolean finishWithMekanismHandling(HybridTank handler, RecipeCraftingContext context, ResultChance chance) {
-        if(this.requirementCheck instanceof HybridFluidGas && handler instanceof HybridGasTank) {
+    @Nonnull
+    private CraftCheck finishWithMekanismHandling(HybridTank handler, RecipeCraftingContext context, ResultChance chance) {
+        if (this.requirementCheck instanceof HybridFluidGas && handler instanceof HybridGasTank) {
             GasStack gasOut = ((HybridFluidGas) this.requirementCheck).asGasStack();
             HybridGasTank gasTankHandler = (HybridGasTank) handler;
             int fillableGas = gasTankHandler.receiveGas(EnumFacing.UP, gasOut, false);
-            if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
-                return fillableGas >= gasOut.amount;
+            if (fillableGas < gasOut.amount) {
+                return CraftCheck.failure("craftcheck.failure.gas.output.space");
             }
-            return fillableGas >= gasOut.amount && gasTankHandler.receiveGas(EnumFacing.UP, gasOut, true) >= gasOut.amount;
+            if (chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
+                return CraftCheck.success();
+            }
+            if (gasTankHandler.receiveGas(EnumFacing.UP, gasOut, true) >= gasOut.amount) {
+                return CraftCheck.success();
+            }
+            return CraftCheck.failure("craftcheck.failure.gas.output.space");
         } else {
             FluidStack outStack = this.requirementCheck.asFluidStack();
             if(outStack != null) {
                 int fillableAmount = handler.fillInternal(outStack.copy(), false);
+                if (fillableAmount < outStack.amount) {
+                    return CraftCheck.failure("craftcheck.failure.gas.output.space");
+                }
                 if(chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
-                    return fillableAmount >= outStack.amount;
+                    return CraftCheck.success();
                 }
                 FluidStack copyOut = outStack.copy();
                 if(this.tagDisplay != null ){
                     copyOut.tag = this.tagDisplay.copy();
                 }
-                return fillableAmount >= outStack.amount && handler.fillInternal(copyOut.copy(), true) >= copyOut.amount;
+                if (handler.fillInternal(copyOut.copy(), true) >= copyOut.amount) {
+                    return CraftCheck.success();
+                }
+                return CraftCheck.failure("craftcheck.failure.gas.output.space");
             }
         }
-        return false;
+        return CraftCheck.skipComponent();
     }
 
 }

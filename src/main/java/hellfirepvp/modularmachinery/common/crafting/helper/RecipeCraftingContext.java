@@ -175,26 +175,37 @@ public class RecipeCraftingContext {
         this.getParentRecipe().getCommandContainer().runStartCommands(this.commandSender);
     }
 
-    public void finishCrafting() {
-        finishCrafting(RAND.nextLong());
+    public CraftingCheckResult finishCrafting() {
+        return finishCrafting(RAND.nextLong());
     }
 
-    public void finishCrafting(long seed) {
+    public CraftingCheckResult finishCrafting(long seed) {
+        CraftingCheckResult result = new CraftingCheckResult();
         ResultChance chance = new ResultChance(seed);
         for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
-            if(requirement.getActionType() == IOType.INPUT) continue;
+            if (requirement.getActionType() == IOType.INPUT) continue;
 
+            List<String> errorMessages = Lists.newArrayList();
             requirement.startRequirementCheck(chance, this);
             for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
-                if(requirement.finishCrafting(component, this, chance)) {
+                CraftCheck check = requirement.finishCrafting(component, this, chance);
+                if (check.isSuccess()) {
                     requirement.endRequirementCheck();
                     break;
                 }
+
+                if (!check.isInvalid() && !check.getUnlocalizedMessage().isEmpty()) {
+                    errorMessages.add(check.getUnlocalizedMessage());
+                }
             }
+            errorMessages.forEach(result::addError);
             requirement.endRequirementCheck();
         }
 
-        this.getParentRecipe().getCommandContainer().runFinishCommands(this.commandSender);
+        if (!result.isFailure()) {
+            this.getParentRecipe().getCommandContainer().runFinishCommands(this.commandSender);
+        }
+        return result;
     }
 
     public CraftingCheckResult canStartCrafting() {

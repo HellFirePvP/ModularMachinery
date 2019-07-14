@@ -82,8 +82,8 @@ public abstract class ComponentRequirement<T, V extends RequirementType<T, ? ext
     //True, if the requirement could be fulfilled by the given component
     public abstract boolean startCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance);
 
-    //True, if the requirement could be fulfilled by the given component
-    public abstract boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance);
+    @Nonnull
+    public abstract CraftCheck finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance);
 
     @Nonnull
     public abstract CraftCheck canStartCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, List<ComponentOutputRestrictor> restrictions);
@@ -119,6 +119,11 @@ public abstract class ComponentRequirement<T, V extends RequirementType<T, ? ext
 
         @SideOnly(Side.CLIENT)
         public abstract RecipeLayoutPart<T> getLayoutPart(Point offset);
+
+        @SideOnly(Side.CLIENT)
+        public RecipeLayoutPart<T> getTemplateLayout() {
+            return this.getLayoutPart(new Point(0, 0));
+        }
 
         @SideOnly(Side.CLIENT)
         public abstract void onJEIHoverTooltip(int slotIndex, boolean input, T ingredient, List<String> tooltip);

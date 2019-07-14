@@ -110,8 +110,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
         List<Class<?>> classes = Lists.newLinkedList(componentsFound.keySet());
         classes.sort((o1, o2) -> {
-            RecipeLayoutPart<?> part1 = componentsFound.get(o1).getLayoutPart(new Point(0, 0));
-            RecipeLayoutPart<?> part2 = componentsFound.get(o2).getLayoutPart(new Point(0, 0));
+            RecipeLayoutPart<?> part1 = componentsFound.get(o1).getTemplateLayout();
+            RecipeLayoutPart<?> part2 = componentsFound.get(o2).getTemplateLayout();
             return part2.getComponentHorizontalSortingOrder() - part1.getComponentHorizontalSortingOrder();
         });
 
@@ -119,7 +119,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             Map<Class<?>, Integer> compMap = componentCounts.get(IOType.INPUT);
             if(compMap != null && compMap.containsKey(clazz)) {
                 ComponentRequirement.JEIComponent<?> component = componentsFound.get(clazz);
-                RecipeLayoutPart<?> layoutHelper = component.getLayoutPart(new Point(0, 0));
+                RecipeLayoutPart<?> layoutHelper = component.getTemplateLayout();
                 int amt = compMap.get(clazz);
 
                 int partOffsetX = offsetX;
@@ -149,8 +149,8 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
 
         classes = Lists.newLinkedList(componentsFound.keySet());
         classes.sort((o1, o2) -> {
-            RecipeLayoutPart<?> part1 = componentsFound.get(o1).getLayoutPart(new Point(0, 0));
-            RecipeLayoutPart<?> part2 = componentsFound.get(o2).getLayoutPart(new Point(0, 0));
+            RecipeLayoutPart<?> part1 = componentsFound.get(o1).getTemplateLayout();
+            RecipeLayoutPart<?> part2 = componentsFound.get(o2).getTemplateLayout();
             return part1.getComponentHorizontalSortingOrder() - part2.getComponentHorizontalSortingOrder();
         });
 
@@ -158,7 +158,7 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
             Map<Class<?>, Integer> compMap = componentCounts.get(IOType.OUTPUT);
             if(compMap != null && compMap.containsKey(clazz)) {
                 ComponentRequirement.JEIComponent<?> component = componentsFound.get(clazz);
-                RecipeLayoutPart<?> layoutHelper = component.getLayoutPart(new Point(0, 0));
+                RecipeLayoutPart<?> layoutHelper = component.getTemplateLayout();
                 int amt = compMap.get(clazz);
 
                 int partOffsetX = offsetX;

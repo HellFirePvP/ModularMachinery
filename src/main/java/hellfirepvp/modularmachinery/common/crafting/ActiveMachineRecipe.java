@@ -64,7 +64,12 @@ public class ActiveMachineRecipe {
     }
 
     @Nonnull
-    public TileMachineController.CraftingStatus tick(RecipeCraftingContext context) {
+    public TileMachineController.CraftingStatus tick(TileMachineController ctrl, RecipeCraftingContext context) {
+        //Skip per-tick logic until controller can finish the recipe
+        if (this.isCompleted(ctrl, context)) {
+            return TileMachineController.CraftingStatus.working();
+        }
+
         RecipeCraftingContext.CraftingCheckResult check;
         if(!(check = context.ioTick(tick)).isFailure()) {
             this.tick++;
@@ -101,8 +106,8 @@ public class ActiveMachineRecipe {
         context.startCrafting();
     }
 
-    public void complete(RecipeCraftingContext completionContext) {
-        completionContext.finishCrafting();
+    public RecipeCraftingContext.CraftingCheckResult complete(RecipeCraftingContext completionContext) {
+        return completionContext.finishCrafting();
     }
 
     public NBTTagCompound serialize() {

@@ -21,7 +21,6 @@ import hellfirepvp.modularmachinery.common.crafting.helper.ComponentSelectorTag;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementFluid;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
-import hellfirepvp.modularmachinery.common.lib.ComponentTypesMM;
 import hellfirepvp.modularmachinery.common.lib.RequirementTypesMM;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import mekanism.api.gas.Gas;
@@ -50,15 +49,17 @@ public class RecipePrimer implements PreparedRecipe {
 
     private final ResourceLocation name, machineName;
     private final int tickTime, priority;
+    private final boolean doesVoidPerTick;
 
     private List<ComponentRequirement> components = new LinkedList<>();
     private ComponentRequirement lastComponent = null;
 
-    public RecipePrimer(ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority) {
+    public RecipePrimer(ResourceLocation registryName, ResourceLocation owningMachine, int tickTime, int configuredPriority, boolean doesVoidPerTick) {
         this.name = registryName;
         this.machineName = owningMachine;
         this.tickTime = tickTime;
         this.priority = configuredPriority;
+        this.doesVoidPerTick = doesVoidPerTick;
     }
 
     @ZenMethod
@@ -252,7 +253,6 @@ public class RecipePrimer implements PreparedRecipe {
     // lingering stats
     //----------------------------------------------------------------------------------------------
 
-
     @Override
     public String getFilePath() {
         return "";
@@ -276,6 +276,11 @@ public class RecipePrimer implements PreparedRecipe {
     @Override
     public int getPriority() {
         return priority;
+    }
+
+    @Override
+    public boolean voidPerTickFailure() {
+        return doesVoidPerTick;
     }
 
     @Override

@@ -53,7 +53,7 @@ public class AdapterMinecraftFurnace extends RecipeAdapter {
             MachineRecipe recipe = createRecipeShell(
                     new ResourceLocation("minecraft", "smelting_recipe_" + incId),
                     owningMachineName,
-                    tickTime, 0);
+                    tickTime, 0, false);
 
             int inAmount = Math.round(RecipeModifier.applyModifiers(modifiers, RequirementTypesMM.REQUIREMENT_ITEM, IOType.INPUT, smelting.getKey().getCount(), false));
             if (inAmount > 0) {

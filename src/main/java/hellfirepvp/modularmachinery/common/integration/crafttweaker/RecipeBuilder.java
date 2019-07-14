@@ -11,8 +11,6 @@ package hellfirepvp.modularmachinery.common.integration.crafttweaker;
 import crafttweaker.CraftTweakerAPI;
 import crafttweaker.annotations.ZenRegister;
 import hellfirepvp.modularmachinery.ModularMachinery;
-import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
 import net.minecraft.util.ResourceLocation;
 import stanhebben.zenscript.annotations.ZenClass;
 import stanhebben.zenscript.annotations.ZenMethod;
@@ -35,6 +33,11 @@ public class RecipeBuilder {
 
     @ZenMethod
     public static RecipePrimer newBuilder(String recipeRegistryName, String associatedMachineRegistryName, int processingTickTime, int sortingPriority) {
+        return newBuilder(recipeRegistryName, associatedMachineRegistryName, processingTickTime, sortingPriority, false);
+    }
+
+    @ZenMethod
+    public static RecipePrimer newBuilder(String recipeRegistryName, String associatedMachineRegistryName, int processingTickTime, int sortingPriority, boolean cancelIfPerTickFails) {
         ResourceLocation recipeLoc = new ResourceLocation(recipeRegistryName);
         if(recipeLoc.getResourceDomain().equals("minecraft")) {
             recipeLoc = new ResourceLocation(ModularMachinery.MODID, recipeLoc.getResourcePath());
@@ -48,7 +51,7 @@ public class RecipeBuilder {
             return null;
         }
 
-        return new RecipePrimer(recipeLoc, machineLoc, processingTickTime, sortingPriority);
+        return new RecipePrimer(recipeLoc, machineLoc, processingTickTime, sortingPriority, cancelIfPerTickFails);
     }
 
 }

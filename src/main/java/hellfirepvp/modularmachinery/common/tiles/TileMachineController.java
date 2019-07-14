@@ -112,19 +112,26 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     }
                 } else {
                     RecipeCraftingContext context = this.foundMachine.createContext(this.activeRecipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
-                    this.craftingStatus = this.activeRecipe.tick(context); //handle energy IO and tick progression
-                    if(this.activeRecipe.isCompleted(this, context)) {
-                        this.activeRecipe.complete(context);
-                        this.activeRecipe.reset();
-                        context = this.foundMachine.createContext(this.activeRecipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
-                        RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
+                    this.craftingStatus = this.activeRecipe.tick(this, context); //handle energy IO and tick progression
 
-                        if (result.isFailure()) {
-                            this.activeRecipe = null;
-                            searchAndUpdateRecipe();
-                        } else {
-                            this.activeRecipe.start(context);
-                            this.craftingStatus = CraftingStatus.working();
+                    if (this.activeRecipe.getRecipe().doesCancelRecipeOnPerTickFailure() && !this.craftingStatus.isCrafting()) {
+                        this.activeRecipe = null;
+                        markForUpdate();
+                    } else if (this.activeRecipe.isCompleted(this, context)) {
+                        RecipeCraftingContext.CraftingCheckResult finishResult = this.activeRecipe.complete(context);
+
+                        if (!finishResult.isFailure()) {
+                            this.activeRecipe.reset();
+                            context = this.foundMachine.createContext(this.activeRecipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
+                            RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
+
+                            if (result.isFailure()) {
+                                this.activeRecipe = null;
+                                searchAndUpdateRecipe();
+                            } else {
+                                this.activeRecipe.start(context);
+                                this.craftingStatus = CraftingStatus.working();
+                            }
                         }
                     }
                     markForUpdate();
@@ -322,6 +329,10 @@ public class TileMachineController extends TileEntityRestrictedTick {
         float tick = activeRecipe.getTick() + partial;
         float maxTick = activeRecipe.getRecipe().getRecipeTotalTickTime();
         return MathHelper.clamp(tick / maxTick, 0F, 1F);
+    }
+
+    public boolean hasActiveRecipe() {
+        return this.activeRecipe != null;
     }
 
     @Override

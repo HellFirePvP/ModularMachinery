@@ -302,7 +302,8 @@ public class RequirementItem extends ComponentRequirement<ItemStack, Requirement
     }
 
     @Override
-    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+    @Nonnull
+    public CraftCheck finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
         if(fuelBurntime > 0 && oreDictName == null && required.isEmpty()) {
             throw new IllegalStateException("Invalid item output!");
         }
@@ -318,7 +319,7 @@ public class RequirementItem extends ComponentRequirement<ItemStack, Requirement
                 }
 
                 if(stack.isEmpty()) {
-                    return true;
+                    return CraftCheck.success(); //Can't find anything to output. Guess that's a valid state.
                 }
                 if(tag != null) {
                     stack.setTagCompound(tag);
@@ -326,16 +327,19 @@ public class RequirementItem extends ComponentRequirement<ItemStack, Requirement
                 //If we don't produce the item, we only need to see if there would be space for it at all.
                 int inserted = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, true);
                 if (inserted > 0 && chance.canProduce(RecipeModifier.applyModifiers(context, this, this.chance, true))) {
-                    return true;
+                    return CraftCheck.success();
                 }
                 if (inserted > 0) {
                     int actual = ItemUtils.tryPlaceItemInInventory(stack.copy(), handler, false);
                     this.countIOBuffer -= actual;
-                    return this.countIOBuffer <= 0;
+                    if (this.countIOBuffer <= 0) {
+                        return CraftCheck.success();
+                    }
+                    return CraftCheck.partialSuccess();
                 }
-                return false;
+                return CraftCheck.failure("craftcheck.failure.item.output.space");
         }
-        return false;
+        return CraftCheck.skipComponent();
     }
 
     public enum ItemRequirementType {

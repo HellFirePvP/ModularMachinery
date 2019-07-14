@@ -10,7 +10,6 @@ package hellfirepvp.modularmachinery.common.crafting.adapter;
 
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.registries.IForgeRegistryEntry;
@@ -18,7 +17,6 @@ import net.minecraftforge.registries.IForgeRegistryEntry;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * This class is part of the Modular Machinery Mod
@@ -57,9 +55,9 @@ public abstract class RecipeAdapter implements IForgeRegistryEntry<RecipeAdapter
                                                                List<ComponentRequirement<?, ?>> additionalRequirements);
 
     @Nonnull
-    public MachineRecipe createRecipeShell(ResourceLocation uniqueRecipeName, ResourceLocation owningMachineName, int tickTime, int priority) {
+    public MachineRecipe createRecipeShell(ResourceLocation uniqueRecipeName, ResourceLocation owningMachineName, int tickTime, int priority, boolean voidPerTickFailure) {
         return new MachineRecipe("internal/adapter/" + registryName.getResourceDomain() + "/" + registryName.getResourcePath(),
-                uniqueRecipeName, owningMachineName, tickTime, priority);
+                uniqueRecipeName, owningMachineName, tickTime, priority, voidPerTickFailure);
     }
 
 

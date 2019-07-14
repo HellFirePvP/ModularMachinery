@@ -115,8 +115,9 @@ public class RequirementEnergy extends ComponentRequirement.PerTick<Long, Requir
     }
 
     @Override
-    public boolean finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
-        return true;
+    @Nonnull
+    public CraftCheck finishCrafting(ProcessingComponent<?> component, RecipeCraftingContext context, ResultChance chance) {
+        return CraftCheck.success();
     }
 
     @Override

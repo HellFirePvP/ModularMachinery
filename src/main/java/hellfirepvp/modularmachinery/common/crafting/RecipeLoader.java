@@ -13,7 +13,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import hellfirepvp.modularmachinery.ModularMachinery;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterAccessor;
-import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapterRegistry;
 import hellfirepvp.modularmachinery.common.crafting.command.RecipeRunnableCommand;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
@@ -113,7 +112,7 @@ public class RecipeLoader {
     private static MachineRecipe convertPreparedRecipe(PreparedRecipe recipe) {
         MachineRecipe mr = new MachineRecipe(recipe.getFilePath(),
                 recipe.getRecipeRegistryName(), recipe.getAssociatedMachineName(),
-                recipe.getTotalProcessingTickTime(), recipe.getPriority());
+                recipe.getTotalProcessingTickTime(), recipe.getPriority(), recipe.voidPerTickFailure());
         recipe.getComponents().forEach(mr::addRequirement);
         return mr;
     }

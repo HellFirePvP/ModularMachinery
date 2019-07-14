@@ -32,6 +32,10 @@ public interface PreparedRecipe {
 
     public int getPriority();
 
+    default public boolean voidPerTickFailure() {
+        return false;
+    }
+
     public List<ComponentRequirement> getComponents();
 
 }
