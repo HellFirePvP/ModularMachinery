@@ -106,8 +106,8 @@ public class ActiveMachineRecipe {
         context.startCrafting();
     }
 
-    public RecipeCraftingContext.CraftingCheckResult complete(RecipeCraftingContext completionContext) {
-        return completionContext.finishCrafting();
+    public void complete(RecipeCraftingContext completionContext) {
+        completionContext.finishCrafting();
     }
 
     public NBTTagCompound serialize() {
@@ -124,5 +124,4 @@ public class ActiveMachineRecipe {
         tag.setTag("data", listData);
         return tag;
     }
-
 }

@@ -9,7 +9,10 @@
 package hellfirepvp.modularmachinery.common.util;
 
 import com.google.common.collect.Lists;
+import net.minecraft.util.EnumFacing;
 import net.minecraft.util.Tuple;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3i;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -37,6 +40,30 @@ public class MiscUtils {
 
     public static List<String> splitStringBy(String str, String spl) {
         return Lists.newArrayList(str.split(spl));
+    }
+
+    public static BlockPos rotateYCCWNorthUntil(BlockPos at, EnumFacing dir) {
+        EnumFacing currentFacing = EnumFacing.NORTH;
+        BlockPos pos = at;
+        while (currentFacing != dir) {
+            currentFacing = currentFacing.rotateYCCW();
+            pos = new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+        }
+        return pos;
+    }
+
+    public static BlockArray rotateYCCWNorthUntil(BlockArray array, EnumFacing dir) {
+        EnumFacing currentFacing = EnumFacing.NORTH;
+        BlockArray rot = array;
+        while (currentFacing != dir) {
+            currentFacing = currentFacing.rotateYCCW();
+            rot = rot.rotateYCCW();
+        }
+        return rot;
+    }
+
+    public static BlockPos rotateYCCW(BlockPos pos) {
+        return new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
     }
 
     public static <T> List<T> flatten(Collection<List<T>> collection) {

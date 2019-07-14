@@ -49,7 +49,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
     private final String recipeFilePath;
     private final ResourceLocation owningMachine, registryName;
     private final int tickTime;
-    private final List<ComponentRequirement> recipeRequirements = Lists.newArrayList();
+    private final List<ComponentRequirement<?, ?>> recipeRequirements = Lists.newArrayList();
     private final RecipeCommandContainer commandContainer = new RecipeCommandContainer();
     private final int configuredPriority;
     private final boolean voidPerTickFailure;
@@ -77,7 +77,7 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         return owningMachine;
     }
 
-    public List<ComponentRequirement> getCraftingRequirements() {
+    public List<ComponentRequirement<?, ?>> getCraftingRequirements() {
         return Collections.unmodifiableList(recipeRequirements);
     }
 
@@ -85,9 +85,9 @@ public class MachineRecipe implements Comparable<MachineRecipe> {
         return commandContainer;
     }
 
-    public void addRequirement(ComponentRequirement requirement) {
+    public void addRequirement(ComponentRequirement<?, ?> requirement) {
         if(requirement instanceof RequirementEnergy) {
-            for (ComponentRequirement req : this.recipeRequirements) {
+            for (ComponentRequirement<?, ?> req : this.recipeRequirements) {
                 if(req instanceof RequirementEnergy && req.getActionType() == requirement.getActionType()) {
                     throw new IllegalStateException("Tried to add multiple energy requirements for the same ioType! Please only add one for each ioType!");
                 }

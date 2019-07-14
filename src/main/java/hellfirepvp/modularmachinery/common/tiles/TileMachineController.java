@@ -21,10 +21,7 @@ import hellfirepvp.modularmachinery.common.crafting.helper.RecipeCraftingContext
 import hellfirepvp.modularmachinery.common.data.Config;
 import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
-import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
-import hellfirepvp.modularmachinery.common.machine.MachineComponent;
-import hellfirepvp.modularmachinery.common.machine.MachineRegistry;
-import hellfirepvp.modularmachinery.common.machine.TaggedPositionBlockArray;
+import hellfirepvp.modularmachinery.common.machine.*;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
@@ -117,21 +114,18 @@ public class TileMachineController extends TileEntityRestrictedTick {
                     if (this.activeRecipe.getRecipe().doesCancelRecipeOnPerTickFailure() && !this.craftingStatus.isCrafting()) {
                         this.activeRecipe = null;
                         markForUpdate();
-                    } else if (this.activeRecipe.isCompleted(this, context)) {
-                        RecipeCraftingContext.CraftingCheckResult finishResult = this.activeRecipe.complete(context);
-
-                        if (!finishResult.isFailure()) {
-                            this.activeRecipe.reset();
-                            context = this.foundMachine.createContext(this.activeRecipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
-                            RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
-
-                            if (result.isFailure()) {
-                                this.activeRecipe = null;
-                                searchAndUpdateRecipe();
-                            } else {
-                                this.activeRecipe.start(context);
-                                this.craftingStatus = CraftingStatus.working();
-                            }
+                    } else if (this.activeRecipe.isCompleted(this, context) &&
+                            !context.canStartCrafting(req -> req.getActionType() == IOType.OUTPUT).isFailure()) {
+                        this.activeRecipe.complete(context);
+                        this.activeRecipe.reset();
+                        context = this.foundMachine.createContext(this.activeRecipe, this, this.foundComponents, MiscUtils.flatten(this.foundModifiers.values()));
+                        RecipeCraftingContext.CraftingCheckResult result = context.canStartCrafting();
+                        if (result.isFailure()) {
+                            this.activeRecipe = null;
+                            searchAndUpdateRecipe();
+                        } else {
+                            this.activeRecipe.start(context);
+                            this.craftingStatus = CraftingStatus.working();
                         }
                     }
                     markForUpdate();

@@ -12,6 +12,7 @@ import com.google.common.collect.Lists;
 import hellfirepvp.modularmachinery.client.ClientScheduler;
 import hellfirepvp.modularmachinery.common.util.BlockArray;
 import hellfirepvp.modularmachinery.common.util.BlockCompatHelper;
+import hellfirepvp.modularmachinery.common.util.MiscUtils;
 import net.minecraft.block.properties.IProperty;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.client.Minecraft;
@@ -307,8 +308,8 @@ public class BlockArrayRenderHelper {
             }
         }
 
-        WorldBlockArrayRenderAccess move(BlockArrayRenderHelper ref, Vec3i toOffset) {
-            return new WorldBlockArrayRenderAccess(ref, new BlockArray(this.originalArray, toOffset));
+        WorldBlockArrayRenderAccess build(BlockArrayRenderHelper ref, BlockArray array, BlockPos toOffset) {
+            return new WorldBlockArrayRenderAccess(ref, new BlockArray(array, toOffset));
         }
 
         @Nullable

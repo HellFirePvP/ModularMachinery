@@ -28,29 +28,17 @@ public class RegistryRegistries {
     private RegistryRegistries() {}
 
     public static void buildRegistries() {
-        new RegistryBuilder<RecipeAdapter>()
-                .setName(ADAPTER_REGISTRY_NAME)
-                .setType(RecipeAdapter.class)
-                .disableSaving()
-                .setMaxID(Short.MAX_VALUE)
-                .create();
-        new RegistryBuilder<ComponentType>()
-                .setName(COMPONENT_TYPE_REGISTRY_NAME)
-                .setType(ComponentType.class)
-                .disableSaving()
-                .setMaxID(Short.MAX_VALUE)
-                .create();
-        new RegistryBuilder<RequirementType>()
-                .setName(REQUIREMENT_TYPE_REGISTRY_NAME)
-                .setType(RequirementType.class)
-                .setMaxID(Short.MAX_VALUE)
-                .allowModification()
-                .disableSaving()
-                .create();
+        makeRegistry(REQUIREMENT_TYPE_REGISTRY_NAME, RequirementType.class).create();
+        makeRegistry(COMPONENT_TYPE_REGISTRY_NAME, ComponentType.class).create();
+        makeRegistry(ADAPTER_REGISTRY_NAME, RecipeAdapter.class).create();
 
         ADAPTER_REGISTRY          = RegistryManager.ACTIVE.getRegistry(ADAPTER_REGISTRY_NAME);
         COMPONENT_TYPE_REGISTRY   = RegistryManager.ACTIVE.getRegistry(COMPONENT_TYPE_REGISTRY_NAME);
         REQUIREMENT_TYPE_REGISTRY = RegistryManager.ACTIVE.getRegistry(REQUIREMENT_TYPE_REGISTRY_NAME);
+    }
+
+    private static <T extends IForgeRegistryEntry<T>> RegistryBuilder<T> makeRegistry(ResourceLocation name, Class<T> type) {
+        return new RegistryBuilder<T>().setName(name).setType(type).setMaxID(Short.MAX_VALUE).disableSaving().allowModification();
     }
 
 }

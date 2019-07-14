@@ -141,15 +141,15 @@ public class DynamicMachineRenderContext {
     }
 
     public int getRenderSlice() {
-        return renderSlice;
+        return renderSlice - this.moveOffset.getY();
     }
 
     public boolean hasSliceDown() {
-        return render.getBlocks().getMin().getY() - this.moveOffset.getY() < renderSlice - 1;
+        return render.getBlocks().getMin().getY() < renderSlice;
     }
 
     public boolean hasSliceUp() {
-        return render.getBlocks().getMax().getY() + this.moveOffset.getY() > renderSlice + 1;
+        return render.getBlocks().getMax().getY() > renderSlice;
     }
 
     public void sliceUp() {
@@ -186,7 +186,7 @@ public class DynamicMachineRenderContext {
         if(render3D) {
             render.render3DGUI(x, z, scale, partialTicks);
         } else {
-            render.render3DGUI(x, z, scale, partialTicks, Optional.of(renderSlice + this.moveOffset.getY()));
+            render.render3DGUI(x, z, scale, partialTicks, Optional.of(renderSlice));
         }
     }
 

@@ -70,8 +70,8 @@ public class BlockArray {
         for (Map.Entry<BlockPos, BlockInformation> otherEntry : other.pattern.entrySet()) {
             this.pattern.put(otherEntry.getKey().add(offset), otherEntry.getValue());
         }
-        this.min = new Vec3i(other.min.getX(), other.min.getY(), other.min.getZ());
-        this.max = new Vec3i(other.max.getX(), other.max.getY(), other.max.getZ());
+        this.min  = new Vec3i(offset.getX() + other.min.getX(),  offset.getY() + other.min.getY(),  offset.getZ() + other.min.getZ());
+        this.max  = new Vec3i(offset.getX() + other.max.getX(),  offset.getY() + other.max.getY(),  offset.getZ() + other.max.getZ());
         this.size = new Vec3i(other.size.getX(), other.size.getY(), other.size.getZ());
     }
 
@@ -209,7 +209,7 @@ public class BlockArray {
 
         for (BlockPos pos : pattern.keySet()) {
             BlockInformation info = pattern.get(pos);
-            out.pattern.put(new BlockPos(pos.getZ(), pos.getY(), -pos.getX()), info.copyRotateYCCW());
+            out.pattern.put(MiscUtils.rotateYCCW(pos), info.copyRotateYCCW());
         }
         return out;
     }

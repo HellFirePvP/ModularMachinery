@@ -11,9 +11,7 @@ package hellfirepvp.modularmachinery.common.crafting.helper;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import com.google.gson.JsonObject;
 import hellfirepvp.modularmachinery.common.crafting.ActiveMachineRecipe;
-import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.command.ControllerCommandSender;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
@@ -25,11 +23,11 @@ import hellfirepvp.modularmachinery.common.modifier.RecipeModifier;
 import hellfirepvp.modularmachinery.common.tiles.TileMachineController;
 import hellfirepvp.modularmachinery.common.util.PriorityProvider;
 import hellfirepvp.modularmachinery.common.util.ResultChance;
-import net.minecraft.util.ResourceLocation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -109,7 +107,7 @@ public class RecipeCraftingContext {
         float durMultiplier = this.getDurationMultiplier();
 
         for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
-            if(!(requirement instanceof ComponentRequirement.PerTick) ||
+            if (!(requirement instanceof ComponentRequirement.PerTick) ||
                     requirement.getActionType() == IOType.OUTPUT) continue;
             ComponentRequirement.PerTick<?, ?> perTickRequirement = (ComponentRequirement.PerTick<?, ?>) requirement;
 
@@ -124,7 +122,7 @@ public class RecipeCraftingContext {
             }
 
             CraftCheck result = perTickRequirement.resetIOTick(this);
-            if(!result.isSuccess()) {
+            if (!result.isSuccess()) {
                 CraftingCheckResult res = new CraftingCheckResult();
                 res.addError(result.getUnlocalizedMessage());
                 return res;
@@ -132,7 +130,7 @@ public class RecipeCraftingContext {
         }
 
         for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
-            if(!(requirement instanceof ComponentRequirement.PerTick) ||
+            if (!(requirement instanceof ComponentRequirement.PerTick) ||
                     requirement.getActionType() == IOType.INPUT) continue;
             ComponentRequirement.PerTick<?, ?> perTickRequirement = (ComponentRequirement.PerTick<?, ?>) requirement;
 
@@ -160,9 +158,8 @@ public class RecipeCraftingContext {
     public void startCrafting(long seed) {
         ResultChance chance = new ResultChance(seed);
         for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
-            if(requirement.getActionType() == IOType.OUTPUT) continue;
-
             requirement.startRequirementCheck(chance, this);
+
             for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
                 if(requirement.startCrafting(component, this, chance)) {
                     requirement.endRequirementCheck();
@@ -175,47 +172,42 @@ public class RecipeCraftingContext {
         this.getParentRecipe().getCommandContainer().runStartCommands(this.commandSender);
     }
 
-    public CraftingCheckResult finishCrafting() {
-        return finishCrafting(RAND.nextLong());
+    public void finishCrafting() {
+        finishCrafting(RAND.nextLong());
     }
 
-    public CraftingCheckResult finishCrafting(long seed) {
-        CraftingCheckResult result = new CraftingCheckResult();
+    public void finishCrafting(long seed) {
         ResultChance chance = new ResultChance(seed);
         for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
-            if (requirement.getActionType() == IOType.INPUT) continue;
-
-            List<String> errorMessages = Lists.newArrayList();
             requirement.startRequirementCheck(chance, this);
+
             for (ProcessingComponent<?> component : getComponentsFor(requirement, requirement.getTag())) {
                 CraftCheck check = requirement.finishCrafting(component, this, chance);
                 if (check.isSuccess()) {
                     requirement.endRequirementCheck();
                     break;
                 }
-
-                if (!check.isInvalid() && !check.getUnlocalizedMessage().isEmpty()) {
-                    errorMessages.add(check.getUnlocalizedMessage());
-                }
             }
-            errorMessages.forEach(result::addError);
             requirement.endRequirementCheck();
         }
 
-        if (!result.isFailure()) {
-            this.getParentRecipe().getCommandContainer().runFinishCommands(this.commandSender);
-        }
-        return result;
+        this.getParentRecipe().getCommandContainer().runFinishCommands(this.commandSender);
     }
 
     public CraftingCheckResult canStartCrafting() {
+        return this.canStartCrafting(req -> true);
+    }
+
+    public CraftingCheckResult canStartCrafting(Predicate<ComponentRequirement<?, ?>> requirementFilter) {
         currentRestrictions.clear();
         CraftingCheckResult result = new CraftingCheckResult();
         float successfulRequirements = 0;
-        float requirements = this.getParentRecipe().getCraftingRequirements().size();
+        List<ComponentRequirement<?, ?>> requirements = this.getParentRecipe().getCraftingRequirements().stream()
+                .filter(requirementFilter)
+                .collect(Collectors.toList());
 
         lblRequirements:
-        for (ComponentRequirement<?, ?> requirement : this.getParentRecipe().getCraftingRequirements()) {
+        for (ComponentRequirement<?, ?> requirement : requirements) {
             requirement.startRequirementCheck(ResultChance.GUARANTEED, this);
 
             Iterable<ProcessingComponent<?>> components = getComponentsFor(requirement, requirement.getTag());
@@ -243,7 +235,7 @@ public class RecipeCraftingContext {
 
             requirement.endRequirementCheck();
         }
-        result.setValidity(successfulRequirements / requirements);
+        result.setValidity(successfulRequirements / requirements.size());
 
         currentRestrictions.clear();
         return result;
