@@ -13,6 +13,7 @@ import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapter;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraftforge.registries.IForgeRegistryModifiable;
 
 /**
@@ -30,8 +31,8 @@ public class RegistriesMM {
     public static ResourceLocation COMPONENT_TYPE_REGISTRY_NAME = new ResourceLocation(ModularMachinery.MODID, "componenttypes");
     public static ResourceLocation REQUIREMENT_TYPE_REGISTRY_NAME = new ResourceLocation(ModularMachinery.MODID, "requirementtypes");
 
-    public static IForgeRegistryModifiable<RecipeAdapter> ADAPTER_REGISTRY;
-    public static IForgeRegistryModifiable<ComponentType> COMPONENT_TYPE_REGISTRY;
-    public static IForgeRegistryModifiable<RequirementType<?, ?>> REQUIREMENT_TYPE_REGISTRY;
+    public static ForgeRegistry<RecipeAdapter> ADAPTER_REGISTRY;
+    public static ForgeRegistry<ComponentType> COMPONENT_TYPE_REGISTRY;
+    public static ForgeRegistry<RequirementType<?, ?>> REQUIREMENT_TYPE_REGISTRY;
 
 }

@@ -35,6 +35,7 @@ public class IntegrationTypeHelper {
                 removableTypes.add(type);
             }
         }
+        RegistriesMM.COMPONENT_TYPE_REGISTRY.unfreeze();
         removableTypes.forEach(type -> RegistriesMM.COMPONENT_TYPE_REGISTRY.remove(type.getRegistryName()));
     }
 
@@ -47,6 +48,7 @@ public class IntegrationTypeHelper {
                 removableTypes.add(type);
             }
         }
+        RegistriesMM.REQUIREMENT_TYPE_REGISTRY.unfreeze();
         removableTypes.forEach(type -> RegistriesMM.REQUIREMENT_TYPE_REGISTRY.remove(type.getRegistryName()));
     }
 

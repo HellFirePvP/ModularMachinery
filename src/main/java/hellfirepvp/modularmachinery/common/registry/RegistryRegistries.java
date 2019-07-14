@@ -28,29 +28,29 @@ public class RegistryRegistries {
     private RegistryRegistries() {}
 
     public static void buildRegistries() {
-        ADAPTER_REGISTRY = (IForgeRegistryModifiable<RecipeAdapter>) new RegistryBuilder<RecipeAdapter>()
+        new RegistryBuilder<RecipeAdapter>()
                 .setName(ADAPTER_REGISTRY_NAME)
                 .setType(RecipeAdapter.class)
                 .disableSaving()
                 .setMaxID(Short.MAX_VALUE)
                 .create();
-
-        COMPONENT_TYPE_REGISTRY = (IForgeRegistryModifiable<ComponentType>) new RegistryBuilder<ComponentType>()
+        new RegistryBuilder<ComponentType>()
                 .setName(COMPONENT_TYPE_REGISTRY_NAME)
                 .setType(ComponentType.class)
                 .disableSaving()
                 .setMaxID(Short.MAX_VALUE)
                 .create();
-
-        //Because type-generic registries are terrible in 1.12
-        makeRegistry(REQUIREMENT_TYPE_REGISTRY_NAME, RequirementType.class)
+        new RegistryBuilder<RequirementType>()
+                .setName(REQUIREMENT_TYPE_REGISTRY_NAME)
+                .setType(RequirementType.class)
+                .setMaxID(Short.MAX_VALUE)
+                .allowModification()
                 .disableSaving()
                 .create();
-        REQUIREMENT_TYPE_REGISTRY = RegistryManager.ACTIVE.getRegistry(REQUIREMENT_TYPE_REGISTRY_NAME);
-    }
 
-    private static <T extends IForgeRegistryEntry<T>> RegistryBuilder<T> makeRegistry(ResourceLocation name, Class<T> type) {
-        return new RegistryBuilder<T>().setName(name).setType(type).setMaxID(Short.MAX_VALUE);
+        ADAPTER_REGISTRY          = RegistryManager.ACTIVE.getRegistry(ADAPTER_REGISTRY_NAME);
+        COMPONENT_TYPE_REGISTRY   = RegistryManager.ACTIVE.getRegistry(COMPONENT_TYPE_REGISTRY_NAME);
+        REQUIREMENT_TYPE_REGISTRY = RegistryManager.ACTIVE.getRegistry(REQUIREMENT_TYPE_REGISTRY_NAME);
     }
 
 }
