@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.registry.internal;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapter;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
+import hellfirepvp.modularmachinery.common.crafting.tooltip.RequirementTip;
 import hellfirepvp.modularmachinery.common.registry.*;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
@@ -66,6 +67,13 @@ public class PrimerEventHandler {
     public void registerComponentTypes(RegistryEvent.Register<ComponentType> event) {
         registry.wipe(event.getGenericType());
         RegistryComponentTypes.initialize();
+        fillRegistry(event.getRegistry().getRegistrySuperType(), event.getRegistry());
+    }
+
+    @SubscribeEvent
+    public void registerRequirementTips(RegistryEvent.Register<RequirementTip> event) {
+        registry.wipe(event.getGenericType());
+        RegistryRequirementTips.initialize();
         fillRegistry(event.getRegistry().getRegistrySuperType(), event.getRegistry());
     }
 

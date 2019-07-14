@@ -11,6 +11,7 @@ package hellfirepvp.modularmachinery.common.registry;
 import hellfirepvp.modularmachinery.common.crafting.ComponentType;
 import hellfirepvp.modularmachinery.common.crafting.adapter.RecipeAdapter;
 import hellfirepvp.modularmachinery.common.crafting.requirement.type.RequirementType;
+import hellfirepvp.modularmachinery.common.crafting.tooltip.RequirementTip;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.registries.*;
 
@@ -31,10 +32,12 @@ public class RegistryRegistries {
         makeRegistry(REQUIREMENT_TYPE_REGISTRY_NAME, RequirementType.class).create();
         makeRegistry(COMPONENT_TYPE_REGISTRY_NAME, ComponentType.class).create();
         makeRegistry(ADAPTER_REGISTRY_NAME, RecipeAdapter.class).create();
+        makeRegistry(REQUIREMENT_TIPS_REGISTRY_NAME, RequirementTip.class).create();
 
         ADAPTER_REGISTRY          = RegistryManager.ACTIVE.getRegistry(ADAPTER_REGISTRY_NAME);
         COMPONENT_TYPE_REGISTRY   = RegistryManager.ACTIVE.getRegistry(COMPONENT_TYPE_REGISTRY_NAME);
         REQUIREMENT_TYPE_REGISTRY = RegistryManager.ACTIVE.getRegistry(REQUIREMENT_TYPE_REGISTRY_NAME);
+        REQUIREMENT_TIPS_REGISTRY = RegistryManager.ACTIVE.getRegistry(REQUIREMENT_TIPS_REGISTRY_NAME);
     }
 
     private static <T extends IForgeRegistryEntry<T>> RegistryBuilder<T> makeRegistry(ResourceLocation name, Class<T> type) {

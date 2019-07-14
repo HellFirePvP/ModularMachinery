@@ -16,13 +16,16 @@ import hellfirepvp.modularmachinery.common.crafting.MachineRecipe;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
+import hellfirepvp.modularmachinery.common.crafting.tooltip.RequirementTip;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.lib.RegistriesMM;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import mezz.jei.Internal;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IIngredientType;
 import mezz.jei.api.recipe.IRecipeWrapper;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.resources.I18n;
 import net.minecraft.util.math.MathHelper;
@@ -85,41 +88,51 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
 
         int offsetY = recipeCategory.realHeight;
 
-        long totalEnergyIn = 0;
-        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                        .filter(r -> r instanceof RequirementEnergy)
-                        .filter(r -> r.getActionType() == IOType.INPUT).collect(Collectors.toList())) {
-            totalEnergyIn += ((RequirementEnergy) req).getRequiredEnergyPerTick();
-        }
-        if(totalEnergyIn > 0) {
-            offsetY -= 36;
+        int lineHeight = RequirementTip.LINE_HEIGHT;
+        int splitHeight = RequirementTip.SPLIT_HEIGHT;
+
+        List<List<String>> tooltips = new ArrayList<>();
+        for (RequirementTip tip : RegistriesMM.REQUIREMENT_TIPS_REGISTRY) {
+            Collection<ComponentRequirement<?, ?>> requirements = tip.filterRequirements(this.recipe, this.recipe.getCraftingRequirements());
+            if (!requirements.isEmpty()) {
+                tooltips.add(tip.buildTooltip(this.recipe, requirements));
+            }
         }
 
+        for (List<String> tTip : tooltips) {
+            offsetY -= lineHeight * tTip.size();
+            offsetY -= splitHeight;
+        }
+
+        FontRenderer fr = minecraft.fontRenderer;
+        GlStateManager.color(1, 1, 1, 1);
+        for (List<String> tTip : tooltips) {
+            for (String tip : tTip) {
+                fr.drawString(tip, 8, offsetY, 0x222222);
+                offsetY += lineHeight;
+            }
+            offsetY += splitHeight;
+        }
+        GlStateManager.color(1, 1, 1, 1);
+
+
+        //TODO Rework this along with the ingredient for energy stuffs
+        long totalEnergyIn = 0;
+        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
+                .filter(r -> r instanceof RequirementEnergy)
+                .filter(r -> r.getActionType() == IOType.INPUT)
+                .collect(Collectors.toList())) {
+            totalEnergyIn += ((RequirementEnergy) req).getRequiredEnergyPerTick();
+        }
         long totalEnergyOut = 0;
         for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
                 .filter(r -> r instanceof RequirementEnergy)
-                .filter(r -> r.getActionType() == IOType.OUTPUT).collect(Collectors.toList())) {
+                .filter(r -> r.getActionType() == IOType.OUTPUT)
+                .collect(Collectors.toList())) {
             totalEnergyOut += ((RequirementEnergy) req).getRequiredEnergyPerTick();
         }
-        if(totalEnergyOut > 0) {
-            offsetY -= 36;
-        }
 
-        int totalFuelIn = 0;
-        for (ComponentRequirement req : this.recipe.getCraftingRequirements().stream()
-                .filter(c -> c instanceof RequirementItem)
-                .filter(c -> c.getActionType() == IOType.INPUT)
-                .filter(c -> ((RequirementItem) c).requirementType == RequirementItem.ItemRequirementType.FUEL)
-                .collect(Collectors.toList())) {
-            totalFuelIn += ((RequirementItem) req).fuelBurntime;
-        }
-        if(totalFuelIn > 0) {
-            offsetY -= 26;
-        }
-
-        GlStateManager.color(1F, 1F, 1F, 1F);
         long finalTotalEnergyIn = totalEnergyIn;
-
         recipeCategory.inputComponents.stream()
                 .filter(r -> r instanceof RecipeLayoutPart.Energy)
                 .forEach(part -> ((RecipeLayoutPart.Energy) part).drawEnergy(minecraft, finalTotalEnergyIn));
@@ -128,49 +141,16 @@ public class DynamicRecipeWrapper implements IRecipeWrapper {
                 .filter(r -> r instanceof RecipeLayoutPart.Energy)
                 .forEach(part -> ((RecipeLayoutPart.Energy) part).drawEnergy(minecraft, finalTotalEnergyOut));
         GlStateManager.color(1F, 1F, 1F, 1F);
-
-        String energyType = I18n.format(EnergyDisplayUtil.type.getUnlocalizedFormat());
-
-        if(totalEnergyIn > 0) {
-            long energyIn = EnergyDisplayUtil.type.formatEnergyForDisplay(totalEnergyIn);
-
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.tick", energyIn, energyType), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.in.total", energyIn * this.recipe.getRecipeTotalTickTime(), energyType), 8,  offsetY + 30, 0x222222);
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            offsetY += 36;
-        }
-
-        if(totalFuelIn > 0) {
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.fuel.in"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.fuel.in.total", totalFuelIn), 8,  offsetY + 20, 0x222222);
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            offsetY += 26;
-        }
-
-        if(totalEnergyOut > 0) {
-            long energyOut = EnergyDisplayUtil.type.formatEnergyForDisplay(totalEnergyOut);
-
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out"), 8,  offsetY + 10, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.tick", energyOut, energyType), 8,  offsetY + 20, 0x222222);
-            minecraft.fontRenderer.drawString(I18n.format("tooltip.machinery.energy.out.total", energyOut * this.recipe.getRecipeTotalTickTime(), energyType), 8,  offsetY + 30, 0x222222);
-            GlStateManager.color(1F, 1F, 1F, 1F);
-            offsetY += 36;
-        }
-
     }
 
     @Override
     public void getIngredients(@Nonnull IIngredients ingredients) {
         Map<IIngredientType, Map<IOType, List<ComponentRequirement>>> componentMap = new HashMap<>();
         for (ComponentRequirement<?, ?> req : this.recipe.getCraftingRequirements()) {
-            if(req instanceof RequirementEnergy) continue; //Ignore. They're handled differently.
+            if(req instanceof RequirementEnergy) continue; //Ignore. They're handled differently. I should probably rework this...
 
             ComponentRequirement.JEIComponent<?> comp = req.provideJEIComponent();
-            IIngredientType type = Internal.getIngredientRegistry().getIngredientType(comp.getJEIRequirementClass());
+            IIngredientType type = ModIntegrationJEI.ingredientRegistry.getIngredientType(comp.getJEIRequirementClass());
             componentMap.computeIfAbsent(type, t -> new HashMap<>())
                     .computeIfAbsent(req.getActionType(), tt -> new LinkedList<>()).add(req);
         }

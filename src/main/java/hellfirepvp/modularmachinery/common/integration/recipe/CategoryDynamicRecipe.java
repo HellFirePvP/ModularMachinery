@@ -15,13 +15,16 @@ import hellfirepvp.modularmachinery.common.crafting.RecipeRegistry;
 import hellfirepvp.modularmachinery.common.crafting.helper.ComponentRequirement;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementEnergy;
 import hellfirepvp.modularmachinery.common.crafting.requirement.RequirementItem;
+import hellfirepvp.modularmachinery.common.crafting.tooltip.RequirementTip;
 import hellfirepvp.modularmachinery.common.integration.ModIntegrationJEI;
+import hellfirepvp.modularmachinery.common.lib.RegistriesMM;
 import hellfirepvp.modularmachinery.common.machine.DynamicMachine;
 import hellfirepvp.modularmachinery.common.machine.IOType;
 import mezz.jei.api.gui.*;
 import mezz.jei.api.ingredients.IIngredients;
 import mezz.jei.api.recipe.IRecipeCategory;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.FontRenderer;
 
 import java.awt.*;
 import java.util.*;
@@ -64,12 +67,12 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
         Iterable<MachineRecipe> recipes = RecipeRegistry.getRegistry().getRecipesFor(this.machine);
         Map<IOType, Map<Class<?>, Integer>> componentCounts = new HashMap<>();
         Map<Class<?>, ComponentRequirement.JEIComponent<?>> componentsFound = new HashMap<>();
+        FontRenderer fr = Minecraft.getMinecraft().fontRenderer;
         int offsetX = 8;
         int offsetY = 0;
         int highestY = 0;
-
-        boolean hasEnergyIn = false, hasEnergyOut = false;
-        boolean fuelItemIn = false;
+        int longestTooltip = 0;
+        int widestTooltip = 0;
 
         for (MachineRecipe recipe : recipes) {
             Map<IOType, Map<Class<?>, Integer>> tempComp = new HashMap<>();
@@ -84,18 +87,6 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 if(!componentsFound.containsKey(jeiComp.getJEIRequirementClass())) {
                     componentsFound.put(jeiComp.getJEIRequirementClass(), jeiComp);
                 }
-
-                if(req instanceof RequirementEnergy) {
-                    if(req.getActionType() == IOType.INPUT) {
-                        hasEnergyIn = true;
-                    } else if(req.getActionType() == IOType.OUTPUT) {
-                        hasEnergyOut = true;
-                    }
-                }
-                if(req instanceof RequirementItem && req.getActionType() == IOType.INPUT &&
-                        ((RequirementItem) req).requirementType == RequirementItem.ItemRequirementType.FUEL) {
-                    fuelItemIn = true;
-                }
             }
             for (Map.Entry<IOType, Map<Class<?>, Integer>> cmpEntry : tempComp.entrySet()) {
                 for (Map.Entry<Class<?>, Integer> cntEntry : cmpEntry.getValue().entrySet()) {
@@ -105,6 +96,27 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                         componentCounts.get(cmpEntry.getKey()).put(cntEntry.getKey(), cntEntry.getValue());
                     }
                 }
+            }
+
+            int tipLength = 0;
+            for (RequirementTip tip : RegistriesMM.REQUIREMENT_TIPS_REGISTRY) {
+                Collection<ComponentRequirement<?, ?>> requirements = tip.filterRequirements(recipe, recipe.getCraftingRequirements());
+                if (!requirements.isEmpty()) {
+                    List<String> tooltip = tip.buildTooltip(recipe, requirements);
+                    if (!tooltip.isEmpty()) {
+                        for (String tipString : tooltip) {
+                            int length = fr.getStringWidth(tipString);
+                            if (length > widestTooltip) {
+                                widestTooltip = length;
+                            }
+                        }
+                        tipLength += RequirementTip.LINE_HEIGHT * tooltip.size();
+                        tipLength += RequirementTip.SPLIT_HEIGHT;
+                    }
+                }
+            }
+            if (tipLength > longestTooltip) {
+                longestTooltip = tipLength;
             }
         }
 
@@ -188,14 +200,11 @@ public class CategoryDynamicRecipe implements IRecipeCategory<DynamicRecipeWrapp
                 RecipeLayoutHelper.PART_PROCESS_ARROW.xSize, RecipeLayoutHelper.PART_PROCESS_ARROW.zSize);
 
         //Texts for input consumed/produced
-        if(hasEnergyIn) {
-            highestY += 36;
-        }
-        if(hasEnergyOut) {
-            highestY += 36;
-        }
-        if(fuelItemIn) {
-            highestY += 26;
+        highestY += longestTooltip;
+
+        widestTooltip += 8; //Initial offset
+        if (widestTooltip > offsetX) {
+            offsetX = widestTooltip;
         }
 
         return new Point(offsetX, highestY);
