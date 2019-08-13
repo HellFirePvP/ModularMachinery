@@ -7,7 +7,7 @@
             "io": "output",
             "operation": 1,
             "multiplier": 3.0
-        },h
+        },
         {
             "target": "modularmachinery:item",
             "io": "input",

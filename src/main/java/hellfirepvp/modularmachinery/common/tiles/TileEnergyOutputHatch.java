@@ -104,7 +104,9 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     private long attemptDECoreTransfer(long transferCap) {
         TileEntity te = foundCore == null ? null : world.getTileEntity(foundCore);
         if (foundCore == null || !(te instanceof TileEnergyStorageCore)) {
-            foundCore = findCore(foundCore);
+            if (world.getTotalWorldTime() % 100 == 0) {
+                foundCore = findCore(foundCore);
+            }
         }
 
         if (foundCore != null && te instanceof TileEnergyStorageCore) {
@@ -121,7 +123,7 @@ public class TileEnergyOutputHatch extends TileEnergyHatch implements IEnergySou
     @Optional.Method(modid = "draconicevolution")
     private BlockPos findCore(BlockPos before) {
         List<TileEnergyStorageCore> list = new LinkedList<>();
-        int range = 24;
+        int range = 16;
 
         Iterable<BlockPos> positions = BlockPos.getAllInBox(pos.add(-range, -range, -range), pos.add(range, range, range));
 
