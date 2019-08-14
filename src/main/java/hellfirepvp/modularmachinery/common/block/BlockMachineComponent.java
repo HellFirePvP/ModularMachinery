@@ -9,6 +9,7 @@
 package hellfirepvp.modularmachinery.common.block;
 
 import hellfirepvp.modularmachinery.common.data.Config;
+import hellfirepvp.modularmachinery.common.tiles.base.ColorableMachineTile;
 import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import net.minecraft.block.BlockContainer;
 import net.minecraft.block.material.MapColor;
@@ -44,8 +45,8 @@ public abstract class BlockMachineComponent extends BlockContainer implements Bl
             return Config.machineColor;
         }
         TileEntity te = worldIn.getTileEntity(pos);
-        if(te != null && te instanceof TileColorableMachineComponent) {
-            return ((TileColorableMachineComponent) te).definedColor;
+        if (te instanceof ColorableMachineTile) {
+            return ((ColorableMachineTile) te).getMachineColor();
         }
         return Config.machineColor;
     }

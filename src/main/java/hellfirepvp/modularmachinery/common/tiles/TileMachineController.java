@@ -23,8 +23,8 @@ import hellfirepvp.modularmachinery.common.item.ItemBlueprint;
 import hellfirepvp.modularmachinery.common.lib.BlocksMM;
 import hellfirepvp.modularmachinery.common.machine.*;
 import hellfirepvp.modularmachinery.common.modifier.ModifierReplacement;
+import hellfirepvp.modularmachinery.common.tiles.base.ColorableMachineTile;
 import hellfirepvp.modularmachinery.common.tiles.base.MachineComponentTile;
-import hellfirepvp.modularmachinery.common.tiles.base.TileColorableMachineComponent;
 import hellfirepvp.modularmachinery.common.tiles.base.TileEntityRestrictedTick;
 import hellfirepvp.modularmachinery.common.util.IOInventory;
 import hellfirepvp.modularmachinery.common.util.MiscUtils;
@@ -240,9 +240,8 @@ public class TileMachineController extends TileEntityRestrictedTick {
 
     private void tryColorize(BlockPos pos, int color) {
         TileEntity te = this.getWorld().getTileEntity(pos);
-        if(te instanceof TileColorableMachineComponent) {
-            ((TileColorableMachineComponent) te).definedColor = color;
-            ((TileColorableMachineComponent) te).markForUpdate();
+        if (te instanceof ColorableMachineTile) {
+            ((ColorableMachineTile) te).setMachineColor(color);
             getWorld().addBlockEvent(pos, getWorld().getBlockState(pos).getBlock(), 1, 1);
         }
     }

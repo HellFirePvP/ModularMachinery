@@ -18,9 +18,20 @@ import net.minecraft.nbt.NBTTagCompound;
  * Created by HellFirePvP
  * Date: 15.08.2017 / 16:20
  */
-public class TileColorableMachineComponent extends TileEntitySynchronized {
+public class TileColorableMachineComponent extends TileEntitySynchronized implements ColorableMachineTile {
 
-    public int definedColor = Config.machineColor;
+    private int definedColor = Config.machineColor;
+
+    @Override
+    public void setMachineColor(int newColor) {
+        this.definedColor = newColor;
+        this.markForUpdate();
+    }
+
+    @Override
+    public int getMachineColor() {
+        return this.definedColor;
+    }
 
     @Override
     public void readCustomNBT(NBTTagCompound compound) {
