@@ -231,10 +231,10 @@ public class BlockArray {
             sb.append(move).append(move).append(move).append("\"z\": ").append(pos.getZ()).append(",").append(newline);
 
             BlockInformation bi = this.pattern.get(pos);
-            if(bi.matchingTag != null) {
+            /* if(bi.matchingTag != null) {
                 String strTag = NBTJsonSerializer.serializeNBT(bi.matchingTag);
                 sb.append(move).append(move).append(move).append("\"nbt\": ").append(strTag).append(",").append(newline);
-            }
+            } */
 
             sb.append(move).append(move).append(move).append("\"elements\": [").append(newline);
             for (Iterator<IBlockState> iterator1 = bi.samples.iterator(); iterator1.hasNext(); ) {
