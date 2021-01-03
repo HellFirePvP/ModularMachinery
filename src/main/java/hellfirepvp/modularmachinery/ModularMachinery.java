@@ -8,23 +8,20 @@
 
 package hellfirepvp.modularmachinery;
 
+import hellfirepvp.modularmachinery.client.ClientProxy;
 import hellfirepvp.modularmachinery.common.CommonProxy;
 import hellfirepvp.modularmachinery.common.command.CommandHand;
 import hellfirepvp.modularmachinery.common.command.CommandSyntax;
 import hellfirepvp.modularmachinery.common.network.PktCopyToClipboard;
 import hellfirepvp.modularmachinery.common.network.PktInteractFluidTankGui;
 import hellfirepvp.modularmachinery.common.network.PktSyncSelection;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraftforge.fluids.FluidRegistry;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.DatagenModLoader;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.SidedProxy;
-import net.minecraftforge.fml.common.event.FMLInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
-import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
-import net.minecraftforge.fml.common.network.NetworkRegistry;
-import net.minecraftforge.fml.common.network.simpleimpl.SimpleNetworkWrapper;
-import net.minecraftforge.fml.relauncher.Side;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 /**
@@ -34,70 +31,42 @@ import org.apache.logging.log4j.Logger;
  * Created by HellFirePvP
  * Date: 26.06.2017 / 20:26
  */
-@Mod(modid = ModularMachinery.MODID, name = ModularMachinery.NAME, version = ModularMachinery.VERSION,
-        dependencies = "required-after:forge@[14.21.0.2371,);after:crafttweaker@[4.0.4,);after:jei@[4.13.1.222,)",
-        certificateFingerprint = "a0f0b759d895c15ceb3e3bcb5f3c2db7c582edf0",
-        acceptedMinecraftVersions = "[1.12, 1.13)"
-)
+@Mod(ModularMachinery.MODID)
 public class ModularMachinery {
 
     public static final String MODID = "modularmachinery";
     public static final String NAME = "Modular Machinery";
-    public static final String VERSION = "1.11.1";
-    public static final String CLIENT_PROXY = "hellfirepvp.modularmachinery.client.ClientProxy";
-    public static final String COMMON_PROXY = "hellfirepvp.modularmachinery.common.CommonProxy";
 
-    public static final SimpleNetworkWrapper NET_CHANNEL = NetworkRegistry.INSTANCE.newSimpleChannel(MODID);
+    public static Logger log = LogManager.getLogger(NAME);
 
-    private static boolean devEnvChache = false;
+    private static ModularMachinery instance;
+    private static ModContainer modContainer;
+    private final CommonProxy proxy;
 
-    @Mod.Instance(MODID)
-    public static ModularMachinery instance;
+    public ModularMachinery() {
+        instance = this;
+        modContainer = ModList.get().getModContainerById(MODID).get();
 
-    public static Logger log;
-
-    @SidedProxy(clientSide = CLIENT_PROXY, serverSide = COMMON_PROXY)
-    public static CommonProxy proxy;
-
-    @Mod.EventHandler
-    public void preInit(FMLPreInitializationEvent event) {
-        event.getModMetadata().version = VERSION;
-        log = event.getModLog();
-        devEnvChache = (Boolean) Launch.blackboard.get("fml.deobfuscatedEnvironment");
-
-        NET_CHANNEL.registerMessage(PktCopyToClipboard.class, PktCopyToClipboard.class, 0, Side.CLIENT);
-        NET_CHANNEL.registerMessage(PktSyncSelection.class, PktSyncSelection.class, 1, Side.CLIENT);
-
-        NET_CHANNEL.registerMessage(PktInteractFluidTankGui.class, PktInteractFluidTankGui.class, 2, Side.SERVER);
-
-        proxy.loadModData(event.getModConfigurationDirectory());
-
-        proxy.preInit();
+        this.proxy = DistExecutor.unsafeRunForDist(() -> ClientProxy::new, () -> CommonProxy::new);
     }
 
-    @Mod.EventHandler
-    public void init(FMLInitializationEvent event) {
-        proxy.init();
+    public static ModularMachinery getInstance() {
+        return instance;
     }
 
-    @Mod.EventHandler
-    public void postInit(FMLPostInitializationEvent event) {
-        proxy.postInit();
+    public static ModContainer getModContainer() {
+        return modContainer;
     }
 
-    @Mod.EventHandler
-    public void onServerStart(FMLServerStartingEvent event) {
-        //Cmd registration
-        event.registerServerCommand(new CommandSyntax());
-        event.registerServerCommand(new CommandHand());
+    public static CommonProxy getProxy() {
+        return getInstance().proxy;
     }
 
-    public static boolean isRunningInDevEnvironment() {
-        return devEnvChache;
+    public static ResourceLocation key(String path) {
+        return new ResourceLocation(ModularMachinery.MODID, path);
     }
 
-    static {
-        FluidRegistry.enableUniversalBucket();
+    public static boolean isDoingDataGeneration() {
+        return DatagenModLoader.isRunningDataGen();
     }
-
 }

@@ -1,17 +1,22 @@
+import net.minecraftforge.gradle.common.task.SignJar
+
 buildscript {
+
     repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        mavenCentral()
     }
+
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
     }
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-apply plugin: "java"
 
-version = "1.12.2-1.11.1"
+version = "1.16.4-1.12.0"
 group = "hellfirepvp.modularmachinery"
 archivesBaseName = "modularmachinery"
 String build_version = ""
@@ -19,101 +24,137 @@ String build_version = ""
 // Most likely inside Jenkins. Or homebrew environment.
 // I hope you know what you do if it's the latter.
 if (System.getenv("BUILD_NUMBER") != null) {
-    build_version = version + "-v" + System.getenv("BUILD_NUMBER")
+    build_version = version + ".v" + System.getenv("BUILD_NUMBER")
 }
 
-sourceCompatibility = targetCompatibility = '1.8'
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
 
 minecraft {
-    version = "1.12.2-14.23.5.2800"
-    runDir = "run"
-    useDepAts = true
 
-    mappings = "snapshot_20171003"
+    mappings channel: 'snapshot', version: '20201028-1.16.3'
+
+    accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'info'
+
+            mods {
+                modularmachinery {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'info'
+
+            mods {
+                modularmachinery {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'info'
+
+            args '--mod', 'modularmachinery', '--all', '--output', file('src/generated/resources/'), '--validate',
+                    '--existing', sourceSets.main.resources.srcDirs[0]
+
+            mods {
+                modularmachinery {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
 }
 
 repositories {
+
     maven {
-        // for rf stuffs
-        url = "https://maven.covers1624.net"
+        name 'hellfirepvp maven'
+        url 'https://maven.hellfiredev.net/'
     }
 
     maven {
-        // location of the maven that hosts JEI files
-        url = "http://dvs1.progwml6.com/files/maven"
-    }
-
-    maven {
-        // CraftTweaker
-        url "https://maven.blamejared.com/"
-    }
-
-    maven {
-        // Brandonscore and DE
-        url "http://chickenbones.net/maven/"
-    }
-
-    maven {
-        // Open Computers
-        url "http://maven.cil.li/"
-    }
-    
-    maven {
-        // Curseforge
-        url "https://minecraft.curseforge.com/api/maven"
+        name 'JEI maven'
+        url "https://dvs1.progwml6.com/files/maven"
     }
 
 }
 
 dependencies {
 
-    def mc_version = "1.12.2"
-    def jei_version = "4.14.4.267"
+    minecraft 'net.minecraftforge:forge:1.16.4-35.1.28'
 
-    ////JEI stuff
-    deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
+    compileOnly 'hellfirepvp.observerlib:observerlib:1.16.4-1.5.0.v74'
+    runtimeOnly 'hellfirepvp.observerlib:observerlib:1.16.4-1.5.0.v74:deobf'
 
-    def rf_version = "2.1.0.7"
-
-    deobfCompile "cofh:RedstoneFlux:1.12-${rf_version}:universal"
-
-    def ct_mc_version = "MC1120"
-    def ct_version = "4.1.14.520"
-
-    deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:1.12-${ct_version}"
-
-    //deobfCompile group: 'cofh', name: 'ThermalDynamics', version: '1.12.2-2.5.4.18', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'ThermalExpansion', version: '1.12.2-5.5.3.40', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'ThermalFoundation', version: '1.12.2-2.6.2.24', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'CoFHCore', version: '1.12.2-4.6.1.22', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'CoFHWorld', version: '1.12.2-1.2.0.5', classifier: 'universal'
-    deobfCompile group: 'codechicken', name: 'CodeChickenLib', version: '1.12.2-3.2.2.353', classifier: 'universal'
-    deobfCompile group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
-    deobfCompile group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
-
-    deobfCompile "gregtechce:gregtech:1.12.2:1.5.21.182"
+    compileOnly fg.deobf('mezz.jei:jei-1.16.4:7.6.0.58')
+    runtimeOnly fg.deobf('mezz.jei:jei-1.16.4:7.6.0.58')
 
 }
 
-//Sign jar from flatfile if present - local build
-task signMainJarFile(type: SignJar, dependsOn: reobfJar) {
-    onlyIf { // Skip the task if our secret data isn't available
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+//Sign jar from flatfile if present
+task signJar(type: SignJar, dependsOn: jar) {
+    onlyIf {
         project.hasProperty('keyStore')
     }
-    if (project.hasProperty('keyStore')) { // This needs to be a path to the keystore file
+    if (project.hasProperty('keyStore')) {
         keyStore = project.keyStore
         alias = project.alias
         storePass = project.storePass
         keyPass = project.keyPass
         inputFile = jar.archivePath
         outputFile = jar.archivePath
+    } else {
+        logger.warn("No key store found, not signing the output jar\n")
     }
 }
 
-build.dependsOn signMainJarFile
+build.dependsOn signJar
+
+// Example for how to get properties into the manifest for reading by the runtime..
+jar {
+    manifest {
+        attributes([
+                "Specification-Title": "modularmachinery",
+                "Specification-Vendor": "hellfirepvp",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": "${version}",
+                "Implementation-Vendor" : "hellfirepvp",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
 
 task deobfJar(type: Jar) {
     from(sourceSets.main.output)
@@ -154,17 +195,30 @@ publishing {
     }
 }
 
-processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        expand 'version':project.version, 'mcversion': "1.12"
+// Minimize/optimize all png files, requires optipng on the PATH
+// Credits: ImmersiveEngineering / and from there: BrainStone
+void minimizePNGFile(File file) {
+    long size = file.length()
+    exec {
+        executable "optipng"
+        args "-q", "-o7", "-zm1-9", "-strip", "all", file
     }
+    long newSize = file.length()
+    if (newSize < size) {
+        System.out.format("Reduced File size of %s from %d bytes to %d bytes (reduced by %.2f%%)\n",
+                file, size, newSize, ((double) (size - newSize)) / ((double) size) * 100.0)
+    } else {
+        System.out.format("File size of %s couldn't be reduced.\n", file)
+    }
+}
 
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
+task optimizePng {
+    def pngPatterns = ["**/*.png"]
+    doLast {
+        //Ensure the logo is minimized (we add this file to each jar)
+        //Minimize any PNGs in the source sets
+        for (dir in sourceSets.main.resources.srcDirs) {
+            fileTree(dir: dir, includes: pngPatterns).each { minimizePNGFile(it) }
+        }
     }
 }

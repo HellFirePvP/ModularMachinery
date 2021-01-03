@@ -41,6 +41,8 @@ hs_err_pid*
 /libs
 /eclipse
 /classes
+/out
+/logs
 
 # Mac filesystem dust
 /.DS_Store
@@ -53,4 +55,8 @@ hs_err_pid*
 
 # For good measure...
 *.jks
+gradle.attributes
 gradle.properties
+
+# Do not commit generated resources
+/src/generated/
