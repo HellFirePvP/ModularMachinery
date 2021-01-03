@@ -1,15 +1,18 @@
+import net.minecraftforge.gradle.common.task.SignJar
+
 buildscript {
     repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
         jcenter()
-        maven { url = "http://files.minecraftforge.net/maven" }
+        mavenCentral()
     }
     dependencies {
-        classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:3.+'
     }
 }
-apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'eclipse'
 apply plugin: 'maven-publish'
-apply plugin: "java"
 
 version = "1.12.2-1.11.1"
 group = "hellfirepvp.modularmachinery"
@@ -22,17 +25,26 @@ if (System.getenv("BUILD_NUMBER") != null) {
     build_version = version + "-v" + System.getenv("BUILD_NUMBER")
 }
 
-sourceCompatibility = targetCompatibility = '1.8'
-compileJava {
-    sourceCompatibility = targetCompatibility = '1.8'
-}
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8'
 
 minecraft {
-    version = "1.12.2-14.23.5.2800"
-    runDir = "run"
-    useDepAts = true
 
-    mappings = "snapshot_20171003"
+    mappings channel: 'snapshot', version: '20171003-1.12'
+
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'info'
+        }
+
+        server {
+
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+            property 'forge.logging.console.level', 'info'
+        }
+    }
 }
 
 repositories {
@@ -70,50 +82,62 @@ repositories {
 
 dependencies {
 
-    def mc_version = "1.12.2"
-    def jei_version = "4.14.4.267"
+    minecraft 'net.minecraftforge:forge:1.12.2-14.23.5.2855'
 
-    ////JEI stuff
-    deobfCompile "mezz.jei:jei_${mc_version}:${jei_version}"
+    compileOnly fg.deobf('mezz.jei:jei_1.12.2:4.14.4.267')
+    runtimeOnly fg.deobf('mezz.jei:jei_1.12.2:4.14.4.267')
 
-    def rf_version = "2.1.0.7"
+    compileOnly fg.deobf('cofh:RedstoneFlux:1.12-2.1.0.7:universal')
+    runtimeOnly fg.deobf('cofh:RedstoneFlux:1.12-2.1.0.7:universal')
 
-    deobfCompile "cofh:RedstoneFlux:1.12-${rf_version}:universal"
+    compileOnly fg.deobf('CraftTweaker2:CraftTweaker2-MC1120-Main:1.12-4.1.14.520')
+    runtimeOnly fg.deobf('CraftTweaker2:CraftTweaker2-MC1120-Main:1.12-4.1.14.520')
 
-    def ct_mc_version = "MC1120"
-    def ct_version = "4.1.14.520"
+    deobf group: 'codechicken', name: 'CodeChickenLib', version: '1.12.2-3.2.2.353', classifier: 'universal'
+    deobf group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
+    deobf group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
 
-    deobfCompile "CraftTweaker2:CraftTweaker2-${ct_mc_version}-Main:1.12-${ct_version}"
-
-    //deobfCompile group: 'cofh', name: 'ThermalDynamics', version: '1.12.2-2.5.4.18', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'ThermalExpansion', version: '1.12.2-5.5.3.40', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'ThermalFoundation', version: '1.12.2-2.6.2.24', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'CoFHCore', version: '1.12.2-4.6.1.22', classifier: 'universal'
-    //deobfCompile group: 'cofh', name: 'CoFHWorld', version: '1.12.2-1.2.0.5', classifier: 'universal'
-    deobfCompile group: 'codechicken', name: 'CodeChickenLib', version: '1.12.2-3.2.2.353', classifier: 'universal'
-    deobfCompile group: 'com.brandon3055.brandonscore', name: 'BrandonsCore', version: '1.12.2-2.4.9.195', classifier: 'universal'
-    deobfCompile group: 'com.brandon3055.draconicevolution', name: 'Draconic-Evolution', version: '1.12.2-2.3.18.329', classifier: 'universal'
-
-    deobfCompile "gregtechce:gregtech:1.12.2:1.5.21.182"
+    deobf "gregtechce:gregtech:1.12.2:1.5.21.182"
 
 }
 
-//Sign jar from flatfile if present - local build
-task signMainJarFile(type: SignJar, dependsOn: reobfJar) {
-    onlyIf { // Skip the task if our secret data isn't available
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+}
+
+//Sign jar from flatfile if present
+task signJar(type: SignJar, dependsOn: jar) {
+    onlyIf {
         project.hasProperty('keyStore')
     }
-    if (project.hasProperty('keyStore')) { // This needs to be a path to the keystore file
+    if (project.hasProperty('keyStore')) {
         keyStore = project.keyStore
         alias = project.alias
         storePass = project.storePass
         keyPass = project.keyPass
         inputFile = jar.archivePath
         outputFile = jar.archivePath
+    } else {
+        logger.warn("No key store found, not signing the output jar\n")
     }
 }
 
-build.dependsOn signMainJarFile
+build.dependsOn signJar
+
+// Example for how to get properties into the manifest for reading by the runtime..
+jar {
+    manifest {
+        attributes([
+                "Specification-Title": "astralsorcery",
+                "Specification-Vendor": "hellfirepvp",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": "${version}",
+                "Implementation-Vendor" : "hellfirepvp",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
 
 task deobfJar(type: Jar) {
     from(sourceSets.main.output)
@@ -151,20 +175,5 @@ publishing {
         maven {
             url "file://" + System.getenv("LOCAL_MAVEN")
         }
-    }
-}
-
-processResources {
-    inputs.property "version", project.version
-    inputs.property "mcversion", project.minecraft.version
-
-    from(sourceSets.main.resources.srcDirs) {
-        include 'mcmod.info'
-
-        expand 'version':project.version, 'mcversion': "1.12"
-    }
-
-    from(sourceSets.main.resources.srcDirs) {
-        exclude 'mcmod.info'
     }
 }
