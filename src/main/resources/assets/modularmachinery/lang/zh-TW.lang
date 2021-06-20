@@ -26,7 +26,7 @@ message.structurebuild.confirmrotation.rotating=儲存時將結構旋轉 %s 度�
 message.structurebuild.empty=你沒有選中任何東西。
 message.structurebuild.warndedicated=你現在是在伺服器上儲存機器組態！請不要忘記從伺服器上下載對應檔案！
 message.structurebuild.save=機器組態已儲存在機器資料夾下的 '%s' 中！
-message.structurebuild.fail=機器組態儲存失敗！請查閱紀錄檔檔案取得詳細資訊！
+message.structurebuild.fail=機器組態儲存失敗！請查閱記錄檔取得詳細資訊！
 
 tooltip.machinery.empty=空
 tooltip.machinery.fuel=接受任意燃料。
